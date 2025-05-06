@@ -17,16 +17,16 @@
   :root, .theme-dark {
     --colorBody: #88ccff;
     --colorBackground: #202020;
-    --colorPanel: rgba(32,32,32,0.98);
+    --colorPanel: rgba(190, 183, 193, 0.85);
     --colorBorderPassive: rgba(136,204,255,0.6);
-    --colorBorderActive: #88ccff;
-    --colorUserText: #88ccff;
-    --colorSystemText: #cc77ff;
-    --colorToolbarPassive: rgba(136,204,255,0.6);
-    --colorToolbarPassive2: rgba(136,204,255,0.3);
-    --colorToolbarActive: #88ccff;
+    --colorBorderActive: rgba(168, 169, 226, 0.9);/*#88ccff;*/
+    --colorUserText: #90e7fa;/*#d3c6e0;*/
+    --colorSystemText: #3c096c;
+    --colorToolbarPassive: rgba(58, 1, 92, 0.9);
+    --colorToolbarPassive2: #d4adf8;/*rgba(136,204,255,0.3);*/
+    --colorToolbarActive: #8314eb;/*#88ccff;*/
     --widthLabel: 5rem;
-    --colorGlow: #88ccff;
+    --colorGlow: rgba(94,96,206, 0.9);  /*#80ffdb*/
   }
   .theme-light {
     --colorBody: #505050;
@@ -41,11 +41,85 @@
     --colorToolbarActive: #606666;
     --widthLabel: 5rem;
   }
+  .theme-glass {
+    --colorBody: rgba(255, 255, 255, 0.8); /* 半透明白色 */
+    --colorBackground: rgba(255, 255, 255, 0.1); /* 透明背景 */
+    --colorPanel: rgba(255, 255, 255, 0.5); /* 半透明面板 */
+    --colorBorderPassive: rgba(255, 255, 255, 0.3); /* 半透明边框 */
+    --colorBorderActive: rgba(255, 255, 255, 0.6); /* 活动边框 */
+    --colorUserText: #333333; /* 深色用户文本 */
+    --colorSystemText: #ffffff; /* 白色系统文本 */
+    --colorToolbarPassive: rgba(255, 255, 255, 0.2); /* 半透明工具栏 */
+    --colorToolbarPassive2: rgba(255, 255, 255, 0.1); /* 更透明的工具栏 */
+    --colorToolbarActive: rgba(255, 255, 255, 0.5); /* 活动工具栏 */
+    --widthLabel: 5rem;
+    --colorGlow: rgba(255, 255, 255, 0.8); /* 半透明发光效果 */
+  }
+  .theme-gradient {
+    --colorBody: rgba(255, 255, 255, 0.9); /* 半透明白色 */
+    --colorBackground: linear-gradient(135deg, #ff7e5f, #feb47b); /* 渐变背景 */
+    --colorPanel: rgba(255, 255, 255, 0.6); /* 半透明面板 */
+    --colorBorderPassive: rgba(255, 255, 255, 0.4); /* 半透明边框 */
+    --colorBorderActive: rgba(255, 255, 255, 0.7); /* 活动边框 */
+    --colorUserText: #333333; /* 深色用户文本 */
+    --colorSystemText: #ffffff; /* 白色系统文本 */
+    --colorToolbarPassive: rgba(255, 255, 255, 0.3); /* 半透明工具栏 */
+    --colorToolbarPassive2: rgba(255, 255, 255, 0.2); /* 更透明的工具栏 */
+    --colorToolbarActive: rgba(255, 255, 255, 0.5); /* 活动工具栏 */
+    --widthLabel: 5rem;
+    --colorGlow: rgba(255, 255, 255, 0.9); /* 半透明发光效果 */
+  }
+  .theme-dynamic {
+    --colorBody: rgba(255, 255, 255, 0.8); /* 半透明白色 */
+    --colorBackground: rgba(0, 0, 0, 0.5); /* 初始背景色 */
+    --colorPanel: rgba(255, 255, 255, 0.5); /* 半透明面板 */
+    --colorBorderPassive: rgba(255, 255, 255, 0.3); /* 半透明边框 */
+    --colorBorderActive: rgba(255, 255, 255, 0.6); /* 活动边框 */
+    --colorUserText: #333333; /* 深色用户文本 */
+    --colorSystemText: #ffffff; /* 白色系统文本 */
+    --colorToolbarPassive: rgba(255, 255, 255, 0.2); /* 半透明工具栏 */
+    --colorToolbarPassive2: rgba(255, 255, 255, 0.1); /* 更透明的工具栏 */
+    --colorToolbarActive: rgba(255, 255, 255, 0.5); /* 活动工具栏 */
+    --widthLabel: 5rem;
+    --colorGlow: #88ccff; /* 初始发光效果 */
+  
+    /* animation: colorChange 6s infinite alternate; */
+}
+/*
+@keyframes colorChange {
+    0% {
+        --colorBackground: rgba(255, 0, 0, 0.5);
+        --colorGlow: rgba(255, 100, 100, 0.8);
+        --colorPanel: rgba(255, 200, 200, 0.5);
+    }
+    25% {
+        --colorBackground: rgba(0, 255, 0, 0.5);
+        --colorGlow: rgba(100, 255, 100, 0.8);
+        --colorPanel: rgba(200, 255, 200, 0.5);
+    }
+    50% {
+        --colorBackground: rgba(0, 0, 255, 0.5);
+        --colorGlow: rgba(100, 100, 255, 0.8);
+        --colorPanel: rgba(200, 200, 255, 0.5);
+    }
+    75% {
+        --colorBackground: rgba(255, 255, 0, 0.5);
+        --colorGlow: rgba(255, 255, 100, 0.8);
+        --colorPanel: rgba(255, 255, 200, 0.5);
+    }
+    100% {
+        --colorBackground: rgba(255, 0, 255, 0.5);
+        --colorGlow: rgba(255, 100, 255, 0.8);
+        --colorPanel: rgba(255, 200, 255, 0.5);
+    }
+}
+    */
 
   body {
     width: 100%; height: 100%; min-height: 100vh;
     min-height: -webkit-fill-available; margin: 0; padding: 0;
-    background-color: var(--colorBackground); color: var(--colorBody);
+    background-color: #032343; /* 设置浅色背景 */
+    color: var(--colorBody);
     overflow: hidden; text-align: left; touch-action: manipulation;
     font-family: "SansRegular", sans-serif; font-size: 1.4rem;
     line-height: 1.4rem; scrollbar-color: var(--colorToolbarPassive) transparent;
@@ -164,7 +238,7 @@
   #main {
     position: absolute; top: 50%; left: 50%;
     transform: translate(-50%,-50%); background-color: transparent;
-  }
+  } /*整体背景：background-color*/
 
   /* Left panel */
   #left {
@@ -206,8 +280,8 @@
   #loading-top {
     clip-path: inset(0 100% 0 0);
     background: repeating-linear-gradient(
-      to right, var(--colorBody),
-      var(--colorBody) 5px,
+      to right, var(--colorPanel),
+      var(--colorToolbarActive) 5px,
       transparent 5px,
       transparent 10px
     );
@@ -278,7 +352,7 @@
     line-height: 2rem; resize: none; outline: none; color: var(--colorUserText);
     pointer-events: auto; box-sizing: border-box;
   }
-  #bottom textarea::placeholder { color: var(--colorUserText); opacity: 0.3; }
+  #bottom textarea::placeholder { color: var(--colorToolbarPassive2); opacity: 0.5; }
   #flag, #score, #scripttag, #scriptstatus { color: var(--colorToolbarPassive2); }
 
   [data-image-type^='video/']:before {
@@ -384,9 +458,36 @@
     #main.layout-full #bottom { top: 76%; left: 38%; bottom: 0; right: 0; max-width: none; }
   }
 
-  </style>
-
+  /*控制浅色背景*/
+  body {
+    overflow: hidden; 
+    background-color: #f0f4f8;
+    transition: background 0.3s ease-in-out;
+  }
+  .interactive-background {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    background: rgba(255, 255, 255, 0.5);
+    backdrop-filter: blur(10px);
+    transition: background 0.3s ease;
+  }
+  .interactive-background {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    background: radial-gradient(circle, rgba(255, 255, 255, 0.5) 0%, rgba(0, 0, 0, 0.5) 100%);
+    transition: background 0.3s ease;
+  }
+</style>
 <script nomodule>alert("You browser doesn't seem to support modules. Use a modern browser to run Enterprise.");</script>
+
 <script src="https://d3js.org/d3.v6.min.js"></script>
 <script async src="https://cdn.jsdelivr.net/npm/es-module-shims@1.7.1/dist/es-module-shims.js"></script>
 <script type="importmap">
@@ -396,24 +497,48 @@
     "three/examples/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/",
     "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/",
     "dompurify": "https://cdn.jsdelivr.net/npm/dompurify@3.1.7/+esm",
-    "marked": "https://cdn.jsdelivr.net/npm/marked@14.1.3/+esm"
+    "marked": "https://cdn.jsdelivr.net/npm/marked@14.1.3/+esm",
+    "pinyin-pro": "https://cdn.jsdelivr.net/npm/pinyin-pro@3.26.0/+esm",
+    "opencc-js": "https://cdn.jsdelivr.net/npm/opencc-js@1.0.0/+esm"
   }
 }
 </script>
+<!-- importmap的末项绝对不能加逗号 -->
 <script src="https://cdn.jsdelivr.net/npm/microsoft-cognitiveservices-speech-sdk@latest/distrib/browser/microsoft.cognitiveservices.speech.sdk.bundle-min.js"></script>
 
+<!--   document.querySelector(".command.starttransparent").classList.add("newDefiner");
+   document.querySelector("row.text.label").classList.add("newDefined");
+    document.querySelector(".newDefiner").style.display="none";
+       document.querySelector(".newDefined").style.display="none";
+       document.querySelector(".hiddenRow").style.display="none";
+  document.querySelector(".row").classList.add("hiddenRow");
+  -->
+
 <script type="module">
-import { site } from './siteconfig.js'
-import { TalkingHead } from "./modules/talkinghead.mjs";
-import dompurify from 'dompurify';
-import { marked } from 'marked';
+  
+  import { site } from './siteconfig.js'
+  import { TalkingHead } from "./modules/talkinghead.mjs";
+  import dompurify from 'dompurify';
+  import { marked } from 'marked';
+  import { Converter } from 'opencc-js';
+
+  // import { UESocketProxy } from './modules/socketService.mjs';
+
 
 // API proxys
 const jwtEndpoint = "/app/jwt/get"; // Get JSON Web Token for Single Sign-On
+
+//LLM
 const openaiChatCompletionsProxy = "/openai/v1/chat/completions";
-const openaiModerationsProxy = "/openai/v1/moderations";
 const openaiAudioTranscriptionsProxy = "/openai/v1/audio/transcriptions";
 const geminiProxy = "/gemini/";
+
+const grokChatCompletionsProxy = "/grok/v1/chat/completions"; // Grok-beta
+const llamaChatCompletionsProxy = "/llama/v1/chat/completions"; // Local llama.cpp server proxy
+
+const UESocketProxy = "/socket:ue/animation";
+
+//TTS
 const googleTTSProxy = "/gtts/";
 const elevenTTSProxy = [
   "wss://" + window.location.host + "/elevenlabs/",
@@ -424,8 +549,8 @@ const microsoftTTSProxy = [
   "wss://" + window.location.host + "/mstts/",
   "/cognitiveservices/websocket/v1"
 ];
-const grokChatCompletionsProxy = "/grok/v1/chat/completions"; // Grok-beta
-const llamaChatCompletionsProxy = "/llama/v1/chat/completions"; // Local llama.cpp server proxy
+
+//ASR
 const localWhisperCppProxy = "/whisper/"; // Local whisper.cpp server proxy
 
 
@@ -442,6 +567,88 @@ const elevenTTSEndpoint = [
 const microsoftTTSEndpoint = "wss://northeurope.tts.speech.microsoft.com/cognitiveservices/websocket/v1";
 const grokChatCompletionsEndpoint = "https://api.x.ai/v1/chat/completions";
 
+const animation_list = { // 尽量选时长均衡的
+    "1": {
+        "name": "BP_Zi_2Talk_01",
+        "describe": "演讲的双手动作",
+        "duration": 24., // second
+    },
+    "2": {
+        "name": "BP_Zi_U_Speech_01_L_Cycle_01_0",
+        "describe": "轻轻摆动脑袋",
+        "duration": 14.,
+    },
+    "3": {
+        "name": "Idle_01to03",
+        "describe": "两只手在腰前交叉(拘谨)",
+        "duration": 2.,
+    },
+    "4": {
+        "name": "Idle_01to04",
+        "describe": "向前走了一小步",
+        "duration": 2.,
+    },
+    "5": {
+        "name": "Idle_03to04",
+        "describe": "双手放下后退一步",
+        "duration": 2.,
+    },
+    "6": {
+        "name": "BP_Zi_U_Greet_02_R_Cycle_01",
+        "describe": "右手拍拍胸脯(保证)",
+        "duration": 10.,
+    },
+    "7": {
+        "name": "Idle_02to01_Fix",
+        "describe": "向后退一小步",
+        "duration": 1.,
+    },
+};
+
+function animation_string(animate_list) {
+  let res = "{";
+  for (const key in animate_list) {
+    const item = animate_list[key];
+    res = res + `\n<${key}>: {"describe": "${item.describe}", "duration": ${item.duration}},\n`;
+  }
+  return (res + "}\n");
+}
+
+
+// <5>: {"describe": "Reach out the Left hand","duration": 3s},
+// <6>: {"describe": "Reach out the Left hand","duration": 4s},
+// <7>: {"describe": "Reach out the Left hand","duration": 2s},
+const animation_msg = [
+ // "role": "system" ?
+  {
+    "role": "system",
+    "content": `你是一个动作规划大师,需要根据输入的文本从动作库中挑选合适的动作并给出一个长度不超过3的序列,不能有多余字符.
+    允许的动作库（包括含义和动作时长,时长的单位是秒）: 
+      ${animation_string(animation_list)}
+    规划出适合在讲述输入文本时做的动作，动作以下是几个例子：
+    [INPUT-1] 你好！有什么我可以帮助你的吗？
+    [OUTPUT-1] <4><5>
+    
+    [INPUT-2] 你好！ 你想了解关于浙江大学的哪些信息呢？比如：1、学科专业情况；2、录取要求；3、校园生活；4、师资力量；5、科研实力；6、校史校情。请具体说明一下。
+    [OUPUT-2] <1>
+    `
+  },
+  // {
+  //   "role": "assistant",
+  //   "content": "好的"
+  // },
+]
+
+// 左开右闭
+function randomIntExclusiveLeft(a, b) {
+  if (a >= b) throw new Error("a must be less than b");
+  return Math.floor(Math.random() * (b - a)) + a + 1;
+}
+// 左闭右开
+function randomInt(a, b) {
+  if (a >= b) throw new Error("a must be less than b");
+  return Math.floor(Math.random() * (b - a)) + a;
+}
 
 // I18n internationalization
 const i18n = {
@@ -464,7 +671,7 @@ const i18n = {
     'Mixer': 'Mikseri', 'Space': 'Tila', 'Dry': 'Suora', 'voice-test': 'Äänitesti',
     'Limits': 'Rajat', 'ai-stop': 'Stop', 'ai-stopword': 'Avainsana', 'ai-user': 'Käyttäjä',
     'ai-username': 'Nimi', 'input': 'Kirjoita viesti.', 'Name': 'Nimi', 'Language': 'Kieli',
-    'en': 'English', 'fi': 'Finnish', 'words': 'sanaa', 'dialogs': 'sanomaa',
+    'en': 'English', 'fi': 'Finnish', 'zh': 'Chinese', 'words': 'sanaa', 'dialogs': 'sanomaa',
     'Manuscript': 'Käsikirjoitus', 'Exclude': 'Ohita', 'Italics': 'Kursiivi',
     'Code': 'Koodi', 'Light': 'Valo', 'LightAmbient': 'Ambientti',
     'LightDirect': 'Suunnattu', 'LightSpot': 'Spotti', 'theme-full': "Täysi",
@@ -483,7 +690,7 @@ const i18n = {
     'ai-stopword': 'Word', 'ai-username': 'Name', 'LightAmbient': 'Ambient',
     'LightDirect': 'Direct', 'LightSpot': 'Spot', 'theme-full': "Fullscreen",
     'lt': 'Lithuanian', 'test-sentence': "Write your test sentence.",
-    'PoseMovement': 'Movement'
+    'PoseMovement': 'Movement', 'zh': 'Chinese'
   }
 
 }
@@ -492,7 +699,7 @@ const i18n = {
 // Default UI language is English
 
 function i18nWord(w,l) {
-  l = l || cfg('theme-lang') || 'en';
+  l = l || cfg('theme-lang') || 'en';
   return (( i18n[l] && i18n[l][w] ) ? i18n[l][w] : w);
 }
 
@@ -587,6 +794,9 @@ async function elevenSpeak(s,node=null) {
   if ( !elevenSocket ) {
     // Temporary reservation of WebSocket connection
     elevenSocket = { readyState: 0 };
+    if (/[\u4e00-\u9fa5]/.test(s)) {
+      s = s.replace(/\s+/g, '');
+    }
 
     // Temporary stack of message until the connection is established
     elevenInputMsgs = [
@@ -704,6 +914,39 @@ async function elevenSpeak(s,node=null) {
       elevenInputMsgs.push(msg);
     }
   }
+}
+
+async function sendSocketMessage(host, port, socket_body) {
+  return new Promise((resolve, reject) => {
+    try {
+      const client = new net.Socket();
+
+      client.connect(port, host, () => {
+        console.log('Connected to UE server via TCP');
+        const message = JSON.stringify(socket_body);
+        client.write(message);
+        console.log('Data sent:', message);
+      });
+
+      client.on('data', (data) => {
+        console.log('Received from server:', data.toString());
+        client.destroy(); // 关闭连接
+        resolve(data.toString()); // 把数据返回出去
+      });
+
+      client.on('close', () => {
+        console.log('Connection closed');
+      });
+
+      client.on('error', (err) => {
+        console.error('Error:', err.message);
+        reject(err);
+      });
+    } catch (error) {
+      console.error("Error sending request:", error);
+      reject(error);
+    }
+  });
 }
 
 // Speak using Microsoft
@@ -872,10 +1115,12 @@ async function microsoftProcessQueue() {
 
 // Whisper MP3
 let whisperAudio = null;
-let whisperLipsyncLang = 'en';
+let whisperLipsyncLang = 'zh';
 
 async function whisperLoadMP3(file) {
-
+  
+  // cfg("whisper-type") = "local";
+  
   if ( cfg("whisper-type") === "openai" ) {
     try {
       d3.select("#playmp3").classed("disabled", true);
@@ -947,7 +1192,8 @@ async function whisperLoadMP3(file) {
             // Add timed callback markers to the audio object
             const startSegment = async () => {
               // Look at the camera
-              head.lookAtCamera(500);
+              head.lookAtCamera(500); 
+              // TODO: 坐标系与walking.fbx等保持一致？目前直接加载两个模型的方向不同，没有相机的话可能是坐标系吧（talkinghead本身bug？）
               head.speakWithHands();
             };
             json.segments.forEach( x => {
@@ -1070,12 +1316,14 @@ let recordingAnalyzer = null;
 let recordingIgnoreData = false;
 let recordingChunks = [];
 const recordingMediaTypes = [
+  { type: "audio/wav", ext: "wav" },  // 添加WAV格式作为首选
   { type: "audio/webm", ext: "webm" },
   { type: "video/mp4", ext: "mp4" }
 ];
 let recordingMediaType = {};
 for( let i=0; i<recordingMediaTypes.length; i++ ) {
   if ( MediaRecorder.isTypeSupported(recordingMediaTypes[i].type) ) {
+    console.log("支持的类型:", recordingMediaTypes[i].type);
     recordingMediaType = recordingMediaTypes[i];
     break;
   }
@@ -1085,6 +1333,113 @@ const recordingPlaySound = (function beep() {
   const snd = new Audio(recordingBeep);
   return function() { snd.play(); }
 })();
+
+// 提取.webm文件中的语音数据保存为.wav文件
+async function convertWebmToWav(file) {
+  if (!(file instanceof File) || file.type !== "audio/webm") {
+    throw new Error("Input must be a File of type audio/webm");
+  }
+
+  // Decode the .webm file
+  const arrayBuffer = await file.arrayBuffer();
+  const audioContext = new AudioContext();
+  const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
+
+  // Create an OfflineAudioContext to render the audio buffer to WAV
+  const offlineContext = new OfflineAudioContext(
+    audioBuffer.numberOfChannels,
+    audioBuffer.length,
+    audioBuffer.sampleRate
+  );
+
+  // Copy the audio buffer to the offline context
+  const source = offlineContext.createBufferSource();
+  source.buffer = audioBuffer;
+  source.connect(offlineContext.destination);
+  source.start(0);
+
+  // Render the audio
+  const renderedBuffer = await offlineContext.startRendering();
+
+  // Convert the rendered buffer to WAV format
+  const wavData = audioBufferToWav(renderedBuffer);
+
+  // Create a new File object for the WAV data
+  const wavFile = new File([wavData], file.name.replace(/\.webm$/, ".wav"), {
+    type: "audio/wav",
+  });
+
+  return wavFile;
+}
+
+// Helper function to convert an AudioBuffer to WAV format
+function audioBufferToWav(buffer) {
+  const numOfChannels = buffer.numberOfChannels;
+  const sampleRate = buffer.sampleRate;
+  const format = 1; // PCM
+  const bitDepth = 16;
+
+  let result;
+  if (numOfChannels === 2) {
+    result = interleave(buffer.getChannelData(0), buffer.getChannelData(1));
+  } else {
+    result = buffer.getChannelData(0);
+  }
+
+  const bufferLength = result.length * (bitDepth / 8);
+  const wavBuffer = new ArrayBuffer(44 + bufferLength);
+  const view = new DataView(wavBuffer);
+
+  // Write WAV container
+  writeString(view, 0, "RIFF");
+  view.setUint32(4, 36 + bufferLength, true);
+  writeString(view, 8, "WAVE");
+  writeString(view, 12, "fmt ");
+  view.setUint32(16, 16, true); // PCM chunk size
+  view.setUint16(20, format, true); // PCM format
+  view.setUint16(22, numOfChannels, true);
+  view.setUint32(24, sampleRate, true);
+  view.setUint32(28, sampleRate * numOfChannels * (bitDepth / 8), true); // Byte rate
+  view.setUint16(32, numOfChannels * (bitDepth / 8), true); // Block align
+  view.setUint16(34, bitDepth, true); // Bits per sample
+  writeString(view, 36, "data");
+  view.setUint32(40, bufferLength, true);
+
+  // Write interleaved PCM samples
+  floatTo16BitPCM(view, 44, result);
+
+  return new Uint8Array(wavBuffer);
+}
+
+function writeString(view, offset, string) {
+  for (let i = 0; i < string.length; i++) {
+    view.setUint8(offset + i, string.charCodeAt(i));
+  }
+}
+
+function floatTo16BitPCM(output, offset, input) {
+  for (let i = 0; i < input.length; i++, offset += 2) {
+    const s = Math.max(-1, Math.min(1, input[i]));
+    output.setInt16(offset, s < 0 ? s * 0x8000 : s * 0x7fff, true);
+  }
+}
+
+function interleave(inputL, inputR) {
+  const length = inputL.length + inputR.length;
+  const result = new Float32Array(length);
+
+  let index = 0;
+  let inputIndex = 0;
+
+  while (index < length) {
+    result[index++] = inputL[inputIndex];
+    result[index++] = inputR[inputIndex];
+    inputIndex++;
+  }
+  return result;
+}
+// DONE
+
 
 
 async function recordingRecord() {
@@ -1106,10 +1461,14 @@ async function recordingRecord() {
 
         if ( event.data.size > 0 ) {
 
-          // Make a transcription
+          // Make a transcription | 一次说话已经被分割为多个语音，多次转文本
           const file = new File([event.data], 'file.'+recordingMediaType.ext, { type: recordingMediaType.type });
-          const form = new FormData();
-          form.append("file", file);
+          const file_ = await convertWebmToWav(file);
+          let form = new FormData(); // Original: const form = new FormData();
+          form.append("file", file_); 
+          // console.log(file); console.log(file instanceof File); console.log(Array.from(form.entries()).length);
+          let transcribedText = '';
+          const converter = Converter({ from: 'tw', to: 'cn' });
 
           if ( cfg("whisper-type") === "openai" ) {
 
@@ -1173,17 +1532,43 @@ async function recordingRecord() {
                   .replaceAll(/[^\p{L}\p{N},\.\p{Quotation_Mark}!€\$\+\p{Dash_Punctuation}%&\?\(\)\* ]/ug,"")
                   .replaceAll("  "," ")
                   .trim();
-
-                if ( text ) {
-                  e.property("value", text + ' ' + s );
-                } else {
-                  e.property("value", s );
-                }
+                
+                transcribedText = s.replace(/\([^()]*\)/g, ''); // 去掉括号内的内容
+                console.log("直接转写：", transcribedText);
+                transcribedText = converter(transcribedText);
+                console.log("转换：", transcribedText)
+                
+                // 显示出的ASR后的文本
+                //  if ( text ) {
+                //    e.property("value", text + ' ' + s );
+                //  } else {
+                //    e.property("value", s );
+                //  }
               }
             }
 
           }
 
+
+          const inputElement = d3.select("#input").node();
+          inputElement.value = transcribedText;
+          // 创建一个键盘事件，模拟按下 Enter 键
+          let ext_pp = "";
+          if (! transcribedText) {
+            ext_pp = "请只回复：“我没有听清楚，可以请您再讲一遍吗”,禁止出现多余字符";
+          }
+          const event_key = new KeyboardEvent("keydown", {
+            key: "Enter",
+            keyCode: 13,
+            code: "Enter",
+            which: 13,
+            bubbles: true,
+            cancelable: true,
+            extra_system_prompt: ext_pp
+          });
+          // 触发键盘事件
+          inputElement.dispatchEvent(event_key);
+          
         }
       };
 
@@ -1206,17 +1591,20 @@ async function recordingRecord() {
         switch(status) {
         case 'start':
           head.lookAtCamera(2000);
+          console.log('start');
           break;
         case 'stop':
           if ( recordingMediaRecorder ) {
             // recordingMediaRecorder.requestData();
             recordingMediaRecorder.stop();
             recordingMediaRecorder.start();
+            console.log('stop');
           }
           break;
-        case 'maxsilence':
+        case 'maxsilence': // check: "修改默认参数"
           if ( recordingMediaRecorder ) {
             recordingIgnoreData = true;
+            console.log('Max silence');
             // recordingMediaRecorder.requestData();
             recordingMediaRecorder.stop();
             recordingMediaRecorder.start();
@@ -1225,6 +1613,7 @@ async function recordingRecord() {
         case 'maxactive':
           if ( recordingMediaRecorder ) {
             recordingIgnoreData = true;
+            console.log('Max Active');
             // recordingMediaRecorder.requestData();
             recordingMediaRecorder.stop();
             recordingMediaRecorder.start();
@@ -1256,13 +1645,13 @@ let CFG = {
   session: 0,
   sessions : [
     {
-      name: "Nimetön",
+      name: "Robot Assistant",
       theme: { lang: 'en', brightness:"dark", ratio:"wide", layout:"port" },
       view: { image: 'NONE' },
       avatar: {},
       camera: { frame: 'full' },
       ai: {},
-      voice: { background: "NONE", type: "google", google:{ id: "en-GB-Standard-A"}, lipsync:{ lang: 'en' } }
+      voice: { background: "NONE", type: "google", google:{ id: "en-GB-Standard-A"}, lipsync:{ lang: 'zh' } }
     },
     {
       name: "Nimetön 2",
@@ -1272,7 +1661,7 @@ let CFG = {
       avatar: {},
       camera: { frame: 'upper' },
       ai: {},
-      voice: { background: "NONE", type: "google", google:{ id: "en-GB-Standard-A"}, lipsync:{ lang: 'en' } }
+      voice: { background: "NONE", type: "google", google:{ id: "en-GB-Standard-A"}, lipsync:{ lang: 'zh' } }
     },
   ]
 };
@@ -1282,6 +1671,10 @@ const svgSelect = '<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><
 const svgSpeak = '<svg viewBox="-2 -2 28 28" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" clip-rule="evenodd" d="M12 18.939C14.2091 18.939 16 17.1482 16 14.939C16 12.7299 14.2091 10.939 12 10.939C9.79086 10.939 8 12.7299 8 14.939C8 17.1482 9.79086 18.939 12 18.939ZM12 16.939C13.1046 16.939 14 16.0436 14 14.939C14 13.8345 13.1046 12.939 12 12.939C10.8954 12.939 10 13.8345 10 14.939C10 16.0436 10.8954 16.939 12 16.939Z" fill="currentColor" /><path d="M12 9.04401C13.1046 9.04401 14 8.14858 14 7.04401C14 5.93944 13.1046 5.04401 12 5.04401C10.8954 5.04401 10 5.93944 10 7.04401C10 8.14858 10.8954 9.04401 12 9.04401Z" fill="currentColor" /><path fill-rule="evenodd" clip-rule="evenodd" d="M7 1C5.34315 1 4 2.34315 4 4V20C4 21.6569 5.34315 23 7 23H17C18.6569 23 20 21.6569 20 20V4C20 2.34315 18.6569 1 17 1H7ZM17 3H7C6.44772 3 6 3.44772 6 4V20C6 20.5523 6.44772 21 7 21H17C17.5523 21 18 20.5523 18 20V4C18 3.44772 17.5523 3 17 3Z" fill="currentColor" /></svg>'
 const svgStop = '<svg viewBox="-2 -2 28 28" xmlns="http://www.w3.org/2000/svg"><path d="M6.2253 4.81108C5.83477 4.42056 5.20161 4.42056 4.81108 4.81108C4.42056 5.20161 4.42056 5.83477 4.81108 6.2253L10.5858 12L4.81114 17.7747C4.42062 18.1652 4.42062 18.7984 4.81114 19.1889C5.20167 19.5794 5.83483 19.5794 6.22535 19.1889L12 13.4142L17.7747 19.1889C18.1652 19.5794 18.7984 19.5794 19.1889 19.1889C19.5794 18.7984 19.5794 18.1652 19.1889 17.7747L13.4142 12L19.189 6.2253C19.5795 5.83477 19.5795 5.20161 19.189 4.81108C18.7985 4.42056 18.1653 4.42056 17.7748 4.81108L12 10.5858L6.2253 4.81108Z" fill="currentColor" /></svg>';
 const svgRepost = '<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M13.1459 11.0499L12.9716 9.05752L15.3462 8.84977C14.4471 7.98322 13.2242 7.4503 11.8769 7.4503C9.11547 7.4503 6.87689 9.68888 6.87689 12.4503C6.87689 15.2117 9.11547 17.4503 11.8769 17.4503C13.6977 17.4503 15.2911 16.4771 16.1654 15.0224L18.1682 15.5231C17.0301 17.8487 14.6405 19.4503 11.8769 19.4503C8.0109 19.4503 4.87689 16.3163 4.87689 12.4503C4.87689 8.58431 8.0109 5.4503 11.8769 5.4503C13.8233 5.4503 15.5842 6.24474 16.853 7.52706L16.6078 4.72412L18.6002 4.5498L19.1231 10.527L13.1459 11.0499Z" fill="currentColor" /></svg>';
+
+const condition = `你是一位国安隐蔽战线女警员，名叫粤晓隐,25岁,女。你出生于一个警察家庭,父亲是一名老刑警,母亲是法学教授。
+                    你对法律和公安事业充满向往,大学期间以优异的成绩考入公安大学,主修网络安全与情报分析；毕业后,你主动申请加入国安战线,已经参与了多起重大案件的侦破工作。
+                    你曾在一次任务中凭借出色的数据分析能力,成功破解一个跨国犯罪组织的加密通讯系统，发现了大量的公民数据信息遭到外泄和利用。`;
 
 // Get/set config value for the current session
 function cfg(key,value) {
@@ -1360,7 +1753,7 @@ function loadConfig(session = null) {
         if ( id >= 0 && id < CFG.sessions.length ) {
           let name = CFG.sessions[id].name;
           if ( !name || name.length === 0 ) {
-            name = "Nimetön";
+            name = "Robot";
             CFG.sessions[id].name = name;
           }
           e.select("div")
@@ -1376,7 +1769,7 @@ function loadConfig(session = null) {
           let n = d3.select("#directory").node().lastElementChild;
           let name = CFG.sessions[i].name;
           if ( !name || name.length === 0 ) {
-            name = "Nimetön";
+            name = "Robot Assistant2";
             CFG.sessions[i].name = name;
           }
           let clone = d3.select(n).clone(true);
@@ -1492,6 +1885,10 @@ function excludesProcess(s,o=null) {
   return o;
 }
 
+function SyncSleep(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
 function motion( action, pose, gesture, mood ) {
   try {
     head.setMood(mood || 'neutral');
@@ -1500,14 +1897,14 @@ function motion( action, pose, gesture, mood ) {
     head.playGesture(site.gestures[gesture].name);
   }
   if ( action && site.animations[action] ) {
-    head.playAnimation( site.animations[action].url, progressUpdate, site.animations[action].dur || 20 );
+    head.playAnimation( site.animations[action].url, progressUpdate, site.animations[action].dur || 200 );
   } else if ( pose && site.poses[pose] ) {
     head.playPose( site.poses[pose].url, progressUpdate, site.poses[pose].dur || 60 );
   }
 }
 
 // Build outgoing message for OpenAI
-function openaiBuildMessage() {
+function openaiBuildMessage( extra_system_prompt = "") {
   const msgs = [];
 
   const systems = [
@@ -1538,6 +1935,10 @@ function openaiBuildMessage() {
         words += wc;
       }
       msgs.push( { n: n, role: x.role, content: n.value } );
+    }
+    if(x.role === "system") {
+      n.value = condition + "仅返回20字-50字的中文, 禁用markdown格式 禁止分点作答." + extra_system_prompt; // 约定只有中文且无markdown
+      // TODO: 在此添加约束（如有需要）
     }
   });
 
@@ -1786,7 +2187,7 @@ async function openaiSendMessage(node,msgs) {
 
           // Break, if done
           if (done) {
-            if ( fn.id ) {
+            if ( fn.id ) { // 控制动作、手势、表情、姿势
 
               // Function call
               body.messages.push({
@@ -1824,13 +2225,17 @@ async function openaiSendMessage(node,msgs) {
             }
 
             if ( tts ) {
+              let msg_ = tts.trimStart();
+              if(! /[\u4e00-\u9fa5]/.test(msg_)) {
+                msg_ += ' ';
+              }
               if ( cfg('voice-type') === 'eleven' ) {
-                await elevenSpeak( tts.trimStart() + " ", node );
+                await elevenSpeak( msg_, node );
               } else if ( cfg('voice-type') === 'microsoft' ) {
-                await microsoftSpeak( tts.trimStart() + " ", node );
+                await microsoftSpeak( msg_, node );
               } else {
-                exclude = excludesProcess(tts,exclude);
-                await head.speakText( tts, {
+                exclude = excludesProcess(msg_,exclude);
+                await head.speakText( msg_, {
                   lipsyncLang: cfg('voice-lipsync-lang'),
                   ttsVoice: cfg('voice-google-id'),
                   ttsRate: cfg('voice-google-rate'),
@@ -2072,6 +2477,7 @@ async function grokSendMessage(node,msgs) {
 // Llama
 
 // Send messages to local LLama API and handle streamed response
+// TODO: 加入动作option，仿照openaiSendMessage
 async function llamaSendMessage(node,msgs) {
 
   // Create a new AbortController instance
@@ -2081,7 +2487,7 @@ async function llamaSendMessage(node,msgs) {
   // Chat completion
   try {
     // Message body
-    const body = {
+    const body = { // DEBUG
       model: cfg('ai-model'),
       messages: msgs.map( x => {
         const {role,content,name} = x;
@@ -2105,6 +2511,7 @@ async function llamaSendMessage(node,msgs) {
     // Elements
     node.dataset.output = '';
     let tts = '';
+    let fn = { id: '', name: '', arguments: '' }
 
     // Fetch the response from the Llama.cpp server
     tts = '';
@@ -2113,11 +2520,13 @@ async function llamaSendMessage(node,msgs) {
       mode: "cors",
       headers: {
         "Content-Type": "application/json",
-        "Authorization": "Bearer " + await jwtGet()
+        "Authorization": "Bearer " // + await jwtGet()
       },
       body: JSON.stringify(body),
       signal
     });
+
+    
 
     if ( res.ok ) {
 
@@ -2126,11 +2535,25 @@ async function llamaSendMessage(node,msgs) {
       const decoder = new TextDecoder("utf-8");
       let exclude = null; // Exclude object
 
-      while (true) {
+      let done = false;
+      // let value = '';
+      
+      let buffer = "";
+      const speakQueue = [];
+      const LengthThreshold = 30;
+      let delta = 0;
+      let adding = 0;
+
+      let keep_reading = true;
+
+      while (keep_reading) {
+
         let { done, value } = await reader.read();
 
+        await SyncSleep( Math.min(Math.floor(Math.random() * ( 70 * ++adding - 50 + 1)) + 50, 100) );
+        //adding++;
         // Extract text data
-        if ( value ) {
+        if ( value && keep_reading ) {
           decoder.decode(value).split('\n').forEach( data => {
             if ( data.startsWith("data: ") ) {
               let line = data.substring(6).trim();
@@ -2145,6 +2568,11 @@ async function llamaSendMessage(node,msgs) {
                 }
 
                 if ( obj && obj.error ) throw new Error( obj.error.message || ''+res.status );
+                // modified: 目前与async function openaiSendMessage一致，想加入action等
+                fn.id += obj?.choices?.[0]?.delta?.tool_calls?.[0]?.id || '';
+                fn.name += obj?.choices?.[0]?.delta?.tool_calls?.[0]?.function?.name || '';
+                fn.arguments += obj?.choices?.[0]?.delta?.tool_calls?.[0]?.function?.arguments || '';
+                // modified: 目前与async function openaiSendMessage一致，想加入action等
                 node.dataset.output += obj?.choices?.[0]?.delta?.content || '';
                 tts += obj?.choices?.[0]?.delta?.content || '';
 
@@ -2153,18 +2581,41 @@ async function llamaSendMessage(node,msgs) {
           });
         }
 
-        // Break, if done
+        tts = tts.trimStart().trimEnd();
+        if (! /[\u4e00-\u9fa5]/.test(tts)) {
+          tts += ' ';
+        }
+        
+        if ( tts.length > LengthThreshold + delta) {
+          const indices = ['。', '！', '？']
+                  .map(p => tts.indexOf(p, LengthThreshold)) // start ths 45-th letter
+                  .filter(index => index !== -1);
+          const idx = indices.length > 0 ? Math.min(...indices) : -1;
+          if (idx > 0) {
+            tts = tts.substring(0, idx+1);
+            done = true;
+            keep_reading = false;
+          } else {
+            delta = delta + 3;
+          }
+          
+        }
+        
+        
         if (done) {
 
-
           if ( tts ) {
+            let msg_ = tts.trimStart();
+            if( /[\u4e00-\u9fa5]/.test(msg_) ) {
+              msg_ = msg_.trimEnd();
+            }
             if ( cfg('voice-type') === 'eleven' ) {
-              await elevenSpeak( tts.trimStart() + " ", node );
+              await elevenSpeak( msg_, node );
             } else if ( cfg('voice-type') === 'microsoft' ) {
-              await microsoftSpeak( tts.trimStart() + " ", node );
+              await microsoftSpeak( msg_, node );
             } else {
-              exclude = excludesProcess(tts,exclude);
-              await head.speakText( tts, {
+              exclude = excludesProcess(msg_,exclude);
+              await head.speakText( msg_, {
                 lipsyncLang: cfg('voice-lipsync-lang'),
                 ttsVoice: cfg('voice-google-id'),
                 ttsRate: cfg('voice-google-rate'),
@@ -2172,11 +2623,152 @@ async function llamaSendMessage(node,msgs) {
               }, addText.bind(null,node), exclude.excludes );
             }
           }
+          
+          
+          
 
+
+          // 在原来的WebGL逻辑中加入UE的动作控制，保持并发
+          if ( fn.id ) { 
+            /*
+                TODO: 通过llama控制动作、手势、表情、姿势
+                UE - 完整逻辑：
+                  1. tts串 + 动作prompt => 动作id序列
+                  2. 发送id序列 
+            */
+            /////////////////////////////////////////////////
+            //       构造请求llama获得动作规划的请求体         //
+            ///////////////////////////////////////////////
+            /*
+            animation_msg.push({
+              "role":  "user",
+              "content": tts
+            })
+            const animation_body = {
+              model: cfg('ai-model'),
+              messages: animation_msg.map( x => {
+                const {role,content,name} = x;
+                return (name ? {role,content,name} : {role,content});
+              }),
+              temperature: cfg('ai-openai-temperature'),
+              presence_penalty: cfg('ai-openai-presence'),
+              frequency_penalty: cfg('ai-openai-frequency'),
+              max_tokens: cfg('ai-openai-output'),
+              stream: false
+            };
+            // TODO: system prompt = ... | user query = tts
+            const stop = cfg('ai-llama-stop');
+            if ( stop && stop.length ) {
+              animation_body.stop = [ stop ];
+            }
+            const user = cfg('ai-llama-user');
+            if ( user && user.length ) {
+              animation_body.user = user;
+            }
+            */
+            
+            ////////////////////////////////////////
+            //      请求llama所在服务器获得动作规划    //
+            ////////////////////////////////////////
+            /*
+            const annimation_res = await fetch( llamaChatCompletionsProxy, {
+              method: "POST",
+              mode: "cors",
+              headers: {
+                "Content-Type": "application/json",
+                "Authorization": "Bearer " + await jwtGet()
+              },
+              animation_body: JSON.stringify(animation_body), // 格式错误？
+              signal
+            });
+            */
+
+            const animation_res = {
+              'ok': true,
+              'choices': [{
+                "delta": 
+                  {
+                    "content": 
+                      `<${randomInt(0,7)}><${randomInt(0,7)}><${randomInt(0,7)}>`
+                  }
+              }]
+            }
+            if (animation_res.ok) {
+              // const result = animation_res.json();
+              let result = animation_res;
+              const str = result.choices?.[0]?.delta?.content || '<3>'; // TODO: 默认使用伸出双手的动作
+              result = [... str.matchAll(/<(\d+)>/g)].map(x => x[1]);
+              const socket_body = {"action": result.map(x => animation_list[x].name)};
+              // 向UE socket发送
+              const socket_res = await fetch( UESocketProxy, {
+                method: "POST",
+                mode: "cors",
+                headers: {
+                  "Content-Type": "application/json",
+                  "Authorization": "Bearer " // + await jwtGet()
+                },
+                body: JSON.stringify(socket_body),
+                signal
+              });
+              console.log( await socket_res.text() );
+              if ( ! socket_res.ok ) {
+                throw new Error( json.error ? json.error.message : ''+socket_res.status );
+              }
+              
+            } else {
+              console.error( await animation_res.text() );
+              throw new Error( json.error ? json.error.message : ''+animation_res.status );
+            }
+            // await sendSocketMessage(UESocketHost, UESocketPort, socket_body);
+
+            // WebGL
+            body.messages.push({
+              role: "assistant",
+              content: null,
+              tool_calls: [
+                {
+                  id: fn.id,
+                  type: "function",
+                  function: {
+                    name: fn.name,
+                    arguments: fn.arguments
+                  }
+                }
+              ]
+            });
+            
+            try {
+              const m = JSON.parse(fn.arguments);
+              // TODO: 控制动作、手势、表情、姿势的方法 → 在fn.arguments添加如下字段
+              // m: { action: '...', stillpose: '...', gesture: '...', mood: '...' }
+              motion(m.action, m.stillpose, m.gesture, m.mood);
+            } catch(motionError) {
+              console.error(motionError);
+            }
+            // Response
+            body.messages.push({
+              role: "tool",
+              content: "",
+              tool_call_id: fn.id
+            });
+            // Make sure we do not get another function call
+            body.tool_choice = "none";
+          }
+
+          
           break;
         }
 
+        // modified: 测试动作控制
+         try {
+            // m: { action: '...', pose: '...', gesture: '...', mood: '...' }
+           //  motion('1', '', '', 'neutral');
+         } catch(motionError) {
+           console.error(motionError);
+         }
+
         // Speak
+        
         if ( tts ) {
           let idx = 0;
           ['.','!','?','\n'].forEach( x => {
@@ -2187,10 +2779,13 @@ async function llamaSendMessage(node,msgs) {
             let s = tts.substring(0, idx);
             if ( s && s.length ) {
               tts = tts.substring(idx).trimStart();
+              if( /[\u4e00-\u9fa5]/.test(s) ) {
+                s = s.trimEnd()
+              }
               if ( cfg('voice-type') === 'eleven' ) {
-                await elevenSpeak( s + " ", node );
+                await elevenSpeak( s , node );
               } else if ( cfg('voice-type') === 'microsoft' ) {
-                await microsoftSpeak( s + " ", node );
+                await microsoftSpeak( s , node );
               } else {
                 exclude = excludesProcess(s,exclude);
                 await head.speakText( s, {
@@ -2205,6 +2800,7 @@ async function llamaSendMessage(node,msgs) {
         }
 
       }
+      // await Promise.all(speakQueue);
 
     } else {
       console.error( await res.text() );
@@ -3477,8 +4073,10 @@ function scriptStatus(msg=null) {
   }
 }
 
+
 function scriptInit() {
-  const script = d3.select("#script").property("value");
+  const script = (d3.select("#script").node() ? d3.select("#script").property("value") : "") || "";
+  // const script = d3.select("#script").property("value") || "";
   scriptBlocks = script
     .replaceAll('\n\n\n','\n\n').trim()
     .split('\n\n')
@@ -3488,6 +4086,7 @@ function scriptInit() {
   scriptIndex = 0;
   scriptStatus();
 }
+
 
 function scriptCommand(ev) {
   if ( ev.altKey ) {
@@ -3641,7 +4240,6 @@ document.addEventListener('DOMContentLoaded', async function(e) {
       .attr("data-voice-eleven-id",o.id)
       .attr("data-i18n-site","elevenVoices-"+k);
   }
-
   // Add Microsoft voices
   const eMicrosoftVoices = d3.select("#microsoftvoices");
   for ( const [i,k] of Object.entries(Object.keys(site.microsoftVoices)) ) {
@@ -3732,7 +4330,7 @@ document.addEventListener('DOMContentLoaded', async function(e) {
     cameraPanEnable: true,
     cameraView: 'full',
     avatarMood: 'neutral',
-    lipsyncModules: ["en", "fi", "lt"],
+    lipsyncModules: ["en", "fi", "lt", "zh"],
     // Stats display that can be used when testing performance
     statsNode: document.body,
     statsStyle: "position: fixed; bottom: 0px; left: 0px; cursor: pointer; opacity: 0.9; z-index: 10000;"
@@ -3767,60 +4365,62 @@ document.addEventListener('DOMContentLoaded', async function(e) {
 
   // Send message
   d3.select("#input").on("keydown", async function(ev) {
+    let ext_pp = ev.hasOwnProperty('extra_system_prompt') ? ev.properties('extra_system_prompt') : "";
+    
     if ( ev.keyCode === 13 && !ev.shiftKey ) {
       ev.preventDefault();
       const e = d3.select("#input");
       let text = e.property("value");
       if ( head && text.length ) {
+        if (cfg('ai-model')) {  
+          if ( cfg('ai-model').startsWith("gpt") ) {
+            const m = openaiBuildMessage(ext_pp);
+            let flag = await openaiModerateMessage(m);
 
-        if ( cfg('ai-model').startsWith("gpt") ) {
-          const m = openaiBuildMessage();
-          let flag = await openaiModerateMessage(m);
+            const nodeInput = addMessage(true);
+            nodeInput.dataset.input = text;
+            addText(nodeInput,text);
+            e.property("value","");
 
-          const nodeInput = addMessage(true);
-          nodeInput.dataset.input = text;
-          addText(nodeInput,text);
-          e.property("value","");
+            if ( flag ) {
+              console.info("Moderation flagged.");
+              d3.select(nodeInput).classed("grayed", true );
+              d3.select(nodeInput .select).classed("selected", true );
+            } else {
+              const nodeOutput = addMessage(false);
+              openaiSendMessage(nodeOutput,m);
+            }
+          } else if ( cfg('ai-model').startsWith("gemini") ) {
+            const m = geminiBuildMessage();
 
-          if ( flag ) {
-            console.info("Moderation flagged.");
-            d3.select(nodeInput).classed("grayed", true );
-            d3.select(nodeInput .select).classed("selected", true );
-          } else {
+            const nodeInput = addMessage(true);
+            nodeInput.dataset.input = text;
+            addText(nodeInput,text);
+            e.property("value","");
+
             const nodeOutput = addMessage(false);
-            openaiSendMessage(nodeOutput,m);
-          }
-        } else if ( cfg('ai-model').startsWith("gemini") ) {
-          const m = geminiBuildMessage();
+            geminiSendMessage(nodeOutput,m);
+          } else if ( cfg('ai-model').startsWith("llama") ) {
+            const m = openaiBuildMessage(ext_pp);
 
-          const nodeInput = addMessage(true);
-          nodeInput.dataset.input = text;
-          addText(nodeInput,text);
-          e.property("value","");
+            const nodeInput = addMessage(true);
+            nodeInput.dataset.input = text;
+            addText(nodeInput,text);
+            e.property("value","");
 
-          const nodeOutput = addMessage(false);
-          geminiSendMessage(nodeOutput,m);
-        } else if ( cfg('ai-model').startsWith("llama") ) {
-          const m = openaiBuildMessage();
+            const nodeOutput = addMessage(false);
+            llamaSendMessage(nodeOutput,m);
+          } else if ( cfg('ai-model').startsWith("grok") ) {
+            const m = openaiBuildMessage(ext_pp);
 
-          const nodeInput = addMessage(true);
-          nodeInput.dataset.input = text;
-          addText(nodeInput,text);
-          e.property("value","");
+            const nodeInput = addMessage(true);
+            nodeInput.dataset.input = text;
+            addText(nodeInput,text);
+            e.property("value","");
 
-          const nodeOutput = addMessage(false);
-          llamaSendMessage(nodeOutput,m);
-        } else if ( cfg('ai-model').startsWith("grok") ) {
-          const m = openaiBuildMessage();
-
-          const nodeInput = addMessage(true);
-          nodeInput.dataset.input = text;
-          addText(nodeInput,text);
-          e.property("value","");
-
-          const nodeOutput = addMessage(false);
-          grokSendMessage(nodeOutput,m);
-        }
+            const nodeOutput = addMessage(false);
+            grokSendMessage(nodeOutput,m);
+          }}
 
       }
     }
@@ -4579,7 +5179,7 @@ document.addEventListener('DOMContentLoaded', async function(e) {
     const mode = !x.classed("selected");
     x.classed("selected",mode);
     // recordingPlaySound();
-    if ( mode ) {
+    if ( mode ) { 
       recordingRecord();
     } else {
       if ( recordingMediaRecorder ) {
@@ -4593,6 +5193,8 @@ document.addEventListener('DOMContentLoaded', async function(e) {
       head.stopListening();
     }
   });
+
+  // 执行完 record ? ↑ ？↓ ？
 
   // Viseme tester
   d3.select('#visemeword').on('input change keyup paste', function(ev) {
@@ -4611,8 +5213,8 @@ document.addEventListener('DOMContentLoaded', async function(e) {
     }
   });
 
-  // Script
-  d3.select("#script").on('input change keyup paste', scriptInit);
+  // Scripts
+  // d3.select("#script").on('input change keyup paste', scriptInit);
   d3.select("body").on('keydown', scriptCommand);
 
   // Pause animation when not visible
@@ -4650,7 +5252,7 @@ document.addEventListener('DOMContentLoaded', async function(e) {
   try {
 
     // Get token
-    jwt = await jwtGet();
+    jwt = ''; // await jwtGet();
 
     // Show last avatar
     let o = {};
@@ -4722,29 +5324,30 @@ document.addEventListener('DOMContentLoaded', async function(e) {
 
           <div class="filler"></div>
 
-          <div class="command starttransparent" data-i18n-title="Manuscript" data-show="right-ai">
-            <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-              <path d="M7 18H17V16H7V18Z" fill="currentColor" />
-              <path d="M17 14H7V12H17V14Z" fill="currentColor" />
-              <path d="M7 10H11V8H7V10Z" fill="currentColor" />
-              <path fill-rule="evenodd" clip-rule="evenodd" d="M6 2C4.34315 2 3 3.34315 3 5V19C3 20.6569 4.34315 22 6 22H18C19.6569 22 21 20.6569 21 19V9C21 5.13401 17.866 2 14 2H6ZM6 4H13V9H19V19C19 19.5523 18.5523 20 18 20H6C5.44772 20 5 19.5523 5 19V5C5 4.44772 5.44772 4 6 4ZM15 4.10002C16.6113 4.4271 17.9413 5.52906 18.584 7H15V4.10002Z" fill="currentColor" />
-            </svg>
-          </div>
-          <div class="command starttransparent" data-i18n-title="Location" data-show="right-view">
+          
+          <div class="text label" data-i18n-title="Location" data-show="right-view" style="display: none;">
             <svg viewBox="-1 -1 26 26" xmlns="http://www.w3.org/2000/svg">
               <path fill-rule="evenodd" clip-rule="evenodd" d="M7 7C5.34315 7 4 8.34315 4 10C4 11.6569 5.34315 13 7 13C8.65685 13 10 11.6569 10 10C10 8.34315 8.65685 7 7 7ZM6 10C6 9.44772 6.44772 9 7 9C7.55228 9 8 9.44772 8 10C8 10.5523 7.55228 11 7 11C6.44772 11 6 10.5523 6 10Z" fill="currentColor" />
               <path fill-rule="evenodd" clip-rule="evenodd" d="M3 3C1.34315 3 0 4.34315 0 6V18C0 19.6569 1.34315 21 3 21H21C22.6569 21 24 19.6569 24 18V6C24 4.34315 22.6569 3 21 3H3ZM21 5H3C2.44772 5 2 5.44772 2 6V18C2 18.5523 2.44772 19 3 19H7.31374L14.1924 12.1214C15.364 10.9498 17.2635 10.9498 18.435 12.1214L22 15.6863V6C22 5.44772 21.5523 5 21 5ZM21 19H10.1422L15.6066 13.5356C15.9971 13.145 16.6303 13.145 17.0208 13.5356L21.907 18.4217C21.7479 18.7633 21.4016 19 21 19Z" fill="currentColor" />
             </svg>
           </div>
-          <div class="command starttransparent" data-i18n-title="Avatar" data-show="right-avatar">
+          <div class="text label" data-i18n-title="Avatar" data-show="right-avatar" style="display: none;">
             <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
               <path fill-rule="evenodd" clip-rule="evenodd" d="M16 7C16 9.20914 14.2091 11 12 11C9.79086 11 8 9.20914 8 7C8 4.79086 9.79086 3 12 3C14.2091 3 16 4.79086 16 7ZM14 7C14 8.10457 13.1046 9 12 9C10.8954 9 10 8.10457 10 7C10 5.89543 10.8954 5 12 5C13.1046 5 14 5.89543 14 7Z" fill="currentColor" />
               <path d="M16 15C16 14.4477 15.5523 14 15 14H9C8.44772 14 8 14.4477 8 15V21H6V15C6 13.3431 7.34315 12 9 12H15C16.6569 12 18 13.3431 18 15V21H16V15Z" fill="currentColor" />
             </svg>
           </div>
-          <div class="command starttransparent" data-i18n-title="Bones" data-show="right-bones">
+          <div class="text label" data-i18n-title="Bones" data-show="right-bones" style="display: none;">
             <svg viewBox="-2 -2 28 28" xmlns="http://www.w3.org/2000/svg">
               <path d="m19.1072 11.2565c.7557.0637 1.5333-.1936 2.1115-.7718 1.0417-1.0417 1.0417-2.73065 0-3.77236-.6245-.62448-1.5546-.8015-2.1996-.84313-.5717 0-.8883-.34038-.8883-.88834-.0416-.64494-.2187-1.57511-.8431-2.19959-1.0418-1.04171-2.7307-1.04171-3.7724 0-.5782.57821-.8355 1.35582-.7718 2.11147.0867 1.0289.1799 2.25278-.5502 2.9829l-4.31765 4.31765c-.73012.7301-1.954.6369-2.9829.5502-.75565-.0637-1.53326.1936-2.11147.7718-1.04171 1.0417-1.04171 2.7306 0 3.7724.62448.6244 1.55465.8015 2.19959.8431.61071 0 .88835.3692.88835.8883.04162.645.21864 1.5751.84312 2.1996 1.04171 1.0417 2.73066 1.0417 3.77236 0 .5782-.5782.8355-1.3558.7718-2.1115-.0867-1.0288-.1799-2.2527.5502-2.9829l4.3177-4.3176c.7301-.7301 1.954-.6369 2.9828-.5502z" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"/>
+            </svg>
+          </div>
+          <div class="command starttransparent" data-i18n-title="Manuscript" data-show="right-ai"> <!-- AI菜单 -->
+            <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+              <path d="M7 18H17V16H7V18Z" fill="currentColor" />
+              <path d="M17 14H7V12H17V14Z" fill="currentColor" />
+              <path d="M7 10H11V8H7V10Z" fill="currentColor" />
+              <path fill-rule="evenodd" clip-rule="evenodd" d="M6 2C4.34315 2 3 3.34315 3 5V19C3 20.6569 4.34315 22 6 22H18C19.6569 22 21 20.6569 21 19V9C21 5.13401 17.866 2 14 2H6ZM6 4H13V9H19V19C19 19.5523 18.5523 20 18 20H6C5.44772 20 5 19.5523 5 19V5C5 4.44772 5.44772 4 6 4ZM15 4.10002C16.6113 4.4271 17.9413 5.52906 18.584 7H15V4.10002Z" fill="currentColor" />
             </svg>
           </div>
           <div class="command starttransparent" data-i18n-title="Light" data-show="right-light">
@@ -4758,7 +5361,7 @@ document.addEventListener('DOMContentLoaded', async function(e) {
               <path fill-rule="evenodd" clip-rule="evenodd" d="M4 4.5V6.5H12V7.5H3C1.34315 7.5 0 8.84315 0 10.5V16.5C0 18.1569 1.34315 19.5 3 19.5H15C16.5731 19.5 17.8634 18.2892 17.9898 16.7487L24 17.5V9.5L17.9898 10.2513C17.8634 8.71078 16.5731 7.5 15 7.5H14V5.5C14 4.94772 13.5523 4.5 13 4.5H4ZM18 12.2656V14.7344L22 15.2344V11.7656L18 12.2656ZM16 10.5C16 9.94772 15.5523 9.5 15 9.5H3C2.44772 9.5 2 9.94772 2 10.5V16.5C2 17.0523 2.44772 17.5 3 17.5H15C15.5523 17.5 16 17.0523 16 16.5V10.5Z" fill="currentColor" />
             </svg>
           </div>
-          <div class="command starttransparent" data-i18n-title="Audio" data-show="right-audio">
+          <div class="text label" data-i18n-title="Audio" data-show="right-audio" style="display: none;">
             <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
               <path fill-rule="evenodd" clip-rule="evenodd" d="M12 8.95439L17.6352 7.82736C19.0102 7.55235 20 6.34501 20 4.94274C20 3.08637 18.3017 1.69406 16.4813 2.05813L12.4117 2.87206C11.0094 3.15252 10 4.38376 10 5.8138V13.8895C9.41165 13.5492 8.72857 13.3544 8 13.3544C5.79086 13.3544 4 15.1453 4 17.3544C4 19.5635 5.79086 21.3544 8 21.3544C10.2091 21.3544 12 19.5635 12 17.3544V8.95439ZM16.8736 4.01929L12.8039 4.83322C12.3365 4.92671 12 5.33712 12 5.8138V6.91479L17.2429 5.8662C17.6831 5.77816 18 5.39165 18 4.94274C18 4.34846 17.4563 3.90274 16.8736 4.01929ZM10 17.3544C10 16.2498 9.10457 15.3544 8 15.3544C6.89543 15.3544 6 16.2498 6 17.3544C6 18.459 6.89543 19.3544 8 19.3544C9.10457 19.3544 10 18.459 10 17.3544Z" fill="currentColor" />
             </svg>
@@ -4774,11 +5377,11 @@ document.addEventListener('DOMContentLoaded', async function(e) {
             <div class="text label" data-i18n-text="AI"></div>
             <div class="column">
               <div class="rowWrap">
-                <div class="command selected" data-item="ai-model" data-type="option" data-ai-model="gpt-4o-mini">GPT-4o-mini</div>
-                <div class="command" data-item="ai-model" data-type="option" data-ai-model="gpt-4o">GPT-4o</div>
-                <div class="command" data-item="ai-model" data-type="option" data-ai-model="grok-beta">Grok-beta</div>
-                <div class="command" data-item="ai-model" data-type="option" data-ai-model="gemini-1.5-pro">Gemini-1.5-pro</div>
-                <div class="command" data-item="ai-model" data-type="option" data-ai-model="llama">Llama</div>
+                <div class="command selected" data-item="ai-model" data-type="option" data-ai-model="llama">Llama</div>
+                <div class="command" data-item="ai-model" data-type="option" data-ai-model="gpt-4o-mini" style="display: none;">GPT-4o-mini</div>
+                <div class="command" data-item="ai-model" data-type="option" data-ai-model="gpt-4o" style="display: none;">GPT-4o</div>
+                <div class="command" data-item="ai-model" data-type="option" data-ai-model="grok-beta" style="display: none;">Grok-beta</div>
+                <div class="command" data-item="ai-model" data-type="option" data-ai-model="gemini-1.5-pro" style="display: none;">Gemini-1.5-pro</div>
               </div>
             </div>
           </div>
@@ -4786,23 +5389,23 @@ document.addEventListener('DOMContentLoaded', async function(e) {
           <div class="vbar"></div>
 
           <div id="ai-openai" class="column">
-            <div class="row">
+            <div class="row" style="display: none;">
               <div class="text label" data-i18n-text="System"></div>
               <textarea data-i18n-placeholder="ai-system" rows="1" autocapitalize="sentences" data-item="ai-openai-system" data-type="value" data-ai-openai-system=""></textarea>
             </div>
-            <div class="row">
+            <div class="row" style="display: none;">
               <div class="text label" data-i18n-text="Example1"></div>
               <textarea data-i18n-placeholder="ai-user1" rows="1" autocapitalize="sentences" data-item="ai-openai-user1" data-type="value" data-ai-openai-user1=""></textarea>
             </div>
-            <div class="row">
+            <div class="row" style="display: none;">
               <div class="text label"></div>
               <textarea data-i18n-placeholder="ai-ai1" rows="1" autocapitalize="sentences" data-item="ai-openai-ai1" data-type="value" data-ai-openai-ai1=""></textarea>
             </div>
-            <div class="row">
+            <div class="row" style="display: none;">
               <div class="text label" data-i18n-text="Example2"></div>
               <textarea data-i18n-placeholder="ai-user2" rows="1" autocapitalize="sentences" data-item="ai-openai-user2" data-type="value" data-ai-openai-user2=""></textarea>
             </div>
-            <div class="row">
+            <div class="row" style="display: none;">
               <div class="text label"></div>
               <textarea data-i18n-placeholder="ai-ai2" rows="1" autocapitalize="sentences" data-item="ai-openai-ai2" data-type="value" data-ai-openai-ai2=""></textarea>
             </div>
@@ -4877,17 +5480,17 @@ document.addEventListener('DOMContentLoaded', async function(e) {
                 </div>
               </div>
             </div>
-            <div class="row">
+            <div class="row" style="display: none;">
               <div class="text label" data-i18n-text="ai-stop"></div>
               <input type="text" data-i18n-placeholder="ai-stopword" data-item="ai-openai-stop" data-type="value" data-ai-openai-stop="">
             </div>
-            <div class="row">
+            <div class="row" style="display: none;">
               <div class="text label" data-i18n-text="ai-user"></div>
               <input type="text" data-i18n-placeholder="ai-username" data-item="ai-openai-user" data-type="value" data-ai-openai-user="">
             </div>
           </div>
 
-          <div id="ai-grok" class="column">
+          <div id="ai-grok" class="column" style="display: none;">
             <div class="row">
               <div class="text label" data-i18n-text="System"></div>
               <textarea data-i18n-placeholder="ai-system" rows="1" autocapitalize="sentences" data-item="ai-openai-system" data-type="value" data-ai-openai-system=""></textarea>
@@ -4979,11 +5582,11 @@ document.addEventListener('DOMContentLoaded', async function(e) {
                 </div>
               </div>
             </div>
-            <div class="row">
+            <div class="row" style="display: none;">
               <div class="text label" data-i18n-text="ai-stop"></div>
               <input type="text" data-i18n-placeholder="ai-stopword" data-item="ai-grok-stop" data-type="value" data-ai-grok-stop="">
             </div>
-            <div class="row">
+            <div class="row" style="display: none;">
               <div class="text label" data-i18n-text="ai-user"></div>
               <input type="text" data-i18n-placeholder="ai-username" data-item="ai-grok-user" data-type="value" data-ai-grok-user="">
             </div>
@@ -5081,17 +5684,17 @@ document.addEventListener('DOMContentLoaded', async function(e) {
                 </div>
               </div>
             </div>
-            <div class="row">
+            <div class="row" style="display: none;">
               <div class="text label" data-i18n-text="ai-stop"></div>
               <input type="text" data-i18n-placeholder="ai-stopword" data-item="ai-llama-stop" data-type="value" data-ai-llama-stop="">
             </div>
-            <div class="row">
+            <div class="row" style="display: none;">
               <div class="text label" data-i18n-text="ai-user"></div>
               <input type="text" data-i18n-placeholder="ai-username" data-item="ai-llama-user" data-type="value" data-ai-llama-user="">
             </div>
           </div>
 
-          <div id="ai-gemini" class="column">
+          <div id="ai-gemini" class="column" style="display: none;">
             <div class="row">
               <div class="text label" data-i18n-text="System"></div>
               <textarea data-i18n-placeholder="ai-system" rows="1" autocapitalize="sentences" data-item="ai-gemini-system" data-type="value" data-ai-gemini-system=""></textarea>
@@ -5174,17 +5777,17 @@ document.addEventListener('DOMContentLoaded', async function(e) {
                 </div>
               </div>
             </div>
-            <div class="row">
+            <div class="row" style="display: none;">
               <div class="text label" data-i18n-text="ai-stop"></div>
               <input type="text" data-i18n-placeholder="ai-stopword" data-item="ai-gemini-stop" data-type="value" data-ai-gemini-stop="">
             </div>
           </div>
 
-          <div class="vbar"></div>
-
-          <div class="row">
-            <div class="text label" data-i18n-text="Script"></div>
-            <textarea id="script" data-i18n-placeholder="Script" data-item="script-text" data-type="value" data-script-text=""></textarea>
+          <!-- <div class="vbar"></div> -->
+          <div class = "row" style="display: none;">
+              <div class="text label" data-i1s8n-text="Script"></div>
+              <!-- <textarea id="script" data-i18n-placeholder="Script" data-item="script-text" data-type="value" data-script-text=""></textarea> -->
+              <!-- 文本输入框只能手动删 -->
           </div>
 
         </div>
@@ -5194,7 +5797,7 @@ document.addEventListener('DOMContentLoaded', async function(e) {
           <div class="vbar"></div>
 
           <div class="row">
-            <div class="text label" data-i18n-text="Location"></div>
+            <div class="newDefine" data-i18n-text="Location"></div>
             <div class="column">
               <div id="views" class="rowWrap">
                 <label for="view-image-file" class="command" data-view-image="FILE">
@@ -5880,12 +6483,11 @@ document.addEventListener('DOMContentLoaded', async function(e) {
             </div>
           </div>
 
-          <div class="vbar"></div>
-
+          <!-- <div class="vbar"></div>
           <div class="row">
             <div class="text label" data-i18n-text="Data"></div>
             <textarea id="lightingdata" rows="1" readonly></textarea>
-          </div>
+          </div> -->
 
         </div>
 
@@ -6025,6 +6627,7 @@ document.addEventListener('DOMContentLoaded', async function(e) {
             <div class="column">
               <div class="rowWrap">
                 <div class="command selected" data-item="voice-type" data-type="option" data-voice-type="google">Google</div>
+                <!-- 当前模仿了GoogleTTS的报文 -->
                 <div class="command" data-item="voice-type" data-type="option" data-voice-type="microsoft">Microsoft</div>
                 <div class="command" data-item="voice-type" data-type="option" data-voice-type="eleven">ElevenLabs</div>
               </div>
@@ -6077,9 +6680,10 @@ document.addEventListener('DOMContentLoaded', async function(e) {
             <div class="text label" data-i18n-text="Lip-sync"></div>
             <div class="column">
               <div class="rowWrap">
-                <div class="command selected" data-i18n-text="en" data-item="voice-lipsync-lang" data-type="option" data-voice-lipsync-lang="en"></div>
+                <div class="command" data-i18n-text="en" data-item="voice-lipsync-lang" data-type="option" data-voice-lipsync-lang="en"></div>
                 <div class="command" data-i18n-text="fi" data-item="voice-lipsync-lang" data-type="option" data-voice-lipsync-lang="fi"></div>
                 <div class="command" data-i18n-text="lt" data-item="voice-lipsync-lang" data-type="option" data-voice-lipsync-lang="lt"></div>
+                <div class="command selected" data-i18n-text="zh" data-item="voice-lipsync-lang" data-type="option" data-voice-lipsync-lang="zh"></div>
               </div>
             </div>
           </div>
@@ -6147,8 +6751,8 @@ document.addEventListener('DOMContentLoaded', async function(e) {
               <div class="text label" data-i18n-text="Whisper"></div>
               <div class="column">
                 <div class="rowWrap">
-                  <div class="command selected" data-item="whisper-type" data-type="option" data-whisper-type="openai">OpenAI</div>
-                  <div class="command" data-item="whisper-type" data-type="option" data-whisper-type="local">Local</div>
+                  <div class="command selected" data-item="whisper-type" data-type="option" data-whisper-type="local">Local</div>
+                  <div class="command" data-item="whisper-type" data-type="option" data-whisper-type="openai">OpenAI</div>
                 </div>
               </div>
             </div>
@@ -6200,25 +6804,25 @@ document.addEventListener('DOMContentLoaded', async function(e) {
             <div id="directory" class="column fill">
               <div id="entry-0" class="entry row">
                 <div class="command fill selected" data-session="0">Nimet&ouml;n</div>
-                <div class="command" data-entry-move="up">
+                <div class="command" data-entry-move="up" style="display: none;">
                   <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                     <path d="M17.6569 16.2427L19.0711 14.8285L12.0001 7.75739L4.92896 14.8285L6.34317 16.2427L12.0001 10.5858L17.6569 16.2427Z" fill="currentColor" />
                   </svg>
                 </div>
-                <div class="command" data-entry-move="down">
+                <div class="command" data-entry-move="down" style="display: none;">
                   <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                     <path d="M6.34317 7.75732L4.92896 9.17154L12 16.2426L19.0711 9.17157L17.6569 7.75735L12 13.4142L6.34317 7.75732Z" fill="currentColor" />
                   </svg>
                 </div>
               </div>
               <div id="entry-1" class="entry row">
-                <div class="command fill" data-session="1">Nimet&ouml;n</div>
-                <div class="command" data-entry-move="up">
+                <div class="command fill" data-session="1" style="display: none;">Nimet&ouml;n</div>
+                <div class="command" data-entry-move="up" style="display: none;">
                   <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                     <path d="M17.6569 16.2427L19.0711 14.8285L12.0001 7.75739L4.92896 14.8285L6.34317 16.2427L12.0001 10.5858L17.6569 16.2427Z" fill="currentColor" />
                   </svg>
                 </div>
-                <div class="command" data-entry-move="down">
+                <div class="command" data-entry-move="down" style="display: none;">
                   <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                     <path d="M6.34317 7.75732L4.92896 9.17154L12 16.2426L19.0711 9.17157L17.6569 7.75735L12 13.4142L6.34317 7.75732Z" fill="currentColor" />
                   </svg>
@@ -6232,46 +6836,46 @@ document.addEventListener('DOMContentLoaded', async function(e) {
           <div class="row">
             <div class="text label" data-i18n-text="Title"></div>
             <input class="fill" type="text" data-i18n-placeholder="Name" data-item="name" data-type="value">
-            <div id="session-duplicate" class="command">
+            <!-- <div id="session-duplicate" class="command">
               <svg viewBox="-2 -2 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <path d="M19 5H7V3H21V17H19V5Z" fill="currentColor" />
                 <path d="M9 13V11H11V13H13V15H11V17H9V15H7V13H9Z" fill="currentColor" />
                 <path fill-rule="evenodd" clip-rule="evenodd" d="M3 7H17V21H3V7ZM5 9H15V19H5V9Z" fill="currentColor" />
               </svg>
-            </div>
-            <div id="session-delete" class="command">
+            </div> -->
+            <!-- <div id="session-delete" class="command">
               <svg viewBox="-1 -1 26 26" xmlns="http://www.w3.org/2000/svg">
                 <path fill-rule="evenodd" clip-rule="evenodd" d="M17 5V4C17 2.89543 16.1046 2 15 2H9C7.89543 2 7 2.89543 7 4V5H4C3.44772 5 3 5.44772 3 6C3 6.55228 3.44772 7 4 7H5V18C5 19.6569 6.34315 21 8 21H16C17.6569 21 19 19.6569 19 18V7H20C20.5523 7 21 6.55228 21 6C21 5.44772 20.5523 5 20 5H17ZM15 4H9V5H15V4ZM17 7H7V18C7 18.5523 7.44772 19 8 19H16C16.5523 19 17 18.5523 17 18V7Z" fill="currentColor" />
                 <path d="M9 9H11V17H9V9Z" fill="currentColor" />
                 <path d="M13 9H15V17H13V9Z" fill="currentColor" />
               </svg>
-            </div>
+            </div> -->
           </div>
 
           <div class="row">
             <div class="text label" data-i18n-text="Theme"></div>
             <div class="column">
-              <div id="languages" class="rowWrap">
-              </div>
               <div class="rowWrap">
-                <div class="command selected" data-i18n-text="Dark" data-item="theme-brightness" data-type="option" data-theme-brightness="dark"></div>
-                <div class="command" data-i18n-text="Light" data-item="theme-brightness" data-type="option" data-theme-brightness="light"></div>
               </div>
-              <div class="rowWrap">
-                <div class="command selected" data-i18n-text="theme-wide" data-item="theme-ratio" data-type="option" data-theme-ratio="wide"></div>
-                <div class="command" data-i18n-text="theme-43" data-item="theme-ratio" data-type="option" data-theme-ratio="normal"></div>
-              </div>
-              <div class="rowWrap">
-                <div class="command selected" data-i18n-text="theme-landscape" data-item="theme-layout" data-type="option" data-theme-layout="land"></div>
-                <div class="command" data-i18n-text="theme-portrait" data-item="theme-layout" data-type="option" data-theme-layout="port"></div>
-                <div class="command" data-i18n-text="theme-full" data-item="theme-layout" data-type="option" data-theme-layout="full"></div>
-              </div>
+                <div class="rowWrap">
+                  <div class="command selected" data-i18n-text="Dark" data-item="theme-brightness" data-type="option" data-theme-brightness="dark"></div>
+                  <div class="command" data-i18n-text="Light" data-item="theme-brightness" data-type="option" data-theme-brightness="light"></div>
+                </div>
+                <div class="rowWrap" style="display: none;">
+                  <div class="command selected" data-i18n-text="theme-wide" data-item="theme-ratio" data-type="option" data-theme-ratio="wide"></div>
+                  <div class="command" data-i18n-text="theme-43" data-item="theme-ratio" data-type="option" data-theme-ratio="normal"></div>
+                </div>
+                <div class="rowWrap">
+                  <div class="command selected" data-i18n-text="theme-landscape" data-item="theme-layout" data-type="option" data-theme-layout="land"></div>
+                  <div class="command" data-i18n-text="theme-portrait" data-item="theme-layout" data-type="option" data-theme-layout="port"></div>
+                  <div class="command" data-i18n-text="theme-full" data-item="theme-layout" data-type="option" data-theme-layout="full"></div>
+                </div>
             </div>
           </div>
 
-          <div class="vbar"></div>
+          
 
-          <div class="row">
+          <!-- <div class="row">
             <div class="text label" data-i18n-text="JSON"></div>
             <input id="json" type="text" placeholder="JSON">
           </div>
@@ -6310,7 +6914,7 @@ document.addEventListener('DOMContentLoaded', async function(e) {
           <div class="row">
             <div class="text label" style="width: 8rem">ElevenLabs</div>
             <input id="apikey-eleven" class="apikey" type="text" placeholder="API key not specified; using proxy/JWT">
-          </div>
+          </div> -->
 
         </div>
 
@@ -6330,36 +6934,37 @@ document.addEventListener('DOMContentLoaded', async function(e) {
         </div>
 
         <div class="row" style="column-gap:0;">
-          <div id="selectall" class="command starttransparent">
-            <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-              <path d="M10.5858 13.4142L7.75735 10.5858L6.34314 12L10.5858 16.2427L17.6568 9.1716L16.2426 7.75739L10.5858 13.4142Z" fill="currentColor" />
-            </svg>
-          </div>
-          <div id="flag" class="command starttransparent">
+          <div id="flag" class="command starttransparent" style="display: none;">
             <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
               <path fill-rule="evenodd" clip-rule="evenodd" d="M7 8V13C7 15.7614 9.23858 18 12 18C14.7614 18 17 15.7614 17 13V8H7ZM5 4H19V13C19 16.866 15.866 20 12 20C8.13401 20 5 16.866 5 13V4Z" fill="currentColor" />
             </svg>
           </div>
-          <div id="score" class="text starttransparent" style="margin-left:-8px;">0</div>
-          <div id="scripttag" class="command starttransparent">
+          <!-- 用于评估消息内容潜在风险、不适当性的分值 [0.,1.] -->
+          <!-- <div id="score" class="text starttransparent" style="margin-left:-8px;">0</div> -->
+          <div id="scripttag" class="command starttransparent" style="display: none;">
             <svg viewBox="-4 -4 32 32" xmlns="http://www.w3.org/2000/svg">
               <path d="M17 9H7V7H17V9Z" fill="currentColor" /><path d="M7 13H17V11H7V13Z" fill="currentColor" /><path fill-rule="evenodd" clip-rule="evenodd" d="M2 18V2H22V18H16V22H14C11.7909 22 10 20.2091 10 18H2ZM12 16V18C12 19.1046 12.8954 20 14 20V16H20V4H4V16H12Z" fill="currentColor" />
             </svg>
           </div>
           <div id="scriptstatus" class="text starttransparent" style="margin-left:-8px;">1/1</div>
           <div class="filler"></div>
+          <div id="selectall" class="command starttransparent">
+            <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+              <path d="M10.5858 13.4142L7.75735 10.5858L6.34314 12L10.5858 16.2427L17.6568 9.1716L16.2426 7.75739L10.5858 13.4142Z" fill="currentColor" />
+            </svg>
+          </div>
           <div id="record" class="command starttransparent" data-i18n-title="Record">
             <svg viewBox="-2 -2 28 28" xmlns="http://www.w3.org/2000/svg">
               <path fill-rule="evenodd" clip-rule="evenodd" d="M9 4C9 2.34315 10.3431 1 12 1C13.6569 1 15 2.34315 15 4V12C15 13.6569 13.6569 15 12 15C10.3431 15 9 13.6569 9 12V4ZM13 4V12C13 12.5523 12.5523 13 12 13C11.4477 13 11 12.5523 11 12V4C11 3.44772 11.4477 3 12 3C12.5523 3 13 3.44772 13 4Z" fill="currentColor" />
               <path d="M18 12C18 14.973 15.8377 17.441 13 17.917V21H17V23H7V21H11V17.917C8.16229 17.441 6 14.973 6 12V9H8V12C8 14.2091 9.79086 16 12 16C14.2091 16 16 14.2091 16 12V9H18V12Z" fill="currentColor" />
             </svg>
           </div>
-          <div id="motion" class="command starttransparent" data-i18n-title="Motion">
+          <div id="motion" class="command starttransparent" data-i18n-title="Motion" style="display: none;">
             <svg viewBox="0 0 50 50" xmlns="http://www.w3.org/2000/svg">
               <path d="M 34.498047 3 C 32.014047 3 30 5.0150469 30 7.4980469 C 30 9.9830469 32.014047 12 34.498047 12 C 36.987047 12 39 9.9830469 39 7.4980469 C 39 5.0150469 36.987047 3 34.498047 3 z M 20 10 A 2 2 0 0 0 18.919922 10.316406 L 18.917969 10.316406 L 18.886719 10.322266 L 11.957031 15.294922 A 2 2 0 0 0 11 17 A 2 2 0 0 0 13 19 A 2 2 0 0 0 14.287109 18.527344 L 14.289062 18.529297 L 20.283203 14.21875 L 24.691406 15.619141 L 19.757812 23.660156 L 19.757812 23.664062 A 4 4 0 0 0 19 26 A 4 4 0 0 0 21.210938 29.572266 L 28.755859 34.226562 L 27.048828 43.009766 A 2.5 2.5 0 0 0 27 43.5 A 2.5 2.5 0 0 0 29.5 46 A 2.5 2.5 0 0 0 31.955078 43.962891 L 31.957031 43.962891 L 33.984375 33.289062 L 33.978516 33.273438 A 2 2 0 0 0 34 33 A 2 2 0 0 0 33.345703 31.523438 L 33.339844 31.507812 L 27.9375 26.720703 L 32.607422 17.486328 L 32.605469 17.482422 A 3 3 0 0 0 33 16 A 3 3 0 0 0 31.193359 13.248047 L 31.191406 13.244141 L 28.685547 11.849609 L 20.519531 10.066406 L 20.507812 10.068359 A 2 2 0 0 0 20 10 z M 34.212891 18.742188 L 31.972656 23.171875 L 33.181641 25.837891 L 33.193359 25.845703 C 33.513359 26.525703 34.199 27 35 27 L 42 27 C 43.105 27 44 26.105 44 25 C 44 23.895 43.105 23 42 23 L 36 23 L 34.212891 18.742188 z M 17.517578 28.414062 L 15.242188 32 L 7.5 32 C 6.119 32 5 33.119 5 34.5 C 5 35.881 6.119 37 7.5 37 L 15.931641 37 C 17.228641 37 18.445312 36.3705 19.195312 35.3125 L 21.480469 32.089844 C 20.653469 31.578844 20.055828 31.208125 20.048828 31.203125 C 18.904828 30.555125 18.031578 29.569062 17.517578 28.414062 z"  fill="currentColor"/>
             </svg>
           </div>
-          <div id="copy" class="command starttransparent">
+          <div id="copy" class="command starttransparent" style="display: none;">
             <svg viewBox="-2 -2 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
               <path d="M13 7H7V5H13V7Z" fill="currentColor" />
               <path d="M13 11H7V9H13V11Z" fill="currentColor" />
@@ -6367,7 +6972,7 @@ document.addEventListener('DOMContentLoaded', async function(e) {
               <path fill-rule="evenodd" clip-rule="evenodd" d="M3 19V1H17V5H21V23H7V19H3ZM15 17V3H5V17H15ZM17 7V19H9V21H19V7H17Z" fill="currentColor" />
             </svg>
           </div>
-          <div id="delete" class="command starttransparent">
+          <div id="delete" class="command starttransparent" style="display: none;">
             <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
               <path fill-rule="evenodd" clip-rule="evenodd" d="M17 5V4C17 2.89543 16.1046 2 15 2H9C7.89543 2 7 2.89543 7 4V5H4C3.44772 5 3 5.44772 3 6C3 6.55228 3.44772 7 4 7H5V18C5 19.6569 6.34315 21 8 21H16C17.6569 21 19 19.6569 19 18V7H20C20.5523 7 21 6.55228 21 6C21 5.44772 20.5523 5 20 5H17ZM15 4H9V5H15V4ZM17 7H7V18C7 18.5523 7.44772 19 8 19H16C16.5523 19 17 18.5523 17 18V7Z" fill="currentColor" />
               <path d="M9 9H11V17H9V9Z" fill="currentColor" />
@@ -6384,3 +6989,4 @@ document.addEventListener('DOMContentLoaded', async function(e) {
 
 </body>
 </html>
+
