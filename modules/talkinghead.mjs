@@ -22,6 +22,15 @@
 * SOFTWARE.
 */
 
+/**
+ * TODO: 控制动作、手势、表情、姿势的方法
+ * playAnimation
+ * playPose
+ * playGesture
+ * setMood
+ */
+
+
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
@@ -30,7 +39,13 @@ import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import Stats from 'three/addons/libs/stats.module.js';
 
 import{ DynamicBones } from './dynamicbones.mjs';
-const workletUrl = new URL('./playback-worklet.js', import.meta.url);
+
+import { segment, OutputFormat, addDict} from 'pinyin-pro';
+import CompleteDict from './complete.mjs';
+// import CompleteDict from "https://cdn.jsdelivr.net/npm/@pinyin-pro/data@1.2.0/dist/complete.min.js";
+addDict(CompleteDict);
+//  TODO: 就算加不了，分词以后把数字手动合并，给这部分做this.ReplaceNumberInString
+
 
 // Temporary objects for animation loop
 const q = new THREE.Quaternion();
@@ -184,6 +199,10 @@ class TalkingHead {
       }
       this.opt.statsNode.appendChild( this.stats.dom );
     }
+
+    this.ChineseNumber = {'0': '零','1': '一','2': '二','3': '三','4': '四','5': '五','6': '六','7': '七','8': '八','9': '九'}
+    this.ChineseUnit = ['十','百','千','万','亿']
+    
 
     // Pose templates
     // NOTE: The body weight on each pose should be on left foot
@@ -727,13 +746,44 @@ class TalkingHead {
 
     // Anim queues
     this.animQueue = [];
+
+    this.UEanimQueue = [];
+    // 对临界资源animSpeechQueue（在外部）的锁，默认为解锁状态，捕获到非零的animiSpeechQueue.length时锁定，长度置零时解锁 | 解锁时（false）可以this.UEanimQueue.push
+    this.UEanimQueueActive = true;
+    this.UElasttime = 0;
+    this.UEanimInterval = 0; // s
+
+    this.duration_factor = 0.2;
+    
+    this.animID_cnt = 0;
+    this.DefaultAnimation = {
+      '待机': ['5'],
+      '讲话-1': ['1'],
+      '讲话-2': ['7'], // ['3', '1'], ['5', '7'] // 随机一个list
+      '讲话-3': ['4', '6'],
+      '讲话-4': ['1'], 
+      '加油': ['2'],
+      '听声音': ['3'] // 暂用待机
+    }
+    this.UEAnimationCandidate = {
+      'UE-1': { name: 'U_Greet_05_Cycle_04', description: "向前走+敬礼", duration: 8.33 },
+      'UE-2': { name: 'U_Hand_04_Cycle_01', description: "左右手轮流加油", duration: 53.88 },
+      'UE-3': { name: 'U_Idle_01_Cycle_04', description: "站立+迈小步", duration: 15.42 },
+      'UE-4': { name: 'U_Idle_02_Cycle_03', description: "双手抬起交叉于腰前", duration: 13.6 },
+      'UE-5': { name: 'U_Idle_03_Cycle_03', description: "双手交叉于腰前再放下", duration: 16.5 },
+      'UE-6': { name: 'U_Idle_04_Cycle_01', description: "两手保持交叉", duration: 7.08 },
+      'UE-7': { name: '5Talk_03', description: "演讲", duration: 30 },
+      
+    };
+    this.UESocketProxy = "/socket:ue/animation";
+
     this.animClips = [];
     this.animPoses = [];
 
     // Clock
     this.animFrameDur = 1000/ this.opt.modelFPS;
     this.animClock = 0;
-    this.animSlowdownRate = 1;
+    this.animSlowdownRate = 0.95;
     this.animTimeLast = 0;
     this.easing = this.sigmoidFactory(5); // Ease in and out
 
@@ -747,7 +797,23 @@ class TalkingHead {
 
 
     // Audio context and playlist
-    this.initAudioGraph();
+    this.audioCtx = new AudioContext();
+    this.audioSpeechSource = this.audioCtx.createBufferSource();
+    this.audioBackgroundSource = this.audioCtx.createBufferSource();
+    this.audioBackgroundGainNode = this.audioCtx.createGain();
+    this.audioSpeechGainNode = this.audioCtx.createGain();
+    this.audioAnalyzerNode = this.audioCtx.createAnalyser();
+    this.audioAnalyzerNode.fftSize = 256;
+    this.audioAnalyzerNode.smoothingTimeConstant = 0.1;
+    this.audioAnalyzerNode.minDecibels = -70;
+    this.audioAnalyzerNode.maxDecibels = -10;
+    this.audioReverbNode = this.audioCtx.createConvolver();
+    this.setReverb(null); // Set dry impulse as default
+    this.audioBackgroundGainNode.connect(this.audioReverbNode);
+    this.audioAnalyzerNode.connect(this.audioSpeechGainNode);
+    this.audioSpeechGainNode.connect(this.audioReverbNode);
+    this.audioReverbNode.connect(this.audioCtx.destination);
+    this.setMixerGain( this.opt.mixerGainSpeech, this.opt.mixerGainBackground ); // Volume
     this.audioPlaylist = [];
 
     // Volume based head movement
@@ -865,60 +931,6 @@ class TalkingHead {
     // Dynamic Bones
     this.dynamicbones = new DynamicBones();
 
-    // Stream speech mode
-    this.isStreaming = false;
-    this.streamWorkletNode = null;
-    this.streamAudioStartTime = 0;
-    this.streamLipsyncLang = null;
-    this.streamLipsyncType = "visemes";
-  }
-
-  /**
-  * Helper that re/creates the audio context and the other nodes.
-  * @param {number} sampleRate
-  */
-  initAudioGraph(sampleRate = null) {
-    // Close existing context if it exists
-    if (this.audioCtx && this.audioCtx.state !== 'closed') {
-      this.audioCtx.close();
-    }
-
-    // Create a new context
-    if (sampleRate) {
-      this.audioCtx = new AudioContext({ sampleRate });
-    } else {
-      this.audioCtx = new AudioContext();
-    }
-    
-    // Create audio nodes
-    this.audioSpeechSource = this.audioCtx.createBufferSource();
-    this.audioBackgroundSource = this.audioCtx.createBufferSource();
-    this.audioBackgroundGainNode = this.audioCtx.createGain();
-    this.audioSpeechGainNode = this.audioCtx.createGain();
-    this.audioStreamGainNode = this.audioCtx.createGain();
-    this.audioAnalyzerNode = this.audioCtx.createAnalyser();
-    this.audioAnalyzerNode.fftSize = 256;
-    this.audioAnalyzerNode.smoothingTimeConstant = 0.1;
-    this.audioAnalyzerNode.minDecibels = -70;
-    this.audioAnalyzerNode.maxDecibels = -10;
-    this.audioReverbNode = this.audioCtx.createConvolver();
-    
-    // Connect nodes
-    this.audioBackgroundGainNode.connect(this.audioReverbNode);
-    this.audioAnalyzerNode.connect(this.audioSpeechGainNode);
-    this.audioSpeechGainNode.connect(this.audioReverbNode);
-    this.audioStreamGainNode.connect(this.audioReverbNode);
-    this.audioReverbNode.connect(this.audioCtx.destination);
-    
-    // Apply reverb and mixer settings
-    this.setReverb(this.currentReverb || null);
-    this.setMixerGain(
-      this.opt.mixerGainSpeech, 
-      this.opt.mixerGainBackground
-    );
-    
-    // Reset stream worklet loaded flag to reload with the new context
-    this.workletLoaded = false;
   }
 
   /**
@@ -1064,6 +1076,29 @@ class TalkingHead {
       });
       obj.material.dispose();
     }
+  }
+
+  async UEAnimateLike( animID_string ) {
+    const animID_list = this.DefaultAnimation[animID_string];
+    const aiController = new AbortController();
+    const signal = aiController.signal;
+    const socket_body = {"action": animID_list.map(x => this.UEAnimationCandidate[`UE-${x}`].name)};
+    // 向UE socket发送
+    try {
+      const socket_res = await fetch( this.UESocketProxy, {
+        method: "POST",
+        mode: "cors",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": "Bearer " + ''
+        },
+        body: JSON.stringify(socket_body),
+        signal
+      });
+      console.log( await socket_res.text() );  
+    } catch (err) {
+      console.error(err)
+    }  
   }
 
   /**
@@ -1273,7 +1308,9 @@ class TalkingHead {
     let x = - (opt.cameraX || this.opt.cameraX) * Math.tan( fov / 2 );
     let y = ( 1 - (opt.cameraY || this.opt.cameraY)) * Math.tan( fov / 2 );
     let z = (opt.cameraDistance || this.opt.cameraDistance);
-
+    
+    // this.viewName = 'upper'; // debug
+    
     switch(this.viewName) {
     case 'head':
       z += 2;
@@ -1295,7 +1332,7 @@ class TalkingHead {
     x = x * z;
 
     this.controlsEnd = new THREE.Vector3(x, y, 0);
-    this.cameraEnd = new THREE.Vector3(x, y, z).applyEuler( new THREE.Euler( (opt.cameraRotateX || this.opt.cameraRotateX), (opt.cameraRotateY || this.opt.cameraRotateY), 0 ) );
+    this.cameraEnd = new THREE.Vector3(x, y, z).applyEuler( new THREE.Euler( (opt.cameraRotateX || opt.cameraRotateX), (opt.cameraRotateY || this.opt.cameraRotateY), 0 ) );
 
     if ( this.cameraClock === null ) {
       this.controls.target.copy( this.controlsEnd );
@@ -1716,6 +1753,7 @@ class TalkingHead {
   * @return {Object} A new pose object.
   */
   poseFactory(template, ms=2000) {
+    // TODO: 怎么建pose的？
 
     // Pose object
     const o = {
@@ -1842,8 +1880,10 @@ class TalkingHead {
   * Set mood.
   * @param {string} s Mood name.
   */
+  // 表情控制
   setMood(s) {
-    s = (s || '').trim().toLowerCase();
+    if ( !this.UEanimQueueActive ){
+      s = (s || '').trim().toLowerCase();
     if ( !this.animMoods.hasOwnProperty(s) ) throw new Error("Unknown mood.");
     this.moodName = s;
     this.mood = this.animMoods[this.moodName];
@@ -1865,8 +1905,9 @@ class TalkingHead {
       if ( i !== -1 ) {
         this.animQueue.splice(i, 1);
       }
-      this.animQueue.push( this.animFactory( x, -1 ) );
+      this.animQueue.push( this.animFactory( x, -1 ) ); // 表情控制，无需添加动作
     });
+  }
 
   }
 
@@ -1986,6 +2027,8 @@ class TalkingHead {
   * @return {Object} New animation object.
   */
   animFactory( t, loop = false, scaleTime = 1, scaleValue = 1, noClockOffset = false ) {
+    if (!this.UEanimQueueActive) return null;
+
     const o = { template: t, ts: [0], vs: {} };
 
     // Follow the hierarchy of objects
@@ -2181,23 +2224,31 @@ class TalkingHead {
       this.stats.begin();
     }
 
-    // Listening
+    // Listening // UE请求聆听动作
     if ( this.isListening ) {
 
       // Get input max volume
       this.listeningAnalyzer.getByteFrequencyData(this.volumeFrequencyData);
+      let sum = 0;
+      for(let i = 0; i < this.volumeFrequencyData.length; i++) {
+        sum += this.volumeFrequencyData[i];
+      }
+      // console.log("音频数据总和:", sum);
+      // console.log("原始音频数据:", Array.from(this.volumeFrequencyData).slice(0, 10));
       for (i=2, l=10; i<l; i++) {
         if (this.volumeFrequencyData[i] > vol) {
           vol = this.volumeFrequencyData[i];
         }
       }
-
+      // console.log(`VAD调试 - 当前音量: ${vol}, 平滑音量: ${this.listeningVolume}, 激活阈值: ${this.listeningActiveThresholdLevel}, 静音阈值: ${this.listeningSilenceThresholdLevel}`);
       this.listeningVolume = (this.listeningVolume + vol) / 2;
       if ( this.listeningActive ) {
         this.listeningTimerTotal += dt;
+        // console.log(`VAD调试 - 检测到静音 - 计时器: ${this.listeningTimer}ms/${this.listeningSilenceThresholdMs}ms`);
         if ( this.listeningVolume < this.listeningSilenceThresholdLevel ) {
           this.listeningTimer += dt;
-          if ( this.listeningTimer > this.listeningSilenceThresholdMs ) {
+          if (this.listeningTimer > this.listeningSilenceThresholdMs) {
+            console.log(`VAD调试 - 停止检测 - 静音时间超过阈值`);
             if ( this.listeningOnchange ) this.listeningOnchange('stop',this.listeningTimer);
             this.listeningActive = false;
             this.listeningTimer = 0;
@@ -2206,15 +2257,20 @@ class TalkingHead {
         } else {
           this.listeningTimer *= 0.5;
         }
-        if ( this.listeningTimerTotal > this.listeningActiveDurationMax ) {
-          if ( this.listeningOnchange ) this.listeningOnchange('maxactive');
+        if (this.listeningTimerTotal > this.listeningActiveDurationMax) {
+          // 在这行之前: if ( this.listeningOnchange ) this.listeningOnchange('maxactive');
+          console.log(`VAD调试 - 最大活动时间已达到: ${this.listeningTimerTotal}ms/${this.listeningActiveDurationMax}ms`);
+          if (this.listeningOnchange) this.listeningOnchange('maxactive');
           this.listeningTimerTotal = 0;
         }
       } else {
         this.listeningTimerTotal += dt;
+        // console.log(`VAD调试 - 检测到声音 - 计时器: ${this.listeningTimer}ms/${this.listeningActiveThresholdMs}ms`);
         if ( this.listeningVolume > this.listeningActiveThresholdLevel ) {
           this.listeningTimer += dt;
-          if ( this.listeningTimer > this.listeningActiveThresholdMs ) {
+          if (this.listeningTimer > this.listeningActiveThresholdMs) {
+            // 在这行之前: if ( this.listeningOnchange ) this.listeningOnchange('start');
+            console.log(`VAD调试 - 开始检测 - 声音持续时间超过阈值`);
             if ( this.listeningOnchange ) this.listeningOnchange('start');
             this.listeningActive = true;
             this.listeningTimer = 0;
@@ -2223,14 +2279,16 @@ class TalkingHead {
         } else {
           this.listeningTimer *= 0.5;
         }
-        if ( this.listeningTimerTotal > this.listeningSilenceDurationMax ) {
+        if (this.listeningTimerTotal > this.listeningSilenceDurationMax) {
+          console.log(`VAD调试 - 最大静音时间已达到: ${this.listeningTimerTotal}ms/${this.listeningSilenceDurationMax}ms`);
           if ( this.listeningOnchange ) this.listeningOnchange('maxsilence');
           this.listeningTimerTotal = 0;
         }
+        // console.log(`VAD调试 - 当前状态: ${this.listeningActive ? '活动' : '静音'}, 总计时器: ${this.listeningTimerTotal}ms`);
       }
     }
 
-    // Speaking
+    // Speaking // UE请求说话时候的动作（这部分需要规划）
     if ( this.isSpeaking ) {
       vol = 0;
       this.audioAnalyzerNode.getByteFrequencyData(this.volumeFrequencyData);
@@ -2240,13 +2298,42 @@ class TalkingHead {
         }
       }
     }
-
+    // Important !
     // Animation loop
     let isEyeContact = null;
     let isHeadMove = null;
     const tasks = [];
+
+    // 一个UE动作list[待机状态]
+    
+    if ( this.UEanimQueueActive && this.UEanimQueue.length === 0 ) {
+      if ( Date.now() - this.UElasttime >= this.UEanimInterval * 1000 ) {
+        this.UEanimQueue.push( '待机' ); // 开始执行时才计算Interval
+      }
+      // let isRunning = false;
+      // setInterval(async () => {
+      //   if (isRunning) return; // 防止上次没执行完又来一次
+      //   isRunning = true;
+      // }, 16000); // 每16s执行一次
+    }
+    // 间隔大于 interval 和 UEanimQueeu.length > 0 是等价的
+    // if ( Date.now() - this.UElasttime >= this.UEanimInterval * 1000 ) {
+      for( i=0, l=this.UEanimQueue.length; i<l; i++) {
+        const animID_string = this.UEanimQueue[i];
+        this.UEAnimateLike( animID_string );
+        this.UElasttime = Date.now();
+        this.UEanimQueue.splice(i--, 1);
+        l--;
+        this.UEanimInterval = this.DefaultAnimation[animID_string]
+          .map(x => this.UEAnimationCandidate[`UE-${x}`].duration)
+          .reduce((acc, curr) => acc + curr, 0);
+      }
+    // }
+    
+
     for( i=0, l=this.animQueue.length; i<l; i++ ) {
       const x = this.animQueue[i];
+      
       if ( this.animClock < x.ts[0] ) continue;
 
       for( j = x.ndx || 0, k = x.ts.length; j<k; j++ ) {
@@ -2393,7 +2480,7 @@ class TalkingHead {
     }
 
     // Eye contact
-    if ( isEyeContact || isHeadMove ) {
+    if ( (isEyeContact || isHeadMove) && !this.UEanimQueueActive ) {
 
       // Get head position
       e.setFromQuaternion( this.poseAvatar.props['Head.quaternion'] );
@@ -2434,7 +2521,8 @@ class TalkingHead {
     }
 
     // Make sure we do not overshoot
-    if ( dt > 2 * this.animFrameDur ) dt = 2 * this.animFrameDur;
+    if ( !this.UEanimQueueActive ) {
+      if ( dt > 2 * this.animFrameDur ) dt = 2 * this.animFrameDur;
 
     // Randomize facial expression by changing baseline
     if ( this.viewName !== 'full' ) {
@@ -2518,6 +2606,7 @@ class TalkingHead {
       }
       this.controls.update();
     }
+  }
 
     // Autorotate
     if ( this.controls.autoRotate ) this.controls.update();
@@ -2559,7 +2648,7 @@ class TalkingHead {
       });
     }
   }
-
+  
   /**
   * Preprocess text for tts/lipsync, including:
   * - convert symbols/numbers to words
@@ -2573,6 +2662,70 @@ class TalkingHead {
     return o.preProcessText(s);
   }
 
+  readThousandNumbers(num) {
+      num = parseInt(num, 10); // 默认num为str
+      if (num < 0 || num > 9999 || isNaN(num)) return '超出范围';
+      if (num === 0) return this.ChineseNumber['0']; // 处理特殊情况 0
+  
+      let numStr = num.toString();
+      let length = numStr.length;
+      let result = '';
+  
+      // 处理千、百、十、个位
+      for (let i = 0; i < length; i++) {
+          let digit = numStr[i];
+          let unitIndex = length - 2 - i; // 计算单位索引
+  
+          if (digit !== '0') {
+              result += this.ChineseNumber[digit] + (unitIndex >= 0 ? this.ChineseUnit[unitIndex] : '');
+          } else {
+              if (!result.endsWith('零')) result += '零'; // 避免连续多个零
+          }
+      }
+      // 处理"一十"的情况
+      result = result.replace(/^一十/, '十'); 
+      // 处理末尾可能多余的"零"
+      result = result.replace(/零+$/, ''); 
+      return result;
+  }
+
+  readAllNumbers(num) {
+    let numStr = num; // let numStr = num.toString();
+    num = parseInt(num, 10); // 默认num为str
+    if (num < 0 || num > 9999999999 || isNaN(num)) return '超出范围';
+    let length = numStr.length;
+    length = length - 1;
+    const pref = length % 4 + 1;
+    const cuts = length / 4 | 0; // 快速向下取整
+    if (cuts === 0) { // length = 4 也是这种情况
+      return this.readThousandNumbers(numStr);
+    }
+
+    let read_word = this.readThousandNumbers(numStr.slice(0, pref));
+    for( let i=0; i<cuts; i++ ) {
+      read_word += this.ChineseUnit[2 + cuts - i];
+      read_word += this.readThousandNumbers(numStr.slice(pref + i*4, pref + (i+1)*4));
+    }
+    return read_word;    
+  }
+
+  readNumber_behindPoint(num) {
+    const numStr = num.toString(); // 为string
+    return [... numStr].map(x => this.ChineseNumber[x] || '').join('')
+  }
+
+  ReplaceNumberInString(s) {
+    const regex = /\d+(\.\d+)?/g; // 匹配整数或小数
+    return s.replace(regex, (match) => {
+      if (match.includes('.')) {
+        const [integerPart, decimalPart] = match.split('.');
+        return this.readAllNumbers(integerPart) + '点' + this.readNumber_behindPoint(decimalPart);
+      } else {
+        return this.readAllNumbers(match);
+      }
+    });
+  }
+
   /**
   * Convert words to Oculus LipSync Visemes.
   * @param {string} word Word
@@ -2580,10 +2733,35 @@ class TalkingHead {
   * @return {Lipsync} Lipsync object.
   */
   lipsyncWordsToVisemes(word,lang) {
-    const o = this.lipsync[lang] || Object.values(this.lipsync)[0];
+    const o = this.lipsync[lang] || Object.values(this.lipsync)[0];
     return o.wordsToVisemes(word);
   }
+  containsChinese(text) {
+    return /[\u4e00-\u9fa5]/.test(text);
+  }
+  preProcessChineseWords(words) {
+    // 直接添加空格
+    // let cutWords = '';
+    // for( let i=1; i<words.length; i++ ) {
+    //   if(this.containsChinese(words[i-1]) && this.containsChinese(words[i])) {
+    //     cutWords += (words[i-1] + ' ');
+    //   } else { // 否则为标点或英文
+    //     cutWords += words[i-1];
+    //   }
+    // }
+    // return cutWords;
 
+    const result = segment(words.join(''), { format: OutputFormat.AllString });
+  
+    // 按照正常nlp的逻辑分词，以空格为分隔符
+
+    return result.origin
+            .replace(/(\d)\s(?=\d|\.)/g, '$1') // 合并数字之间的空格
+            .replace(/(\d)\s(?=\.\d+)/g, '$1') // 合并小数点前后的空格
+            .replace(/(\.\d+)\s(?=\d)/g, '$1') // 合并小数点后数字的空格
+            .replace(/(\d)\s(?=D)/g, '$1')  // 合并数字和非数字之间的空格
+            .replace(/([0-9])\.\s([0-9])/g, '$1.$2')
+  }
 
   /**
   * Add text to the speech queue.
@@ -2593,12 +2771,15 @@ class TalkingHead {
   * @param {number[][]} [excludes=null] Array of [start, end] index arrays to not speak
   */
   speakText(s, opt = null, onsubtitles = null, excludes = null ) {
+
     opt = opt || {};
 
     // Classifiers
-    const dividersSentence = /[!\.\?\n\p{Extended_Pictographic}]/ug;
+    // const dividersSentence = /[!\.\?\n\p{Extended_Pictographic}]/ug;
+    const dividersSentence = /[。，！？!\?\n\p{Extended_Pictographic}]/ug; // 新增中文断句
     const dividersWord = /[ ]/ug;
-    const speakables = /[\p{L}\p{N},\.\p{Quotation_Mark}!€\$\+\p{Dash_Punctuation}%&\?]/ug;
+    // const speakables = /[\p{L}\p{N},\.\p{Quotation_Mark}!€\$\+\p{Dash_Punctuation}%&\?]/ug;
+    const speakables = /[\p{L}\p{N},\.\p{Quotation_Mark}!€\$\+\p{Dash_Punctuation}%&\?。，！？“]/ug; // 新增中文标点
     const emojis = /[\p{Extended_Pictographic}]/ug;
     const lipsyncLang = opt.lipsyncLang || this.avatar.lipsyncLang || this.opt.lipsyncLang;
 
@@ -2607,7 +2788,15 @@ class TalkingHead {
     let markId = 0; // SSML mark id
     let ttsSentence = []; // Text-to-speech sentence
     let lipsyncAnim = []; // Lip-sync animation sequence
-    const letters = [...s];
+    let letters = [... this.lipsyncPreProcessText(s, lipsyncLang)];
+    // let Letters = " ";
+
+    if (this.containsChinese(letters)) {
+      letters = this.preProcessChineseWords(letters);
+    } 
+
+    let is_first = true;
+    
     for( let i=0; i<letters.length; i++ ) {
       const isLast = i === (letters.length-1);
       const isSpeakable = letters[i].match(speakables);
@@ -2626,24 +2815,25 @@ class TalkingHead {
       }
 
       // Add letter to spoken word
+      // TODO: dividersWords
       if ( isSpeakable ) {
         if ( !excludes || excludes.every( x => (i < x[0]) || (i > x[1]) ) ) {
-          textWord += letters[i];
+          textWord += letters[i].trim();
         }
       }
 
       // Add words to sentence and animations
       if ( isEndOfWord || isEndOfSentence || isLast ) {
-
         // Add to text-to-speech sentence
+        const flag_ = textWord.match(/[0-9]/ug);
         if ( textWord.length ) {
-          textWord = this.lipsyncPreProcessText(textWord, lipsyncLang);
-          if ( textWord.length ) {
-            ttsSentence.push( {
-              mark: markId,
-              word: textWord
-            });
-          }
+          // textWord = this.lipsyncPreProcessText(textWord, lipsyncLang);
+          ttsSentence.push( {
+            mark: markId,
+            word: textWord,
+            flag: flag_,
+            number: flag_ ? this.readAllNumbers(textWord) : ''
+          });
         }
 
         // Push subtitles to animation queue
@@ -2661,7 +2851,7 @@ class TalkingHead {
 
         // Push visemes to animation queue
         if ( textWord.length ) {
-          const val = this.lipsyncWordsToVisemes(textWord, lipsyncLang);
+          const val = this.lipsyncWordsToVisemes(textWord.match(/[0-9]/ug) ? this.readAllNumbers(textWord) : textWord, lipsyncLang);
           if ( val && val.visemes && val.visemes.length ) {
             const d = val.times[ val.visemes.length-1 ] + val.durations[ val.visemes.length-1 ];
             for( let j=0; j<val.visemes.length; j++ ) {
@@ -2699,6 +2889,12 @@ class TalkingHead {
             if ( opt.ttsVoice ) o.pitch = opt.ttsPitch;
             if ( opt.ttsVolume ) o.volume = opt.ttsVolume;
           }
+          
+          if ( is_first ) {
+            o.is_first = is_first;
+            is_first = !is_first;
+          }
+
           this.speechQueue.push(o);
 
           // Reset sentence and animation sequence
@@ -2716,14 +2912,13 @@ class TalkingHead {
             this.speechQueue.push( { emoji: emoji } );
           }
         }
-
-        this.speechQueue.push( { break: 100 } );
+        this.speechQueue.push( { break: 100 * this.duration_factor } );
 
       }
 
     }
 
-    this.speechQueue.push( { break: 1000 } );
+    this.speechQueue.push( { break: 500 * this.duration_factor } );
 
     // Start speaking (if not already)
     this.startSpeaking();
@@ -2747,7 +2942,7 @@ class TalkingHead {
   * @param {numeric} t Duration in milliseconds.
   */
   async speakBreak(t) {
-    this.speechQueue.push( { break: t } );
+    this.speechQueue.push( { break: t * this.duration_factor } );
     this.startSpeaking();
   }
 
@@ -2850,6 +3045,8 @@ class TalkingHead {
 
     if ( r.words ) {
       let lipsyncAnim = [];
+      // if( !this.UEanimQueueActive ) 
+        {
       for( let i=0; i<r.words.length; i++ ) {
         const word = r.words[i];
         const time = r.wtimes[i];
@@ -2893,7 +3090,7 @@ class TalkingHead {
             }
           }
         }
-      }
+      }}
 
       // If visemes were specified, use them
       if ( r.visemes ) {
@@ -2924,7 +3121,7 @@ class TalkingHead {
         }
       }
 
-      if ( lipsyncAnim.length ) {
+      if ( lipsyncAnim.length && !this.UEanimQueueActive ) {
         o.anim = lipsyncAnim;
       }
 
@@ -2935,7 +3132,7 @@ class TalkingHead {
     }
 
     // Blend shapes animation
-    if (r.anim?.name) {
+    if (r.anim?.name ) {
       let animObj = this.animFactory(r.anim, false, 1, 1, true);
       if (!o.anim) {
         o.anim = [ animObj ];
@@ -2950,7 +3147,7 @@ class TalkingHead {
 
     if ( Object.keys(o).length ) {
       this.speechQueue.push(o);
-      this.speechQueue.push( { break: 300 } );
+      this.speechQueue.push( { break: 300 * this.duration_factor } );
       this.startSpeaking();
     }
 
@@ -3004,12 +3201,13 @@ class TalkingHead {
       if ( item.anim ) {
         // Find the lowest negative time point, if any
         delay = Math.abs(Math.min(0, ...item.anim.map( x => Math.min(...x.ts) ) ) );
-        item.anim.forEach( x => {
+        // if ( !this.UEanimQueueActive )
+        {item.anim.forEach( x => {
           for(let i=0; i<x.ts.length; i++) {
             x.ts[i] = this.animClock + x.ts[i] + delay;
           }
           this.animQueue.push(x);
-        });
+        });}
       }
 
       // Play, dealy in seconds so pre-animations can be played
@@ -3032,36 +3230,45 @@ class TalkingHead {
     this.isSpeaking = true;
     if ( this.speechQueue.length ) {
       let line = this.speechQueue.shift();
+
+      const able_to_push = line.hasOwnProperty('is_first') ? line.is_first : false;
+
       if ( line.emoji ) {
+        // if ( !this.UEanimQueueActive ) 
+        {
+          // Look at the camera
+          this.lookAtCamera(500);
 
-        // Look at the camera
-        this.lookAtCamera(500);
-
-        // Only emoji
-        let duration = line.emoji.dt.reduce((a,b) => a+b,0);
-        this.animQueue.push( this.animFactory( line.emoji ) );
-        setTimeout( this.startSpeaking.bind(this), duration, true );
+          // Only emoji
+          let duration = line.emoji.dt.reduce((a,b) => a+b,0);
+          this.animQueue.push( this.animFactory( line.emoji ) );
+          setTimeout( this.startSpeaking.bind(this), duration, true );
+        }
+        
       } else if ( line.break ) {
         // Break
-        setTimeout( this.startSpeaking.bind(this), line.break, true );
+        // if ( !this.UEanimQueueActive ) 
+          setTimeout( this.startSpeaking.bind(this), line.break, true );
       } else if ( line.audio ) {
 
         // Look at the camera
         this.lookAtCamera(500);
-        this.speakWithHands();
+        
 
         // Make a playlist
         this.audioPlaylist.push({ anim: line.anim, audio: line.audio });
-        this.onSubtitles = line.onSubtitles || null;
-        this.resetLips();
+        this.speakWithHands(undefined, undefined, able_to_push);
+        {this.onSubtitles = line.onSubtitles || null;
+        this.resetLips();}
         if ( line.mood ) this.setMood( line.mood );
         this.playAudio();
 
       } else if ( line.text ) {
-
+        // 发送给TTS生成语音
         // Look at the camera
         this.lookAtCamera(500);
-
+        let flag = ! /[\u4e00-\u9fa5]/.test(line.text[0].word);
+        let prefix = "<mark name='";
         // Spoken text
         try {
           // Convert text to SSML
@@ -3069,16 +3276,25 @@ class TalkingHead {
           line.text.forEach( (x,i) => {
             // Add mark
             if (i > 0) {
-              ssml += " <mark name='" + x.mark + "'/>";
+              if( flag ) {
+                prefix = " " + prefix;
+              }
+              if(x.flag) {
+                ssml += prefix + x.number + "'/>";
+              } else {
+                flag = ! /[\u4e00-\u9fa5]/.test(x.word);
+                ssml += prefix + x.mark + "'/>";
+              }
+              prefix = "<mark name='";
             }
-
             // Add word
             ssml += x.word.replaceAll('&','&amp;')
               .replaceAll('<','&lt;')
               .replaceAll('>','&gt;')
               .replaceAll('"','&quot;')
               .replaceAll('\'','&apos;')
-              .replace(/^\p{Dash_Punctuation}$/ug,'<break time="750ms"/>');
+              .replace(/^\p{Dash_Punctuation}$/ug,'<break time="400ms"/>');
+              // 750ms -> 400ms
 
           });
           ssml += "</speak>";
@@ -3120,7 +3336,7 @@ class TalkingHead {
             // Audio data
             const buf = this.b64ToArrayBuffer(data.audioContent);
             const audio = await this.audioCtx.decodeAudioData( buf );
-            this.speakWithHands();
+            
 
             // Workaround for Google TTS not providing all timepoints
             const times = [ 0 ];
@@ -3137,6 +3353,7 @@ class TalkingHead {
                 times.push( ms );
               }
             });
+            this.speakWithHands(undefined, undefined, able_to_push);
 
             // Word-to-audio alignment
             const timepoints = [ { mark: 0, time: 0 } ];
@@ -3153,14 +3370,15 @@ class TalkingHead {
             timepoints[timepoints.length-1].duration = d - timepoints[timepoints.length-1].time;
 
             // Re-set animation starting times and rescale durations
-            line.anim.forEach( x => {
-              const timepoint = timepoints[x.mark];
-              if ( timepoint ) {
-                for(let i=0; i<x.ts.length; i++) {
-                  x.ts[i] = timepoint.time + (x.ts[i] * timepoint.duration) + this.opt.ttsTrimStart;
+            // if ( !this.UEanimQueueActive ) 
+              line.anim.forEach( x => {
+                const timepoint = timepoints[x.mark];
+                if ( timepoint ) {
+                  for(let i=0; i<x.ts.length; i++) {
+                    x.ts[i] = timepoint.time + (x.ts[i] * timepoint.duration) + this.opt.ttsTrimStart;
+                  }
                 }
-              }
-            });
+              });
 
             // Add to the playlist
             this.audioPlaylist.push({ anim: line.anim, audio: audio });
@@ -3178,16 +3396,20 @@ class TalkingHead {
         }
       } else if ( line.anim ) {
         // Only subtitles
-        this.onSubtitles = line.onSubtitles || null;
-        this.resetLips();
-        if ( line.mood ) this.setMood( line.mood );
-        line.anim.forEach( (x,i) => {
-          for(let j=0; j<x.ts.length; j++) {
-            x.ts[j] = this.animClock  + 10 * i;
-          }
-          this.animQueue.push(x);
-        });
-        setTimeout( this.startSpeaking.bind(this), 10 * line.anim.length, true );
+        // if ( !this.UEanimQueueActive ) 
+        {
+          this.onSubtitles = line.onSubtitles || null;
+          this.resetLips();
+          if ( line.mood ) this.setMood( line.mood );
+          line.anim.forEach( (x,i) => {
+            for(let j=0; j<x.ts.length; j++) {
+              x.ts[j] = this.animClock  + 10 * i;
+            }
+            this.animQueue.push(x);
+          });
+          setTimeout( this.startSpeaking.bind(this), 10 * line.anim.length, true );
+        }
+        
       } else if ( line.marker ) {
         if ( typeof line.marker === "function" ) {
           line.marker();
@@ -3236,236 +3458,13 @@ class TalkingHead {
   }
 
   /**
-  * Start streaming mode.
-  * @param opt optional settings inlcude gain, sampleRate, lipsyncLang, and lipsyncType
-  * @onAudioStart optional callback when audio playback starts
-  * @onAudioEnd optional callback when audio streaming is automatically ended.
-  * @onSubtitles optional callback to play subtitles
-  */
-  async streamStart(opt = {}, onAudioStart = null, onAudioEnd = null, onSubtitles = null) {
-    this.stopSpeaking(); // Stop the speech queue mode
-
-    if (opt.sampleRate !== undefined) {
-      const sr = opt.sampleRate;    
-      if (
-        typeof sr === 'number' &&
-        sr >= 8000 &&
-        sr <= 96000
-      ) {
-        if (sr !== this.audioCtx.sampleRate) {
-          this.initAudioGraph(sr);
-        }
-      } else {
-        console.warn(
-          'Invalid sampleRate provided. It must be a number between 8000 and 96000 Hz.'
-        );
-      }
-    }
-    
-    if (opt.gain !== undefined) {
-      this.audioStreamGainNode.gain.value = opt.gain;
-    }
-
-    if (!this.workletLoaded) {
-      try {
-        const loadPromise = this.audioCtx.audioWorklet.addModule(workletUrl.href);
-        const timeoutPromise = new Promise((_, reject) => 
-          setTimeout(() => reject(new Error("Worklet loading timed out")), 5000)
-        );
-        await Promise.race([loadPromise, timeoutPromise]);
-        this.workletLoaded = true;
-      } catch (error) {
-        console.error("Failed to load audio worklet:", error);
-        throw new Error("Failed to initialize streaming speech");
-      }
-    }
-
-    // Create and connect worklet node
-    this.streamWorkletNode = new AudioWorkletNode(this.audioCtx, 'playback-worklet');
-    
-    // Connect worklet through stream gain node for volume control
-    this.streamWorkletNode.connect(this.audioStreamGainNode);
-    this.streamWorkletNode.connect(this.audioAnalyzerNode);
-  
-    this.streamWorkletNode.port.onmessage = (event) => {
-
-      if(event.data.type === 'playback-started') {
-        this.streamAudioStartTime = this.animClock;
-        this.speakWithHands();
-        if (onAudioStart) onAudioStart();
-      }
-
-      if (event.data.type === 'playback-ended') {
-        this.streamStop();
-        if (onAudioEnd) onAudioEnd();
-      }
-    };
-
-    this.resetLips();
-    this.lookAtCamera(500);
-    opt.mood && this.setMood( opt.mood );
-    opt.lipsyncLang && (this.streamLipsyncLang = opt.lipsyncLang);
-    opt.lipsyncType && (this.streamLipsyncType = opt.lipsyncType);
-    this.onSubtitles = onSubtitles || null;
-
-    this.isStreaming = true;
-    this.isSpeaking = true;
-    this.stateName = "speaking"
-    this.streamAudioStartTime = 0;
-
-    // If Web Audio API is suspended, try to resume it
-    if ( this.audioCtx.state === "suspended" || this.audioCtx.state === "interrupted" ) {
-      const resume = this.audioCtx.resume();
-      const timeout = new Promise((_r, rej) => setTimeout(() => rej("p2"), 1000));
-      try {
-        await Promise.race([resume, timeout]);
-      } catch(e) {
-        console.log("Can't play audio. Web Audio API suspended. This is often due to calling some speak method before the first user action, which is typically prevented by the browser.");
-        return;
-      }
-    }
-  }
-
-  /**
-  * Notify if no more streaming data is coming.
-  * Actual stop occurs after audio playback.
-  */
-  streamNotifyEnd() {
-    if (!this.isStreaming || !this.streamWorkletNode) return;
-
-    this.streamWorkletNode.port.postMessage({ type: 'no-more-data' });
-  }
-
-
-  /**
-   * Stop streaming mode
-   */
-  streamStop() {
-    if (this.streamWorkletNode) {
-      try {
-        this.streamWorkletNode.disconnect();
-
-      } catch(e) { 
-        console.error('Error disconnecting streamWorkletNode:', e);
-        /* ignore */ 
-      }
-      this.streamWorkletNode = null;
-    }
-    this.isStreaming = false;
-    this.isSpeaking = false;
-    this.stateName = "idle";
-    this.streamAudioStartTime = 0;
-    if ( this.armature ) {
-      this.resetLips();
-      this.render();
-    }
-  }
-
-  /**
-  * stream audio and lipsync. Audio must be in 16 bit PCM format.
-  * @param r Audio object with viseme data.
-  */
-  streamAudio(r) {
-    if (!this.isStreaming || !this.streamWorkletNode) return;
-
-    if(r.audio) {
-      const pcmData = new Int16Array(r.audio);
-      // Post audio chunk to the AudioWorklet for playback
-      this.streamWorkletNode.port.postMessage(pcmData);
-    }
-
-    if(r.visemes || r.anims || r.words) {
-      let audioStart = this.streamAudioStartTime;
-      if(audioStart === 0) {
-        // Lipsync data received before stream audio data. Add small delay waiting for audio.
-        audioStart = this.animClock + 100;
-      }
-
-      // Process visemes
-      if ( r.visemes && this.streamLipsyncType == 'visemes') {
-        for( let i=0; i<r.visemes.length; i++ ) {
-          const viseme = r.visemes[i];
-          const time = audioStart + r.vtimes[i];
-          const duration = r.vdurations[i];
-          const animObj = {
-            template: { name: 'viseme' },
-            ts: [ time - 2 * duration/3, time + duration/2, time + duration + duration/2 ],
-            vs: {
-              ['viseme_'+viseme]: [null,(viseme === 'PP' || viseme === 'FF') ? 0.9 : 0.6, 0]
-            }
-          }
-          this.animQueue.push(animObj);
-        }
-      }
-
-      // Process words
-      if (r.words && (this.onSubtitles || this.streamLipsyncType == "words")) {
-        for( let i=0; i<r.words.length; i++ ) {
-          const word = r.words[i];
-          const time = r.wtimes[i];
-          let duration = r.wdurations[i];
-  
-          if ( word.length ) {
-            // If subtitles callback is available, add the subtitles
-            if ( this.onSubtitles ) {
-              this.animQueue.push( {
-                template: { name: 'subtitles' },
-                ts: [audioStart + time],
-                vs: {
-                  subtitles: [' ' + word]
-                }
-              });
-            }
-  
-            // Calculate visemes based on the words
-            if ( this.streamLipsyncType == "words" ) {
-              const lipsyncLang = this.streamLipsyncLang || this.avatar.lipsyncLang || this.opt.lipsyncLang;
-              const wrd = this.lipsyncPreProcessText(word, lipsyncLang);
-              const val = this.lipsyncWordsToVisemes(wrd, lipsyncLang);
-              if ( val && val.visemes && val.visemes.length ) {
-                const dTotal = val.times[ val.visemes.length-1 ] + val.durations[ val.visemes.length-1 ];
-                const overdrive = Math.min(duration, Math.max( 0, duration - val.visemes.length * 150));
-                let level = 0.6 + this.convertRange( overdrive, [0,duration], [0,0.4]);
-                duration = Math.min( duration, val.visemes.length * 200 );
-                if ( dTotal > 0 ) {
-                  for( let j=0; j<val.visemes.length; j++ ) {
-                    const t = audioStart + time + (val.times[j]/dTotal) * duration;
-                    const d = (val.durations[j]/dTotal) * duration;
-                    this.animQueue.push( {
-                      template: { name: 'viseme' },
-                      ts: [ t - Math.min(60,2*d/3), t + Math.min(25,d/2), t + d + Math.min(60,d/2) ],
-                      vs: {
-                        ['viseme_'+val.visemes[j]]: [null,(val.visemes[j] === 'PP' || val.visemes[j] === 'FF') ? 0.9 : level, 0]
-                      }
-                    });
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-
-      // If blendshapes anims are provided, add them to animQueue
-      if (r.anims && this.streamLipsyncType == "blendshapes") {
-        for (let i = 0; i < r.anims.length; i++) {
-            let anim = r.anims[i];
-            anim.delay += audioStart;
-            let animObj = this.animFactory(anim, false, 1, 1, true);
-            this.animQueue.push(animObj);
-        }
-      }
-    }
-  }
-
-  /**
   * Make eye contact.
   * @param {number} t Time in milliseconds
   */
   makeEyeContact(t) {
-    this.animQueue.push( this.animFactory( {
+    if ( !this.UEanimQueueActive) {this.animQueue.push( this.animFactory( {
       name: 'eyecontact', dt: [0,t], vs: { eyeContact: [1] }
-    }));
+    }));}
   }
 
   /**
@@ -3474,7 +3473,7 @@ class TalkingHead {
   */
   lookAhead(t) {
 
-    if ( t ) {
+    if ( !this.UEanimQueueActive) {if ( t ) {
 
       // Randomize head/eyes ratio
       let drotx = (Math.random() - 0.5) / 4;
@@ -3503,7 +3502,7 @@ class TalkingHead {
         }
       };
       this.animQueue.push( this.animFactory( templateLookAt ) );
-    }
+    }}
 
   }
 
@@ -3513,7 +3512,7 @@ class TalkingHead {
   */
   lookAtCamera(t) {
 
-    if ( this.avatar.hasOwnProperty('avatarIgnoreCamera') ) {
+    if ( !this.UEanimQueueActive ) {if ( this.avatar.hasOwnProperty('avatarIgnoreCamera') ) {
       if ( this.avatar.avatarIgnoreCamera ) {
         this.lookAhead(t);
       } else {
@@ -3523,7 +3522,7 @@ class TalkingHead {
       this.lookAhead(t);
     } else {
       this.lookAt( null, null, t );
-    }
+    }}
 
   }
 
@@ -3535,7 +3534,7 @@ class TalkingHead {
   */
   lookAt(x,y,t) {
 
-    // Eyes position
+    if( !this.UEanimQueueActive) {// Eyes position
     const rect = this.nodeAvatar.getBoundingClientRect();
     this.objectLeftEye.updateMatrixWorld(true);
     this.objectRightEye.updateMatrixWorld(true);
@@ -3601,7 +3600,7 @@ class TalkingHead {
         }
       };
       this.animQueue.push( this.animFactory( templateLookAt ) );
-    }
+    }}
   }
 
 
@@ -3667,69 +3666,78 @@ class TalkingHead {
   * @param {number} [delay=0] Delay in milliseconds
   * @param {number} [prob=1] Probability of hand movement
   */
-  speakWithHands(delay=0,prob=0.5) {
+  speakWithHands(delay=0,prob=0.5,able_to_push=false) {
 
     // Only if we are standing and not bending and probabilities match up
-    if ( this.mixer || this.gesture || !this.poseTarget.template.standing || this.poseTarget.template.bend || Math.random()>prob ) return;
+    if ( !this.UEanimQueueActive ) {
+        if ( this.mixer || this.gesture || !this.poseTarget.template.standing || this.poseTarget.template.bend || Math.random()>prob ) return;
 
-    // Random targets for left hand
-    this.ikSolve( {
-      root: "LeftShoulder", effector: "LeftHandMiddle1",
-      links: [
-        { link: "LeftHand", minx: -0.5, maxx: 0.5, miny: -1, maxy: 1, minz: -0.5, maxz: 0.5 },
-        { link: "LeftForeArm", minx: -0.5, maxx: 1.5, miny: -1.5, maxy: 1.5, minz: -0.5, maxz: 3 },
-        { link: "LeftArm", minx: -1.5, maxx: 1.5, miny: -1.5, maxy: 1.5, minz: -1, maxz: 3 }
-      ]
-    }, new THREE.Vector3(
-      this.gaussianRandom(0,0.5),
-      this.gaussianRandom(-0.8,-0.2),
-      this.gaussianRandom(0,0.5)
-    ), true);
+      // Random targets for left hand
+      this.ikSolve( {
+        root: "LeftShoulder", effector: "LeftHandMiddle1",
+        links: [
+          { link: "LeftHand", minx: -0.5, maxx: 0.5, miny: -1, maxy: 1, minz: -0.5, maxz: 0.5 },
+          { link: "LeftForeArm", minx: -0.5, maxx: 1.5, miny: -1.5, maxy: 1.5, minz: -0.5, maxz: 3 },
+          { link: "LeftArm", minx: -1.5, maxx: 1.5, miny: -1.5, maxy: 1.5, minz: -1, maxz: 3 }
+        ]
+      }, new THREE.Vector3(
+        this.gaussianRandom(0,0.5),
+        this.gaussianRandom(-0.8,-0.2),
+        this.gaussianRandom(0,0.5)
+      ), true);
 
-    // Random target for right hand
-    this.ikSolve( {
-      root: "RightShoulder", effector: "RightHandMiddle1",
-      links: [
-        { link: "RightHand", minx: -0.5, maxx: 0.5, miny: -1, maxy: 1, minz: -0.5, maxz: 0.5 },
-        { link: "RightForeArm", minx: -0.5, maxx: 1.5, miny: -1.5, maxy: 1.5, minz: -3, maxz: 0.5 },
-        { link: "RightArm" }
-      ]
-    }, new THREE.Vector3(
-      this.gaussianRandom(-0.5,0),
-      this.gaussianRandom(-0.8,-0.2),
-      this.gaussianRandom(0,0.5)
-    ), true);
+      // Random target for right hand
+      this.ikSolve( {
+        root: "RightShoulder", effector: "RightHandMiddle1",
+        links: [
+          { link: "RightHand", minx: -0.5, maxx: 0.5, miny: -1, maxy: 1, minz: -0.5, maxz: 0.5 },
+          { link: "RightForeArm", minx: -0.5, maxx: 1.5, miny: -1.5, maxy: 1.5, minz: -3, maxz: 0.5 },
+          { link: "RightArm" }
+        ]
+      }, new THREE.Vector3(
+        this.gaussianRandom(-0.5,0),
+        this.gaussianRandom(-0.8,-0.2),
+        this.gaussianRandom(0,0.5)
+      ), true);
 
-    // Moveto
-    const dt = [];
-    const moveto = [];
+      // Moveto
+      const dt = [];
+      const moveto = [];
 
-    // First move
-    dt.push( 100 + Math.round( Math.random() * 500 ) );
-    moveto.push( { duration: 1000, props: {
-      "LeftHand.quaternion": new THREE.Quaternion().setFromEuler( new THREE.Euler( 0, -1 - Math.random(), 0 ) ),
-      "RightHand.quaternion": new THREE.Quaternion().setFromEuler( new THREE.Euler( 0, 1 + Math.random(), 0 ) )
-    } } );
-    ["LeftArm","LeftForeArm","RightArm","RightForeArm"].forEach( x => {
-      moveto[0].props[x+'.quaternion'] = this.ikMesh.getObjectByName(x).quaternion.clone();
-    });
+      // First move
+      dt.push( 100 + Math.round( Math.random() * 500 ) );
+      moveto.push( { duration: 1000, props: {
+        "LeftHand.quaternion": new THREE.Quaternion().setFromEuler( new THREE.Euler( 0, -1 - Math.random(), 0 ) ),
+        "RightHand.quaternion": new THREE.Quaternion().setFromEuler( new THREE.Euler( 0, 1 + Math.random(), 0 ) )
+      } } );
+      ["LeftArm","LeftForeArm","RightArm","RightForeArm"].forEach( x => {
+        moveto[0].props[x+'.quaternion'] = this.ikMesh.getObjectByName(x).quaternion.clone();
+      });
 
-    // Return to original target
-    dt.push( 1000 + Math.round( Math.random() * 500 ) );
-    moveto.push( { duration: 2000, props: {} } );
-    ["LeftArm","LeftForeArm","RightArm","RightForeArm","LeftHand","RightHand"].forEach( x => {
-      moveto[1].props[x+'.quaternion'] = null;
-    });
+      // Return to original target
+      dt.push( 1000 + Math.round( Math.random() * 500 ) );
+      moveto.push( { duration: 2000, props: {} } );
+      ["LeftArm","LeftForeArm","RightArm","RightForeArm","LeftHand","RightHand"].forEach( x => {
+        moveto[1].props[x+'.quaternion'] = null;
+      });
 
-    // Make an animation
-    const anim = this.animFactory( {
-      name: 'talkinghands',
-      delay: delay,
-      dt: dt,
-      vs: { moveto: moveto }
-    });
-    this.animQueue.push( anim );
+      // Make an animation
+      const anim = this.animFactory( {
+        name: 'talkinghands',
+        delay: delay,
+        dt: dt,
+        vs: { moveto: moveto }
+      });
+      this.animQueue.push( anim );
+    }
 
+
+    if (able_to_push) {
+      this.UEanimQueue.push( `讲话-${this.animID_cnt%4+1}` );
+      this.animID_cnt++;
+    }
+    
+    
   }
 
   /**
@@ -3795,6 +3803,17 @@ class TalkingHead {
   */
   startListening(analyzer, opt = {}, onchange = null) {
     this.listeningAnalyzer = analyzer;
+    console.log("分析器频率计数:", this.listeningAnalyzer.frequencyBinCount);
+    console.log("volumeFrequencyData大小:", this.volumeFrequencyData.length);
+    console.log("麦克风初始化状态:", this.listeningAnalyzer ? "成功" : "失败");
+    console.log("音频上下文状态:", this.audioCtx.state);
+    if (this.audioCtx.state === 'suspended') {
+      this.audioCtx.resume().then(() => {
+        console.log('AudioContext已恢复');
+      }).catch(err => {
+        console.error('恢复AudioContext失败:', err);
+      });
+    }
     this.listeningAnalyzer.fftSize = 256;
     this.listeningAnalyzer.smoothingTimeConstant = 0.1;
     this.listeningAnalyzer.minDecibels = -70;
@@ -3807,7 +3826,7 @@ class TalkingHead {
     this.listeningActiveThresholdLevel = opt?.hasOwnProperty('listeningActiveThresholdLevel') ? opt.listeningActiveThresholdLevel : this.opt.listeningActiveThresholdLevel;
     this.listeningActiveThresholdMs = opt?.hasOwnProperty('listeningActiveThresholdMs') ? opt.listeningActiveThresholdMs : this.opt.listeningActiveThresholdMs;
     this.listeningActiveDurationMax = opt?.hasOwnProperty('listeningActiveDurationMax') ? opt.listeningActiveDurationMax : this.opt.listeningActiveDurationMax;
-
+    this.volumeFrequencyData = new Uint8Array(this.listeningAnalyzer.frequencyBinCount);
     this.listeningActive = false;
     this.listeningVolume = 0;
     this.listeningTimer = 0;
@@ -3830,11 +3849,14 @@ class TalkingHead {
   * @param {number} [ndx=0] Index of the clip
   * @param {number} [scale=0.01] Position scale factor
   */
+ // 动作控制
   async playAnimation(url, onprogress=null, dur=10, ndx=0, scale=0.01) {
+    // TODO: 默认相机位置
     if ( !this.armature ) return;
-
     let item = this.animClips.find( x => x.url === url+'-'+ndx );
     if ( item ) {
+
+      
 
       // Reset pose update
       let anim = this.animQueue.find( x => x.template.name === 'pose' );
@@ -3853,6 +3875,25 @@ class TalkingHead {
       // Create a new mixer
       this.mixer = new THREE.AnimationMixer(this.armature);
       this.mixer.addEventListener( 'finished', this.stopAnimation.bind(this), { once: true });
+      // this.setView( this.opt.cameraView )
+
+      // this.camera.position.set(0, 2, 4); // 增加 y 和 z 值,使相机位置更高更远
+      // this.camera.rotation.set(-0.2, 0, 0); // 减小 x 轴旋转角度,减少俯视程度
+      // this.camera.lookAt(this.armature.position);
+
+      // 创建补间动画 
+      // const from = this.camera.position.clone();
+      // const to = new THREE.Vector3(0, 2, 4); // 目标位置也要相应调整
+      // const duration = 1000; // 1秒      
+      // new TWEEN.Tween(from)
+      //     .to(to, duration)
+      //     .easing(TWEEN.Easing.Quadratic.InOut)
+      //     .onUpdate(() => {
+      //         this.camera.position.copy(from);
+      //         this.camera.lookAt(this.armature.position);
+      //     })
+      //     .start();
+
 
       // Play action
       const repeat = Math.ceil(dur / item.clip.duration);
@@ -3860,42 +3901,61 @@ class TalkingHead {
       action.setLoop( THREE.LoopRepeat, repeat );
       action.clampWhenFinished = true;
       action.fadeIn(0.5).play();
+      
 
     } else {
-
+      const scale_ = new THREE.Vector3(scale, scale, scale);
       // Load animation
       const loader = new FBXLoader();
 
       let fbx = await loader.loadAsync( url, onprogress );
 
+      // 在加载模型时添加模型旋转修正
       if ( fbx && fbx.animations && fbx.animations[ndx] ) {
+          // 修正模型方向
+          const modelRotationFix = new THREE.Quaternion();
+          modelRotationFix.setFromEuler(new THREE.Euler(Math.PI, 0, Math.PI)); // 旋转180度
+          fbx.quaternion.multiply(modelRotationFix);
+
         let anim = fbx.animations[ndx];
 
         // Rename and scale Mixamo tracks, create a pose
         const props = {};
+        anim.tracks.sort((a, b) => {
+          let ids1 = a.name.split('.');
+          let ids2 = b.name.split('.');
+          return ids2[1].localeCompare(ids1[1]); // scale first (scale, position, quaternion)
+        });
         anim.tracks.forEach( t => {
           t.name = t.name.replaceAll('mixamorig','');
           const ids = t.name.split('.');
-          if ( ids[1] === 'position' ) {
+          if ( ids[1] === 'position' ) { 
+            // [DONE] 初步定位是提供的ref文件中，带有position信息的t(即ids[1] === 'position'时)的time帧数不足；walking中是有 30帧就是30个time，ref中这部分只有2个time
+            const s_now = (ids[0]+'.scale' in props) ? props[ids[0]+'.scale'] : scale_ ;
             for(let i=0; i<t.values.length; i++ ) {
-              t.values[i] = t.values[i] * scale;
+              t.values[i] = t.values[i] * (i%3===0?s_now.x:(i%3===1?s_now.y:s_now.z));
             }
-            props[t.name] = new THREE.Vector3(t.values[0],t.values[1],t.values[2]);
+            props[t.name] = new THREE.Vector3(t.values[0], t.values[1],t.values[2]);
           } else if ( ids[1] === 'quaternion' ) {
             props[t.name] = new THREE.Quaternion(t.values[0],t.values[1],t.values[2],t.values[3]);
+            // props[t.name].multiply(q_);
           } else if ( ids[1] === 'rotation' ) {
             props[ids[0]+".quaternion"] = new THREE.Quaternion().setFromEuler(new THREE.Euler(t.values[0],t.values[1],t.values[2],'XYZ')).normalize();
+          } 
+          else if  ( ids[1] === 'scale' ) {
+            // first
+            props[t.name] = new THREE.Vector3(t.values[0], t.values[1], t.values[2]);
           }
-
         });
 
         // Add to clips
         const newPose = { props: props };
+        // TODO: 似乎与相机位姿无关
         if ( props['Hips.position'] ) {
           if ( props['Hips.position'].y < 0.5 ) {
             newPose.lying = true;
           } else {
-            newPose.standing = true;
+            newPose.standing = true; // 有关? 搜".standing"
           }
         }
         this.animClips.push({
@@ -3953,6 +4013,7 @@ class TalkingHead {
   * @param {number} [ndx=0] Index of the clip
   * @param {number} [scale=0.01] Position scale factor
   */
+  // 姿势控制
   async playPose(url, onprogress=null, dur=5, ndx=0, scale=0.01) {
 
     if ( !this.armature ) return;
@@ -4005,6 +4066,8 @@ class TalkingHead {
         });
 
         // Add to pose
+        // TODO: estimate a better pose
+        this.setView( this.opt.cameraView )
         const newPose = { props: props };
         if ( props['Hips.position'] ) {
           if ( props['Hips.position'].y < 0.5 ) {
@@ -4043,6 +4106,7 @@ class TalkingHead {
   * @param {boolean} [mirror=false] Mirror gesture
   * @param {number} [ms=1000] Transition time in milliseconds
   */
+  // 手势控制
   playGesture(name, dur=3, mirror=false, ms=1000) {
 
     if ( !this.armature ) return;
@@ -4101,7 +4165,7 @@ class TalkingHead {
       }
 
       if ( em ) {
-        // Look at the camera for 500 ms
+        if ( !this.UEanimQueueActive) {// Look at the camera for 500 ms
         this.lookAtCamera(500);
 
         // Create animation and tag as gesture
@@ -4130,7 +4194,8 @@ class TalkingHead {
           }
         }
 
-        this.animQueue.push( anim );
+        this.animQueue.push( anim );}
+        this.UEanimQueue.push('讲话-1');
       }
     }
 
