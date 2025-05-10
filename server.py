@@ -7,7 +7,7 @@ import threading
 import time, pdb, os
 import json
 
-
+UE_Animate = True
 # 配置日志
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -16,7 +16,8 @@ app = Flask(__name__)
 CORS(app)  # 启用跨域支持
 
 # Llama 服务器地址
-LLAMA_SERVER = "http://10.1.0.106:7001"
+LLAMA_SERVER = "http://192.168.23.84:7001"
+# LLAMA_SERVER = "http://127.0.0.1:7001"
 WHISPER_SERVER = "http://127.0.0.1:7002"
 GTTS_SERVER = "http://127.0.0.1:7010"
 # 服务静态文件（index.html 等）
@@ -57,19 +58,16 @@ class SocketService:
         self.client_socket.sendall(message)
         print(f"📤 已发送数据到 {self.address}: {message.decode('utf-8')}")
         
-        response = None
-        try:
-            self.client_socket.settimeout(2)  # 设置超时时间为2秒
-            response = self.client_socket.recv(1024)
-            if response:
-                print(f"📥 来自 {self.address} 的回应: {response.decode('utf-8')}")
-        except socket.timeout:
-            print(f"⚠️ 超时：2秒内未收到来自 {self.address} 的回应，跳过 recv 方法")
+        # 取消应答收发
+        # response = None
+        # try:
+        #     self.client_socket.settimeout(2)  # 设置超时时间为2秒
+        #     response = self.client_socket.recv(1024)
+        #     if response:
+        #         print(f"📥 来自 {self.address} 的回应: {response.decode('utf-8')}")
+        # except socket.timeout:
+        #     print(f"⚠️ 超时：2秒内未收到来自 {self.address} 的回应，跳过 recv 方法")
 
-        # try: client_socket.close()
-        # except Exception as err: print(f"⚠️⚠️⚠️ 关闭客户端连接时出错: {err}")
-            
-        # print(f"🔒 已关闭与客户端 {address} 的连接")
 
     def start(self, data_to_send = None):
         print("🟢 正在等待客户端连接...")
@@ -309,7 +307,7 @@ def whisper_chat():
     
 if __name__ == '__main__':
     # 网络诊断时注释掉 
-    if os.environ.get('WERKZEUG_RUN_MAIN') == 'true':
+    if os.environ.get('WERKZEUG_RUN_MAIN') == 'true' and UE_Animate:
         # 只会在 Flask 的 "重载子进程" 中运行 —— 真正运行你的应用
         TCP_Socket = SocketService(UE_Socket_Host, UE_Socket_Port) 
     app.run(host='0.0.0.0', port=8000, debug=True)

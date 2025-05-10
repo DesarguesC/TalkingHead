@@ -754,16 +754,22 @@ class TalkingHead {
     this.UEanimInterval = 0; // s
 
     this.duration_factor = 0.2;
+
+    this.second_per_word = 2.7; // 根据当前语速设置，向下取
+    this.EvaluateTime = 999;
     
     this.animID_cnt = 0;
+    this.wait_ID = 0;
     this.DefaultAnimation = {
-      '待机': ['5'],
+      '待机-1': ['5'],
+      '待机-2': ['8'],
+      '待机-3': ['9'],
       '讲话-1': ['1'],
       '讲话-2': ['7'], // ['3', '1'], ['5', '7'] // 随机一个list
       '讲话-3': ['4', '6'],
       '讲话-4': ['1'], 
       '加油': ['2'],
-      '听声音': ['3'] // 暂用待机
+      '听声音': ['3']
     }
     this.UEAnimationCandidate = {
       'UE-1': { name: 'U_Greet_05_Cycle_04', description: "向前走+敬礼", duration: 8.33 },
@@ -773,6 +779,11 @@ class TalkingHead {
       'UE-5': { name: 'U_Idle_03_Cycle_03', description: "双手交叉于腰前再放下", duration: 16.5 },
       'UE-6': { name: 'U_Idle_04_Cycle_01', description: "两手保持交叉", duration: 7.08 },
       'UE-7': { name: '5Talk_03', description: "演讲", duration: 30 },
+      'UE-8': { name: "U_Greet_01_L_Cycle_02", description: "左手打招呼",  duration: 19},
+      'UE-9': { name: "U_Greet_01_R_Cycle_01", description: "右手打招呼",  duration: 15},
+      'UE-10': { name: "U_Hand_05_Cycle_01", description: "呼唤",  duration: 18},
+      'UE-11': { name: "U_SceneChange_02_Cycle_01", description: "转场",  duration: 22},
+      'UE-12': { name: "U_Speech_08_Cycle_01", description: "讲解",  duration: 25},
       
     };
     this.UESocketProxy = "/socket:ue/animation";
@@ -2308,13 +2319,9 @@ class TalkingHead {
     
     if ( this.UEanimQueueActive && this.UEanimQueue.length === 0 ) {
       if ( Date.now() - this.UElasttime >= this.UEanimInterval * 1000 ) {
-        this.UEanimQueue.push( '待机' ); // 开始执行时才计算Interval
+        this.UEanimQueue.push( `待机-${this.wait_ID%3+1}` ); // 开始执行时才计算Interval
+        this.wait_ID++;
       }
-      // let isRunning = false;
-      // setInterval(async () => {
-      //   if (isRunning) return; // 防止上次没执行完又来一次
-      //   isRunning = true;
-      // }, 16000); // 每16s执行一次
     }
     // 间隔大于 interval 和 UEanimQueeu.length > 0 是等价的
     // if ( Date.now() - this.UElasttime >= this.UEanimInterval * 1000 ) {
@@ -2796,7 +2803,7 @@ class TalkingHead {
     } 
 
     let is_first = true;
-    
+    this.EvaluateTime = letters.length / this.second_per_word;
     for( let i=0; i<letters.length; i++ ) {
       const isLast = i === (letters.length-1);
       const isSpeakable = letters[i].match(speakables);
@@ -3733,8 +3740,23 @@ class TalkingHead {
 
 
     if (able_to_push) {
-      this.UEanimQueue.push( `讲话-${this.animID_cnt%4+1}` );
-      this.animID_cnt++;
+      
+      let add_flag = 0;
+      while( true ) {
+        let anim_string = `讲话-${this.animID_cnt%4+1}`;
+        let anim_time = this.DefaultAnimation[anim_string]
+                            .map(x => this.UEAnimationCandidate[`UE-${x}`].duration)
+                            .reduce((acc, curr) => acc + curr, 0);
+        this.animID_cnt++;
+        add_flag++;
+        
+        if (anim_time < this.EvaluateTime) {
+          this.UEanimQueue.push( `讲话-${this.animID_cnt%4+1}` );
+          break;
+        }
+        if (add_flag > 4) break;
+      
+      }
     }
     
     

@@ -18,8 +18,8 @@ def main():
                     break
                 # 打印收到的消息
                 print(f"📥 收到消息: {data.decode('utf-8')}")
-                client_socket.sendall('True'.encode('utf-8'))
-                print("已发送应答")
+                # client_socket.sendall('True'.encode('utf-8'))
+                # print("已发送应答")
     
 
         except ConnectionRefusedError:
