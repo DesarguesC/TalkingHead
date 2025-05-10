@@ -763,6 +763,7 @@ let jwt = '';
 
 // Get JSON Web Token
 async function jwtGet() {
+  return "";
   const limit = Math.round(Date.now() / 1000) + 60;
   if ( jwtExpires < limit ) {
     try {
@@ -818,7 +819,7 @@ async function elevenSpeak(s,node=null) {
       elevenInputMsgs[0]["xi_api_key"] = apikey;
     } else {
       url = elevenTTSProxy[0];
-      url += await jwtGet();
+      // url += await jwtGet();
       url += elevenTTSProxy[1];
       url += cfg('voice-eleven-id');
       url += elevenTTSProxy[2];
@@ -1016,7 +1017,8 @@ async function microsoftProcessQueue() {
           endpoint = microsoftTTSEndpoint;
           config = window.SpeechSDK.SpeechConfig.fromEndpoint(endpoint, apikey);
         } else {
-          endpoint = microsoftTTSProxy[0] + await jwtGet() + microsoftTTSProxy[1];
+          // endpoint = microsoftTTSProxy[0] + await jwtGet() + microsoftTTSProxy[1];
+          endpoint = microsoftTTSProxy[0] + microsoftTTSProxy[1];
           config = window.SpeechSDK.SpeechConfig.fromEndpoint(endpoint);
         }
         config.setProperty("SpeechServiceConnection_Endpoint",endpoint);
@@ -1142,7 +1144,7 @@ async function whisperLoadMP3(file) {
         headers["Authorization"] = "Bearer " + apikey;
       } else {
         url = openaiAudioTranscriptionsProxy;
-        headers["Authorization"] = "Bearer " + await jwtGet()
+        headers["Authorization"] = "Bearer "; //+ await jwtGet()
       }
 
       const response = await fetch( url , {
@@ -1228,7 +1230,7 @@ async function whisperLoadMP3(file) {
         method: "POST",
         body: form,
         headers: {
-          "Authorization": "Bearer " + await jwtGet()
+          "Authorization": "Bearer " // + await jwtGet()
         }
       });
       if ( response.ok ) {
@@ -1479,7 +1481,7 @@ async function recordingRecord() {
               method: "POST",
               body: form,
               headers: {
-                "Authorization": "Bearer " + await jwtGet()
+                "Authorization": "Bearer " // + await jwtGet()
               }
             });
 
@@ -1511,7 +1513,7 @@ async function recordingRecord() {
               method: "POST",
               body: form,
               headers: {
-                "Authorization": "Bearer " + await jwtGet()
+                "Authorization": "Bearer " // + await jwtGet()
               }
             });
 
@@ -1937,7 +1939,7 @@ function openaiBuildMessage( extra_system_prompt = "") {
       msgs.push( { n: n, role: x.role, content: n.value } );
     }
     if(x.role === "system") {
-      n.value = condition + "仅返回20字-50字的中文, 禁用markdown格式 禁止分点作答." + extra_system_prompt; // 约定只有中文且无markdown
+      n.value = condition + "仅返回不超过100字的中文, 禁用markdown格式, 禁止分点作答." + extra_system_prompt; // 约定只有中文且无markdown
       // TODO: 在此添加约束（如有需要）
     }
   });
@@ -2000,7 +2002,7 @@ async function openaiModerateMessage(msgs) {
     headers["Authorization"] = "Bearer " + apikey;
   } else {
     url = openaiModerationsProxy;
-    headers["Authorization"] = "Bearer " + await jwtGet()
+    headers["Authorization"] = "Bearer " // + await jwtGet()
   }
 
   const text = modMsgs.map( x => x.content );
@@ -2065,7 +2067,7 @@ async function openaiSendMessage(node,msgs) {
     headers["Authorization"] = "Bearer " + apikey;
   } else {
     url = openaiChatCompletionsProxy;
-    headers["Authorization"] = "Bearer " + await jwtGet()
+    headers["Authorization"] = "Bearer " // + await jwtGet()
   }
 
   // Chat completion
@@ -2323,7 +2325,7 @@ async function grokSendMessage(node,msgs) {
     headers["Authorization"] = "Bearer " + apikey;
   } else {
     url = grokChatCompletionsProxy;
-    headers["Authorization"] = "Bearer " + await jwtGet()
+    headers["Authorization"] = "Bearer " // + await jwtGet()
   }
 
   // Chat completion
@@ -3003,7 +3005,7 @@ async function geminiSendMessage(node,msgs) {
         headers["x-goog-api-key"] = apikey;
       } else {
         url = geminiProxy + cfg("ai-model") + ':streamGenerateContent?alt=sse';
-        headers["Authorization"] = "Bearer " + await jwtGet()
+        headers["Authorization"] = "Bearer "; // + await jwtGet()
       }
 
       // Fetch the response from the Vertex AI API
