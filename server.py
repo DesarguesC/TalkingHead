@@ -16,10 +16,10 @@ app = Flask(__name__)
 CORS(app)  # 启用跨域支持
 
 # Llama 服务器地址
-LLAMA_SERVER = "http://192.168.23.84:7001"
-# LLAMA_SERVER = "http://127.0.0.1:7001"
-WHISPER_SERVER = "http://127.0.0.1:7002"
-GTTS_SERVER = "http://127.0.0.1:7010"
+# LLAMA_SERVER = "http://192.168.23.84:7001"
+LLAMA_SERVER = "http://10.162.175.238:7001"
+WHISPER_SERVER = "http://10.162.175.238:7002"
+GTTS_SERVER = "http://10.214.194.234:7010"
 # 服务静态文件（index.html 等）
 @app.route('/')
 def serve_index():
