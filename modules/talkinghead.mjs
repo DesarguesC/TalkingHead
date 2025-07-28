@@ -1245,6 +1245,44 @@ class TalkingHead {
     // Add avatar to scene
     this.scene.add(gltf.scene);
 
+
+    // 展示坐标轴
+        function makeLabel(text, color) {
+          const canvas = document.createElement('canvas');
+          const context = canvas.getContext('2d');
+          context.font = '50px Arial';
+          context.fillStyle = color;
+          context.fillText(text, 10, 50);
+          
+          const texture = new THREE.CanvasTexture(canvas);
+          const material = new THREE.SpriteMaterial({ map: texture, transparent: true });
+          const sprite = new THREE.Sprite(material);
+          sprite.scale.set(0.5, 0.25, 1); // 控制大小
+          return sprite;
+        }
+
+        const axesHelper = new THREE.AxesHelper(5);
+        this.scene.add(axesHelper);
+
+        // X 轴标签
+        const xLabel = makeLabel('X', 'red');
+        xLabel.position.set(5.5, 0, 0);
+        this.scene.add(xLabel);
+
+        // Y 轴标签
+        const yLabel = makeLabel('Y', 'green');
+        yLabel.position.set(0, 5.5, 0);
+        this.scene.add(yLabel);
+
+        // Z 轴标签
+        const zLabel = makeLabel('Z', 'blue');
+        zLabel.position.set(0, 0, 5.5);
+        this.scene.add(zLabel);
+
+        const gridHelper = new THREE.GridHelper(10, 10); // 网格大小 10，分 10 格
+        this.scene.add(gridHelper);
+    // 展示坐标轴
+
     // Add lights
     this.scene.add( this.lightAmbient );
     this.scene.add( this.lightDirect );
