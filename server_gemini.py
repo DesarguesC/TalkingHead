@@ -1,0 +1,567 @@
+# pip install flask_cors flask_socketio
+from flask import Flask, send_from_directory, request, jsonify, make_response
+from flask_cors import CORS
+from flask_socketio import SocketIO
+import requests
+import logging
+import socket
+import threading
+import time, pdb, os
+import json
+from uuid import uuid4
+from collections import deque
+from datetime import datetime
+
+# 互斥锁
+data_lock = threading.Lock()
+
+# 并发控制参数
+MAX_ACTIVE = 5
+TIMEOUT = 120  # 秒
+active_users = {}
+waiting_queue = deque()
+# 用于存放刚刚被踢出的用户SID ---
+timed_out_sids = set()
+
+def get_or_create_session_id():
+    """
+    获取或创建唯一sid，并将其存储在request上下文中以便全局使用。
+    """
+    # 检查当前请求上下文中是否已经处理过sid，避免重复执行
+    if not hasattr(request, 'sid'):
+        sid_from_cookie = request.cookies.get("sid")
+        if not sid_from_cookie:
+            # 如果cookie中没有，则创建一个新的
+            request.sid = str(uuid4())
+        else:
+            # 如果cookie中有，则使用它
+            request.sid = sid_from_cookie
+    return request.sid
+
+def cleanup():
+    """释放超时用户，并让等待队列的人进来"""
+    now = time.time()
+    with data_lock:
+        expired = [sid for sid, data in active_users.items() if now - data.get("last_activity", now) > TIMEOUT]
+        for sid in expired:
+            del active_users[sid]
+            # --- 将被踢出的用户SID加入超时集合 ---
+            timed_out_sids.add(sid)
+            logger.info(f"会话 {sid} 因超时释放，已标记为超时。")
+            if waiting_queue:
+                next_user = waiting_queue.popleft()
+                next_sid = next_user['sid']
+                active_users[next_sid] = {
+                    "ip": next_user['ip'],
+                    "connect_time": now,
+                    "last_activity": now
+                }
+                logger.info(f"等待用户 {next_sid} 进入网站")
+
+def get_client_ip():
+    return request.headers.get('X-Forwarded-For', request.remote_addr)
+
+def update_activity(sid):
+    """更新最后活跃时间"""
+    with data_lock:
+        if sid in active_users:
+            active_users[sid]["last_activity"] = time.time()
+
+UE_Animate = False
+# 配置日志
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+app = Flask(__name__)
+CORS(app)  # 启用跨域支持
+
+socketio = SocketIO(app, cors_allowed_origins="*")  # WebSocket支持
+
+
+@app.before_request
+def limit_connections():
+    """每个请求前检查并发限制"""
+    # 步骤 1: 确保每个请求都关联一个SID (无论是来自cookie还是新创建的)
+    sid = get_or_create_session_id()
+
+    # 步骤 2: 对特定请求不进行并发限制，但SID已经生成/获取
+    if request.endpoint in ("status", "socketio_message", "static", "serve_static", "monitor_page"):
+        return
+
+    # 步骤 3: 执行原有的并发控制逻辑
+    cleanup()
+
+    with data_lock:
+        if sid in active_users:
+            # 用户已在活跃列表，更新活跃时间
+            active_users[sid]["last_activity"] = time.time()
+        elif len(active_users) < MAX_ACTIVE:
+            # 活跃用户未满，直接加入
+            active_users[sid] = {
+                "ip": get_client_ip(),
+                "connect_time": time.time(),
+                "last_activity": time.time()
+            }
+            logger.info(f"新用户 {sid} 进入网站")
+        else:
+            # 人数已满，加入等待队列
+            if not any(w["sid"] == sid for w in waiting_queue):
+                waiting_queue.append({
+                    "sid": sid,
+                    "ip": get_client_ip(),
+                    "queue_enter_time": time.time()
+                })
+                logger.info(f"用户 {sid} 加入等待队列")
+            
+            # 注意：这里的响应也会被下面的 after_request 钩子处理，确保cookie被设置
+            return make_response("⏳ 人数已满，你正在等待队列中...")
+
+@app.route("/status")
+def status():
+    """返回用户当前是active, waiting,还是timed_out"""
+    cleanup()
+    sid = get_or_create_session_id()
+    with data_lock:
+        # --- 优先检查用户是否刚被踢出 ---
+        if sid in timed_out_sids:
+            timed_out_sids.remove(sid)  # 移除SID，此通知只发送一次
+            return jsonify({"status": "timed_out", "message": "会话已超时，请刷新页面重新排队。"})
+
+        if sid in active_users:
+            return jsonify({"status": "active"})
+        else:
+            position = -1
+            for i, user in enumerate(waiting_queue):
+                if user['sid'] == sid:
+                    position = i + 1
+                    break
+            # 如果不在等待队列，也返回waiting状态，让他开始排队
+            return jsonify({"status": "waiting", "position": position, "total": len(waiting_queue)})
+
+
+# Llama 服务器地址
+LLAMA_SERVER = "http://10.1.0.106:7001"
+WHISPER_SERVER = "http://10.1.0.106:7002"
+GTTS_SERVER = "http://127.0.0.1:7010"
+
+
+# ===== WebSocket事件 =====
+@socketio.on('connect')
+def ws_connect():
+    sid = request.cookies.get("sid")
+    if sid:
+        update_activity(sid)
+        logger.info(f"用户 {sid} WebSocket 连接建立")
+
+@socketio.on('heartbeat')
+def ws_heartbeat():
+    # 心跳包也应该更新活跃时间
+    sid = request.cookies.get("sid")
+    if sid:
+        update_activity(sid)
+        # logger.debug(f"收到 {sid} 心跳包")
+
+@socketio.on('disconnect')
+def ws_disconnect():
+    sid = request.cookies.get("sid")
+    with data_lock:
+        if sid in active_users:
+            del active_users[sid]
+            logger.info(f"用户 {sid} 关闭页面释放会话")
+            if waiting_queue:
+                # --- 从等待队列中提升用户时使用正确的数据结构 ---
+                next_user = waiting_queue.popleft()
+                next_sid = next_user['sid']
+                now = time.time()
+                active_users[next_sid] = {
+                    "ip": next_user['ip'],
+                    "connect_time": now,
+                    "last_activity": now
+                }
+                logger.info(f"等待用户 {next_sid} 进入网站")
+
+
+# 服务静态文件（index.html 等）
+@app.route('/')
+def serve_index():
+    return send_from_directory('.', 'test.html')
+
+# 服务其他静态文件（js, css, images 等）
+@app.route('/<path:path>')
+def serve_static(path):
+    if path == 'monitor':
+        return monitor_page()
+    return send_from_directory('.', path)
+
+
+UE_Socket_Host = '0.0.0.0'  # 本地地址
+UE_Socket_Port = 4000         # 目标端口
+# TCP_Socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+
+class SocketService:
+    def __init__(self, host='0.0.0.0', port=3000):
+        self.host = host
+        self.port = port
+        self.server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.server_socket.bind((self.host, self.port))
+        self.server_socket.listen(5)
+        print(f"🚀 服务正在监听 {self.host}:{self.port}")
+        client_socket, address = self.server_socket.accept()
+        self.client_socket = client_socket
+        self.address = address
+        print(f"🔌 客户端已连接：{self.address}")
+        
+    def handle_client(self, data_to_send = None):
+        # print(f"🔌 客户端已连接：{self.address}")
+        if data_to_send is None:
+            print(f"⚠️ 没有可发送的数据")
+            return
+        
+        message = json.dumps(data_to_send).encode('utf-8')
+        self.client_socket.sendall(message)
+        print(f"📤 已发送数据到 {self.address}: {message.decode('utf-8')}")
+
+    def start(self, data_to_send = None):
+        print("🟢 正在等待客户端连接...")
+        cnt = 0
+        while True:
+            cnt += 1
+            try:
+                
+                self.handle_client(data_to_send)
+                break
+            except KeyboardInterrupt:
+                print("\n🛑 服务终止")
+                try: self.client_socket.close()
+                except Exception as err: print(f"⚠️⚠️⚠️ 关闭客户端连接时出错: {err}")
+                print(f"🔒 已关闭与客户端 {self.address} 的连接")
+                self.server_socket.close()
+            except Exception as e:
+                print(f"⚠️ 接收客户端 [连接 & 传输]时出错: {e}")
+                print(f"待发送数据：{data_to_send}")
+                if cnt > 5:
+                    return jsonify({"error": "重传失败"}), 500
+        return jsonify({"message": "✅ 数据已发送"}), 200
+
+@app.route('/socket:ue/animation', methods=['POST'])
+def animation():
+    if UE_Animate:
+        global TCP_Socket
+        
+        try:
+            # 从请求体中获取数据
+            request_data = request.json
+            logger.info(f"收到动画请求: {request_data}")
+            print(f"✅ 已接收到数据: {request_data}")
+            if not request_data:
+                return jsonify({"error": "请求体不能为空"}), 400
+            
+            # 提取输入参数
+            action_data = request_data.get('action', [])
+            assert isinstance(action_data, list), f'action参数必须是列表: action = {action_data}'
+            
+            # 创建socket的json请求
+            response = {
+                "status": "success",
+                "code": 200,
+                "message": "Animation request processed successfully",
+                "data": {
+                    "action": action_data
+                }
+            }
+            # 将数据存储到 SocketService 实例中
+            
+            socket_response = TCP_Socket.start(response)
+            return socket_response
+    
+        except Exception as e:
+            print(f"⚠️ 处理 POST 请求时出错: {e}")
+            logger.error(f"通过 TCP 发送数据失败: {str(e)}")
+            return jsonify({
+                "error": {
+                    "code": 500,
+                    "message": str(e),
+                    "status": "INTERNAL"
+                }
+            }), 500  
+
+
+
+# 转发 llama 请求到指定服务器
+@app.route('/llama/v1/chat/completions', methods=['POST'])
+def llama_chat():
+    try:
+        logger.info(f"Forwarding request to {LLAMA_SERVER}")
+        logger.info(f"Request data: {request.json}")
+        
+        # 检查是否为流式请求
+        is_stream = request.json.get('stream', False)
+        
+        # 转发请求到 Llama 服务器
+        response = requests.post(
+            f"{LLAMA_SERVER}/v1/chat/completions",
+            json=request.json,
+            headers={
+                'Content-Type': 'application/json'
+            },
+            stream=is_stream  # 设置流式传输
+        )
+        
+        # 记录响应信息
+        logger.info(f"Response status code: {response.status_code}")
+        
+        # 如果是流式请求，直接流式返回响应
+        if is_stream:
+            def generate():
+                for chunk in response.iter_lines():
+                    if chunk:
+                        # logger.info(f"Response chunk: {chunk.decode('utf-8')}")
+                        yield chunk + b'\n\n'
+            
+            return generate(), response.status_code, {'Content-Type': 'text/event-stream'}
+        else:
+            # 非流式请求，返回完整的 JSON 响应
+            logger.info(f"Response content: {response.text}")
+            return response.json(), response.status_code
+        
+    except requests.exceptions.ConnectionError as e:
+        error_msg = f"Connection error: Could not connect to {LLAMA_SERVER}"
+        logger.error(error_msg)
+        logger.error(str(e))
+        return jsonify({
+            "error": "Connection Error",
+            "detail": error_msg,
+            "exception": str(e)
+        }), 503
+        
+    except requests.exceptions.RequestException as e:
+        error_msg = f"Request failed: {str(e)}"
+        logger.error(error_msg)
+        return jsonify({
+            "error": "Request Failed",
+            "detail": error_msg,
+            "exception": str(e)
+        }), 500
+        
+    except Exception as e:
+        error_msg = f"Unexpected error: {str(e)}"
+        logger.error(error_msg)
+        return jsonify({
+            "error": "Server Error",
+            "detail": error_msg,
+            "exception": str(e)
+        }), 500
+
+# 转发 gtts 请求到指定服务器
+@app.route('/gtts/', methods=['POST'])
+def gtts_chat():
+    try:
+        logger.info(f"Forwarding request to {GTTS_SERVER}")
+        logger.info(f"Request data: {request.json}")
+        
+        # 转发请求到 gtts 服务器
+        response = requests.post(
+            f"{GTTS_SERVER}/v1beta1/text:synthesize",
+            json=request.json,
+            headers={
+                'Content-Type': 'application/json'
+            },
+        )
+        
+        # 记录响应信息
+        logger.info(f"Response status code: {response.status_code}")
+        # 非流式请求，返回完整的 JSON 响应
+        # logger.info(f"Response content: {response.text}")
+        return response.json(), response.status_code
+        
+    except Exception as e:
+        logger.error(f"An error occurred: {str(e)}")
+        return jsonify({
+            "error": "An error occurred",
+            "message": str(e)
+        }), 500
+
+# 转发 whisper.cpp 请求到指定服务器
+@app.route('/whisper/inference', methods=['POST'])
+def whisper_chat():
+    try:
+        logger.info(f"Forwarding request to {WHISPER_SERVER}")
+        
+        # 获取请求中的文件
+        files = {}
+        if 'file' in request.files:
+            file = request.files['file']
+            files = {
+                'file': (file.filename, file.read(), file.content_type)
+            }
+        
+        # 获取表单数据
+        form_data = {}
+        for key in request.form:
+            form_data[key] = request.form[key]
+        
+        # 获取授权头
+        headers = {}
+        if 'Authorization' in request.headers:
+            headers['Authorization'] = request.headers['Authorization']
+        
+        # 转发请求到 whisper 服务器
+        response = requests.post(
+            f"{WHISPER_SERVER}/inference",
+            files=files,
+            data=form_data,
+            headers=headers
+        )
+        
+        # 记录响应信息
+        logger.info(f"Response status code: {response.status_code}")
+        
+        # 尝试返回JSON响应，如果不是JSON则返回原始内容
+        try:
+            return response.json(), response.status_code
+        except ValueError:
+            return response.content, response.status_code, {'Content-Type': response.headers.get('Content-Type')}
+        
+    except requests.exceptions.ConnectionError as e:
+        error_msg = f"Connection error: Could not connect to {WHISPER_SERVER}"
+        logger.error(error_msg)
+        logger.error(str(e))
+        return jsonify({
+            "error": "Connection Error",
+            "detail": error_msg,
+            "exception": str(e)
+        }), 503
+
+    except requests.exceptions.RequestException as e:
+        error_msg = f"Request failed: {str(e)}"
+        logger.error(error_msg)
+        return jsonify({
+            "error": "Request Failed",
+            "detail": error_msg,
+            "exception": str(e)
+        }), 500
+
+    except Exception as e:
+        error_msg = f"Unexpected error: {str(e)}"
+        logger.error(error_msg)
+        return jsonify({
+            "error": "Server Error",
+            "detail": error_msg,
+            "exception": str(e)
+        }), 500
+    
+@app.after_request
+def set_sid_if_needed(response):
+    """
+    在每个请求结束时检查是否需要设置sid cookie。
+    这是修复“多session-id”问题的核心。
+    """
+    try:
+        # 检查在请求处理过程中是否生成了sid
+        if hasattr(request, 'sid'):
+            # 如果请求中的cookie与我们最终确定的sid不一致（说明是新创建的sid）
+            # 就需要在响应中设置cookie
+            if request.cookies.get('sid') != request.sid:
+                response.set_cookie('sid', request.sid, max_age=3600*24*7) # 设置7天有效期
+    except Exception as e:
+        # 即使发生异常，也确保程序不会崩溃
+        logger.error(f"设置SID Cookie时出错: {e}")
+    
+    return response
+
+def log_user_status_to_file():
+    """
+    将活跃用户和等待用户的状态信息格式化并写入到 user.txt 文件中。
+    """
+    header = f"{'session-id':<38}{'IP地址':<17}{'接入时间':<21}{'最后一次操作时间':<21}{'无操作时间(秒)':<17}{'等待时间(秒)':<15}\n"
+    separator = "-" * 130 + "\n"
+    
+    with open("user.txt", "w", encoding="utf-8") as f:
+        f.write(f"--- 用户状态更新于: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')} ---\n\n")
+        f.write(header)
+        f.write(separator)
+
+        now = time.time()
+        
+        with data_lock:
+            # 记录活跃用户
+            for sid, data in active_users.items():
+                ip = data.get('ip', '--')
+                connect_time_str = datetime.fromtimestamp(data.get('connect_time', 0)).strftime('%Y-%m-%d %H:%M:%S')
+                last_activity_str = datetime.fromtimestamp(data.get('last_activity', 0)).strftime('%Y-%m-%d %H:%M:%S')
+                idle_time = int(now - data.get('last_activity', now))
+                line = f"{sid:<38}{ip:<17}{connect_time_str:<21}{last_activity_str:<21}{idle_time:<17}{'--':<15}\n"
+                f.write(line)
+
+            # 记录等待用户
+            for user in waiting_queue:
+                sid = user.get('sid', 'N/A')
+                ip = user.get('ip', '--')
+                waiting_time = int(now - user.get('queue_enter_time', now))
+                line = f"{sid:<38}{ip:<17}{'--':<21}{'--':<21}{'--':<17}{waiting_time:<15}\n"
+                f.write(line)
+        
+        f.write("\n--- 日志结束 ---\n")
+
+def run_periodic_logging():
+    """
+    每隔30秒调用一次日志记录函数。
+    """
+    while True:
+        try:
+            log_user_status_to_file()
+        except Exception as e:
+            logger.error(f"Failed to log user status: {e}")
+        time.sleep(10)
+
+@app.route('/monitor')
+def monitor_page():
+    """
+    在网页上展示 user.txt 的内容。
+    """
+    try:
+        # 读取日志文件的全部内容
+        with open("user.txt", "r", encoding="utf-8") as f:
+            content = f.read()
+        
+        # 使用 <pre> 标签可以保留原始文本的换行和空格格式
+        # style 属性让页面更好看一些：黑色背景、白色文字、自动换行
+        html_content = f"""
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <title>用户状态监控</title>
+            <meta http-equiv="refresh" content="5">
+            <style>
+                body {{ background-color: #1e1e1e; color: #d4d4d4; font-family: Consolas, monaco, monospace; }}
+                pre {{ white-space: pre-wrap; word-wrap: break-word; }}
+            </style>
+        </head>
+        <body>
+            <pre>{content}</pre>
+        </body>
+        </html>
+        """
+        return html_content, 200
+
+    except FileNotFoundError:
+        return "日志文件 'user.txt' 尚未生成，请稍后刷新。", 404
+    except Exception as e:
+        return f"读取日志文件时出错: {e}", 500
+    
+if __name__ == '__main__':
+    is_main_process = os.environ.get('WERKZEUG_RUN_MAIN') == 'true'
+
+    if is_main_process:
+        # 在主线程中启动后台日志记录线程 ---
+        # 使用 daemon=True 确保主程序退出时，该线程也会随之退出
+        log_thread = threading.Thread(target=run_periodic_logging, daemon=True)
+        log_thread.start()
+        logger.info("后台用户状态日志记录线程已启动...")
+        
+        # 网络诊断时注释掉 
+        if os.environ.get('WERKZEUG_RUN_MAIN') == 'true' and UE_Animate:
+            # 只会在 Flask 的 "重载子进程" 中运行 —— 真正运行你的应用
+            TCP_Socket = SocketService(UE_Socket_Host, UE_Socket_Port) 
+    
+    app.run(host='0.0.0.0', port=8000, debug=True)
