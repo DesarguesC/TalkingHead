@@ -8,7 +8,6 @@ __pycache__
 user.txt
 *.fbx
 *.FBX
-*.glb
 .DS_Store
 
 
