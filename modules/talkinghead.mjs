@@ -2581,6 +2581,7 @@ class TalkingHead {
         for( let [mt,vs] of Object.entries(x.vs) ) {
 
           if ( this.mtAvatar.hasOwnProperty(mt) ) {
+            // TODO: 更新视素交互列表
             if ( vs[j+1] === null ) continue; // Last or unknown target, skip
 
             // Start value and target
@@ -2680,13 +2681,14 @@ class TalkingHead {
           this.playGesture( ...j );
           break;
 
-        case 'function':
+        case 'function': // TODO: animate also can be added here
           if ( j && typeof j === "function" ) {
             j();
           }
           break;
 
         case 'moveto':
+          break; // ignore original animations
           Object.entries(j.props).forEach( y => {
             if ( y[1] ) {
               this.poseTarget.props[y[0]].copy( y[1] );
@@ -2699,6 +2701,7 @@ class TalkingHead {
           break;
 
         case 'handLeft':
+          break; // ignore original animations
           this.ikSolve( {
             iterations: 20, root: "clavicle_l", effector: "middle_01_l",
             links: [
@@ -2711,6 +2714,7 @@ class TalkingHead {
 
 
         case 'handRight':
+          break; // ignore original animations
           this.ikSolve( {
             iterations: 20, root: "clavicle_r", effector: "middle_01_r",
             links: [
@@ -3445,7 +3449,9 @@ class TalkingHead {
 
       // Rescale lipsync and push to queue
       let delay = 0;
-      if ( item.anim ) {
+      if ( item.anim ) { // 直接来自于line.anim (audioPlaylist.push({anim: line.anim, audio: line.audio})) 
+        // line.anim: { template: 'visemes', ts: ..., vs: ...}
+        // TODO: check here
         // Find the lowest negative time point, if any
         delay = Math.abs(Math.min(0, ...item.anim.map( x => Math.min(...x.ts) ) ) );
         item.anim.forEach( x => {
