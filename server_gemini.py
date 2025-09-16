@@ -140,8 +140,9 @@ def status():
 
 
 # Llama 服务器地址
-LLAMA_SERVER = "http://10.1.0.106:7001"
-WHISPER_SERVER = "http://10.1.0.106:7002"
+LLAMA_SERVER = "http://127.0.0.1:7001" 
+# 需要用本机上的方法，整机测试时需将实验室服务器挂入子网中访问 (模拟后续使用内网API访问)
+WHISPER_SERVER = "http://127.0.0.1:7002"
 GTTS_SERVER = "http://127.0.0.1:7010"
 
 
