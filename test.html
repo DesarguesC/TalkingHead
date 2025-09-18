@@ -2881,6 +2881,8 @@ async function grokSendMessage(node,msgs) {
 // TODO: 加入动作option，仿照openaiSendMessage
 async function llamaSendMessage(node,msgs) {
 
+  const PROXY = llamaChatCompletionsProxy; // 部署时替换为Yue_Xiaoyin_ChatCompletionsProxy
+
   // Create a new AbortController instance
   aiController = new AbortController();
   const signal = aiController.signal;
@@ -2912,12 +2914,12 @@ async function llamaSendMessage(node,msgs) {
     // Elements
     node.dataset.output = '';
     let tts = '';
+    let conv_id = '';
     let fn = { id: '', name: '', arguments: '' }
 
     // Fetch the response from the Llama.cpp server
-    tts = '';
-    console.log(body)
-    const res = await fetch( llamaChatCompletionsProxy, {
+    // console.log(body)
+    const res = await fetch( PROXY, {
       method: "POST",
       mode: "cors",
       headers: {
@@ -2928,7 +2930,6 @@ async function llamaSendMessage(node,msgs) {
       signal
     });
 
-    
 
     if ( res.ok ) {
 
@@ -2971,22 +2972,32 @@ async function llamaSendMessage(node,msgs) {
 
                 if ( obj && obj.error ) throw new Error( obj.error.message || ''+res.status );
                 // modified: 目前与async function openaiSendMessage一致，想加入action等
-                fn.id += obj?.choices?.[0]?.delta?.tool_calls?.[0]?.id || '';
-                fn.name += obj?.choices?.[0]?.delta?.tool_calls?.[0]?.function?.name || '';
-                fn.arguments += obj?.choices?.[0]?.delta?.tool_calls?.[0]?.function?.arguments || '';
-                // modified: 目前与async function openaiSendMessage一致，想加入action等
-                node.dataset.output += obj?.choices?.[0]?.delta?.content || '';
-                tts += obj?.choices?.[0]?.delta?.content || '';
+                if (PROXY === llamaChatCompletionsProxy) {
+                  fn.id += obj?.choices?.[0]?.delta?.tool_calls?.[0]?.id || '';
+                  fn.name += obj?.choices?.[0]?.delta?.tool_calls?.[0]?.function?.name || '';
+                  fn.arguments += obj?.choices?.[0]?.delta?.tool_calls?.[0]?.function?.arguments || '';
+                  // modified: 目前与async function openaiSendMessage一致，想加入action等
+                  node.dataset.output += obj?.choices?.[0]?.delta?.content || '';
+                  tts += obj?.choices?.[0]?.delta?.content || '';
+                } else if (PROXY === Yue_Xiaoyin_ChatCompletionsProxy) {
+
+                  // TODO***: 解码后的格式？设置cookies，并连接好用于做tts的文字
+
+                  // ?
+                  fn.id += obj?.choices?.[0]?.delta?.tool_calls?.[0]?.id || '';
+                  fn.name += obj?.choices?.[0]?.delta?.tool_calls?.[0]?.function?.name || '';
+                  fn.arguments += obj?.choices?.[0]?.delta?.tool_calls?.[0]?.function?.arguments || '';
+                  node.dataset.output += obj?.choices?.[0]?.delta?.content || '';
+                  // ?
+                  tts += o+= obj?.data?.answer || '';
+                  conv_id += obj?.data?.conversation_id || '';
+
+                }
 
               }
             }
           });
         }
-
-        // tts = tts.trimStart().trimEnd();
-        // if (! /[\u4e00-\u9fa5]/.test(tts)) {
-        //   tts += ' ';
-        // }
         
         if ( tts.length > LengthThreshold + delta) {
           const indices = ['。', '！', '？']
@@ -3005,6 +3016,9 @@ async function llamaSendMessage(node,msgs) {
         
         
         if (done) {
+          if (conv_id) {
+            document.cookie = "conv_id=" + conv_id + "; path=" + PROXY;
+          }
           // 「TODO1: tts中的文字完全正常，仅前端显示不正常」
           if ( tts ) {
             let msg_ = tts.trimStart();

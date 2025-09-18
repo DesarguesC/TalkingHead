@@ -11,6 +11,8 @@ import json
 from uuid import uuid4
 from collections import deque
 from datetime import datetime
+import pandas as pd
+import csv
 
 # 互斥锁
 data_lock = threading.Lock()
@@ -22,6 +24,25 @@ active_users = {}
 waiting_queue = deque()
 # 用于存放刚刚被踢出的用户SID ---
 timed_out_sids = set()
+
+def write_csv(filePath: str = './configs/session_dict.csv', session_id: str = None, conversation_id: str = None):
+    if session_id is None:
+        return
+    if not os.path.exists(filePath):
+        return
+    written_dict = {
+        "session_id": session_id,
+        "conversation_id": conversation_id if conversation_id else ""
+    }
+    ori_dict = pd.read_csv(filePath).to_dict(orient='records')
+    ori_dict[session_id] = conversation_id # 直接覆盖，不存在时相当于就直接加入
+    with open(filePath, 'w', newline='') as f:
+        # 直接覆写
+        writer = csv.DictWriter(f, fieldnames=written_dict.keys())
+        writer.writeheader()
+        writer.writerows(ori_dict)
+    return
+
 
 def get_or_create_session_id():
     """
@@ -37,6 +58,9 @@ def get_or_create_session_id():
             # 如果cookie中有，则使用它
             request.sid = sid_from_cookie
     return request.sid
+
+def get_conversation_id(session_id: str = None):
+    return request.json.get('conv_id', request.get("conv_id", request.cookies.get("conv_id", "")))
 
 def cleanup():
     """释放超时用户，并让等待队列的人进来"""
@@ -472,17 +496,20 @@ body [original]
 def yuexiaoyin_chat():
     # 请求结构转换
     query = request.json.get('messages', [{"content": ""}])[-1].get("content", "") # 只需要当前提问；单轮对话，无上下文
+    session_id = get_or_create_session_id() # 此时必有id，直接获取
+    conv_id = get_conversation_id() # 获取上下文ID，可能为空（""），如果已经返回过，js中会放在cookies里
     logger.info(f"Extracted query: {query}") # DEBUG
     new_request = jsonify({
         "inputs": "", 
         "query": query,
         "response_mode": "streaming",
-        "conversation_id": request.json.get('conversation_id', ""), # 后续放在request中
+        "conversation_id": conv_id, # 后续放在request中
         "user": "", # 给什么填什么
         "files":[]
     })
     # TODO: inputs里面的role, content, name等结构体字段可能需要修改
     logger.info(f"Extracted New Request: {new_request}") # DEBUG
+    print(f"Extracted New Request: {new_request}")
 
     try:
         logger.info(f"Forwarding request to {LLAMA_SERVER}")
@@ -753,6 +780,12 @@ if __name__ == '__main__':
         log_thread = threading.Thread(target=run_periodic_logging, daemon=True)
         log_thread.start()
         logger.info("后台用户状态日志记录线程已启动...")
+
+        init_dict = {'session_id': 'test_id', 'conversation_id': 'test_id'}
+        with open('./configs/key.csv', 'r') as f:
+            writer = csv.DictWriter(f, fieldnames=data.keys())
+            writer.writeheader()
+            writer.writerow(data)
         
         # 网络诊断时注释掉 
         if os.environ.get('WERKZEUG_RUN_MAIN') == 'true' and UE_Animate:
