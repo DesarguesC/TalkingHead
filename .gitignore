@@ -10,5 +10,6 @@ user.txt
 *.FBX
 avatars/
 .DS_Store
+configs/
 
 
