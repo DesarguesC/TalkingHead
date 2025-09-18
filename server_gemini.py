@@ -141,6 +141,7 @@ def status():
 
 # Llama 服务器地址
 LLAMA_SERVER = "http://127.0.0.1:7001" 
+Yuexiaoyin_SERVER = "https://api.yuexiaoyin.com"  # TODO: 替换为内网实际地址
 # 需要用本机上的方法，整机测试时需将实验室服务器挂入子网中访问 (模拟后续使用内网API访问)
 WHISPER_SERVER = "http://127.0.0.1:7002"
 GTTS_SERVER = "http://127.0.0.1:7010"
@@ -286,7 +287,7 @@ def animation():
                 }
             }), 500  
 
-@app.route('/app/jwt/get', methods=['POST'])
+# @app.route('/app/jwt/get', methods=['POST'])
 def get_jwt():
     try:
         filePath = request.json.get('filePath', None)
@@ -338,9 +339,30 @@ def get_jwt():
         print(f"⚠️ 处理 GET 请求时出错: {e}")
         logger.error(f"获取 JWT 失败: {str(e)}")
 
+def get_apikey(filePath='./key.csv'):
+    try:
+        filePath = request.json.get('filePath', None)
+        env_key = os.environ.get('USE_APIKEY')
+        if env_key:            
+            # 创建jwtGet所需的json返回
+            logger.info(f"Using JWT from environment variable USE_APIKEY = {env_key}.")
+            return env_key
+        elif filePath:
+            logger.info(f"Reading JWT from file: {filePath}")
+            if os.path.exists(filePath):
+                if filePath.endswith('.csv'): 
+                    file_key = pandas.read_csv(filePath)['key'][0]
+                else: # txt, etc.
+                    with open(filePath, 'r') as f:
+                        file_key = f.read().strip()
+                return file_key
+    except Exception as e:
+        print(f"⚠️ 处理 GET 请求时出错: {e}")
+        logger.error(f"获取 JWT 失败: {str(e)}")
+        return ""
 
 # 转发 llama 请求到指定服务器
-@app.route('/llama/v1/chat/completions', methods=['POST'])
+@app.route('/lllama/v1/chat/completions', methods=['POST'])
 def llama_chat():
     try:
         logger.info(f"Forwarding request to {LLAMA_SERVER}")
@@ -354,7 +376,128 @@ def llama_chat():
             f"{LLAMA_SERVER}/v1/chat/completions",
             json=request.json,
             headers={
-                'Content-Type': 'application/json'
+                'Content-Type': 'application/json',
+                'Authorization': f"Bearer {get_apikey()}"
+            },
+            stream=is_stream  # 设置流式传输
+        )
+        
+        # 记录响应信息
+        logger.info(f"Response status code: {response.status_code}")
+        
+        # 如果是流式请求，直接流式返回响应
+        if is_stream:
+            def generate():
+                for chunk in response.iter_lines():
+                    if chunk:
+                        # logger.info(f"Response chunk: {chunk.decode('utf-8')}")
+                        yield chunk + b'\n\n'
+            
+            return generate(), response.status_code, {'Content-Type': 'text/event-stream'}
+        else:
+            # 非流式请求，返回完整的 JSON 响应
+            logger.info(f"Response content: {response.text}")
+            return response.json(), response.status_code
+        
+    except requests.exceptions.ConnectionError as e:
+        error_msg = f"Connection error: Could not connect to {LLAMA_SERVER}"
+        logger.error(error_msg)
+        logger.error(str(e))
+        return jsonify({
+            "error": "Connection Error",
+            "detail": error_msg,
+            "exception": str(e)
+        }), 503
+        
+    except requests.exceptions.RequestException as e:
+        error_msg = f"Request failed: {str(e)}"
+        logger.error(error_msg)
+        return jsonify({
+            "error": "Request Failed",
+            "detail": error_msg,
+            "exception": str(e)
+        }), 500
+        
+    except Exception as e:
+        error_msg = f"Unexpected error: {str(e)}"
+        logger.error(error_msg)
+        return jsonify({
+            "error": "Server Error",
+            "detail": error_msg,
+            "exception": str(e)
+        }), 500
+
+
+"""
+llamaChatCompletionsProxy [javascript fetch]
+    {
+        method: "POST",
+        mode: "cors",
+        headers: {
+            "Content-Type": "application/json",
+            "Authorization": "Bearer " + await jwtGet() // TODO: apikey
+        },
+        body: JSON.stringify(body),
+        signal
+    }
+
+body [original] 
+    {
+      model: cfg('ai-model'),
+      messages: msgs.map( x => {
+        const {role,content,name} = x;
+        return (name ? {role,content,name} : {role,content});
+      }),
+      temperature: cfg('ai-openai-temperature'),
+      presence_penalty: cfg('ai-openai-presence'),
+      frequency_penalty: cfg('ai-openai-frequency'),
+      max_tokens: cfg('ai-openai-output'),
+      stream: true
+    };
+
+=> [new]
+    {
+        "inputs": {},
+        "query": Question,
+        "response_mode": "streaming",
+        "conversation_id": "",
+        "user": "",
+        "files":[] 
+    }
+
+"""
+
+# @app.route('/yuexiaoyin/v1/chat/completions', methods=['POST'])
+@app.route('/llama/v1/chat/completions', methods=['POST'])
+def yuexiaoyin_chat():
+    # 请求结构转换
+    query = request.json.get('messages', [{"content": ""}])[-1].get("content", "") # 只需要当前提问；单轮对话，无上下文
+    logger.info(f"Extracted query: {query}") # DEBUG
+    new_request = jsonify({
+        "inputs": "", 
+        "query": query,
+        "response_mode": "streaming",
+        "conversation_id": request.json.get('conversation_id', ""), # 后续放在request中
+        "user": "", # 给什么填什么
+        "files":[]
+    })
+    # TODO: inputs里面的role, content, name等结构体字段可能需要修改
+    logger.info(f"Extracted New Request: {new_request}") # DEBUG
+
+    try:
+        logger.info(f"Forwarding request to {LLAMA_SERVER}")
+        logger.info(f"Request data: {request.json}")
+        
+        # 检查是否为流式请求
+        is_stream = request.json.get('stream', False)
+        
+        # 转发请求到 Llama 服务器
+        response = requests.post(
+            f"{LLAMA_SERVER}/v1/chat/completions", # TODO: 替换为 Yuexiaoyin_SERVER，以及后面的路由需要替换
+            json=request.json,
+            headers={
+                'Content-Type': 'application/json',
+                'Authorization': f"Bearer {get_apikey()}"
             },
             stream=is_stream  # 设置流式传输
         )

@@ -7,7 +7,7 @@ export const site = {
       // url: './avatars/brunette.glb',
       // url: './avatars/Body_Face_All4.glb',
       url: './avatars/Police_Webgl_Rig_002.glb',
-      default: './animations/U_Idle_01_Short04_Cycle_test.glb', // 待机动作
+      default: './animations/Idle_01to04.glb', // 待机动作
       body: 'F',
       avatarMood: 'neutral',
       fi: 'XiaoyinYue'

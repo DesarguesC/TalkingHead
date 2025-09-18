@@ -207,6 +207,7 @@ class TalkingHead {
     // Pose templates
     // NOTE: The body weight on each pose should be on left foot
     // for most natural result.
+    this.poseCounter = {};
     this.poseTemplates = {
 
       'default': {
@@ -2668,6 +2669,12 @@ class TalkingHead {
           break;
 
         case 'pose': // 「TODO3: 这里Templates中仅保留一个动作default动作，为默认的正常的待机静态动作；其余全部删除」
+          if (this.poseCounter.hasOwnProperty(j)) {
+            this.poseCounter[j] += 1;
+          } else {
+            this.poseCounter[j] = 1;
+          }
+
           if ( this.GLBmotion ) {
             this.playAnimation( j ? j : this.GLBdefaultPose);
           } else {
@@ -2865,6 +2872,8 @@ class TalkingHead {
     }
 
     this.render();
+
+    console.log('动作模板计数: ', this.poseCounter);
 
   }
 

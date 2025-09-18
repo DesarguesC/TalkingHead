@@ -913,6 +913,9 @@ const geminiProxy = "/gemini/";
 const grokChatCompletionsProxy = "/grok/v1/chat/completions"; // Grok-beta
 const llamaChatCompletionsProxy = "/llama/v1/chat/completions"; // Local llama.cpp server proxy
 
+const Yue_Xiaoyin_ChatCompletionsProxy = "/yuexiaoyin/v1/chat/completions"; // outside API proxy
+// TODO: 接入时用这个代理替代llamaChatCompletionsProxy即可
+
 const UESocketProxy = "/socket:ue/animation";
 
 //TTS
@@ -1140,53 +1143,7 @@ let jwt = '';
 
 // Get JSON Web Token
 async function jwtGet(filePath='./key.csv') {
-  // if (window.USE_APIKEY) {
-  //   const apikey = String(window.USE_APIKEY).trim();
-  //   console.log(apikey);
-  //   return apikey;
-  // }
-  // // 2. 检查文件是否存在
-  // if (filePath && !fs.existsSync(filePath)) {
-  //   throw new Error(`指定的路径不存在: ${filePath}`);
-  // }
-
-  // const ext = path.extname(filePath).toLowerCase();
-
-  // // 3. txt 文件处理
-  // if (ext === ".txt") {
-  //   const content = fs.readFileSync(filePath, "utf-8").trim();
-  //   if (!content) {
-  //     throw new Error(`txt 文件为空: ${filePath}`);
-  //   }
-  //   return content;
-  // }
-
-  // // 4. csv 文件处理
-  // if (ext === ".csv") {
-  //   const content = fs.readFileSync(filePath, "utf-8").trim();
-  //   const lines = content.split(/\r?\n/);
-
-  //   if (lines.length < 2) {
-  //     throw new Error(`csv 文件内容不足: ${filePath}`);
-  //   }
-
-  //   const headers = lines[0].split(",");
-  //   const values = lines[1].split(",");
-
-  //   const keyIndex = headers.indexOf("key");
-  //   if (keyIndex === -1) {
-  //     throw new Error(`csv 文件缺少 'key' 列: ${filePath}`);
-  //   }
-
-  //   const apikey = values[keyIndex]?.trim();
-  //   if (!apikey) {
-  //     throw new Error(`csv 文件中的 key 值为空: ${filePath}`);
-  //   }
-
-  //   return apikey;
-  // }
-
-  // throw new Error(`不支持的文件类型: ${ext}`);
+  return ""; // 用在server中获得
   const apikey = await (await fetch( jwtEndpoint, {
       method: "POST",
       mode: "cors",
@@ -1201,11 +1158,9 @@ async function jwtGet(filePath='./key.csv') {
   
   if ( !apikey || apikey.code != 200 ) { return ""; }
   else { 
-    console.log("GET JWT from server: ", apikey.data['jwt']);
+    // console.log("GET JWT from server: ", apikey.data['jwt']);
     return apikey.data['jwt'];
   }
-
- 
   const limit = Math.round(Date.now() / 1000) + 60;
   if ( jwtExpires < limit ) {
     try {
@@ -2961,6 +2916,7 @@ async function llamaSendMessage(node,msgs) {
 
     // Fetch the response from the Llama.cpp server
     tts = '';
+    console.log(body)
     const res = await fetch( llamaChatCompletionsProxy, {
       method: "POST",
       mode: "cors",
