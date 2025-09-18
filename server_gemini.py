@@ -671,7 +671,7 @@ def log_user_status_to_file():
     header = f"{'session-id':<38}{'IP地址':<17}{'接入时间':<21}{'最后一次操作时间':<21}{'无操作时间(秒)':<17}{'等待时间(秒)':<15}\n"
     separator = "-" * 130 + "\n"
     
-    with open("user.txt", "w", encoding="utf-8") as f:
+    with open("./configs/user.txt", "w", encoding="utf-8") as f:
         f.write(f"--- 用户状态更新于: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')} ---\n\n")
         f.write(header)
         f.write(separator)
