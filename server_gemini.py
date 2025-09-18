@@ -286,6 +286,57 @@ def animation():
                 }
             }), 500  
 
+@app.route('/app/jwt/get', methods=['POST'])
+def get_jwt():
+    try:
+        filePath = request.json.get('filePath', None)
+        env_key = os.environ.get('USE_APIKEY')
+        if env_key:            
+            # 创建jwtGet所需的json返回
+            logger.info(f"Using JWT from environment variable USE_APIKEY = {env_key}.")
+            return jsonify({
+                "status": "success",
+                "code": 200,
+                "message": "JWT request processed successfully",
+                "data": {
+                    "jwt": env_key
+                }
+            }), 200
+        elif filePath:
+            logger.info(f"Reading JWT from file: {filePath}")
+            if os.path.exists(filePath):
+                if filePath.endswith('.csv'): file_key = pandas.read_csv(filePath)['key'][0]
+                else: # txt, etc.
+                    with open(filePath, 'r') as f:
+                        file_key = f.read().strip()
+                return jsonify({
+                    "status": "success",
+                    "code": 200,
+                    "message": "JWT request processed successfully",
+                    "data": {
+                        "jwt": file_key
+                    }
+                }), 200
+            else:
+                return jsonify({
+                    "error": {
+                        "code": 404,
+                        "message": f"文件路径 {filePath} 不存在",
+                        "status": "BAD_REQUEST"
+                    }
+                }), 404
+        else:
+            return jsonify({
+                    "status": "success",
+                    "code": 204,
+                    "message": "JWT request got an empty return",
+                    "data": {
+                        "jwt": ""
+                    }
+            }), 204
+    except Exception as e:
+        print(f"⚠️ 处理 GET 请求时出错: {e}")
+        logger.error(f"获取 JWT 失败: {str(e)}")
 
 
 # 转发 llama 请求到指定服务器

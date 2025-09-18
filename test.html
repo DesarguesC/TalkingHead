@@ -1139,8 +1139,73 @@ let jwtExpires = 0;
 let jwt = '';
 
 // Get JSON Web Token
-async function jwtGet() {
-  return "";
+async function jwtGet(filePath='./key.csv') {
+  // if (window.USE_APIKEY) {
+  //   const apikey = String(window.USE_APIKEY).trim();
+  //   console.log(apikey);
+  //   return apikey;
+  // }
+  // // 2. 检查文件是否存在
+  // if (filePath && !fs.existsSync(filePath)) {
+  //   throw new Error(`指定的路径不存在: ${filePath}`);
+  // }
+
+  // const ext = path.extname(filePath).toLowerCase();
+
+  // // 3. txt 文件处理
+  // if (ext === ".txt") {
+  //   const content = fs.readFileSync(filePath, "utf-8").trim();
+  //   if (!content) {
+  //     throw new Error(`txt 文件为空: ${filePath}`);
+  //   }
+  //   return content;
+  // }
+
+  // // 4. csv 文件处理
+  // if (ext === ".csv") {
+  //   const content = fs.readFileSync(filePath, "utf-8").trim();
+  //   const lines = content.split(/\r?\n/);
+
+  //   if (lines.length < 2) {
+  //     throw new Error(`csv 文件内容不足: ${filePath}`);
+  //   }
+
+  //   const headers = lines[0].split(",");
+  //   const values = lines[1].split(",");
+
+  //   const keyIndex = headers.indexOf("key");
+  //   if (keyIndex === -1) {
+  //     throw new Error(`csv 文件缺少 'key' 列: ${filePath}`);
+  //   }
+
+  //   const apikey = values[keyIndex]?.trim();
+  //   if (!apikey) {
+  //     throw new Error(`csv 文件中的 key 值为空: ${filePath}`);
+  //   }
+
+  //   return apikey;
+  // }
+
+  // throw new Error(`不支持的文件类型: ${ext}`);
+  const apikey = await (await fetch( jwtEndpoint, {
+      method: "POST",
+      mode: "cors",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": "Bearer",
+      },
+      body: JSON.stringify({
+        filePath: filePath
+      }),
+    })).json();
+  
+  if ( !apikey || apikey.code != 200 ) { return ""; }
+  else { 
+    console.log("GET JWT from server: ", apikey.data['jwt']);
+    return apikey.data['jwt'];
+  }
+
+ 
   const limit = Math.round(Date.now() / 1000) + 60;
   if ( jwtExpires < limit ) {
     try {
@@ -1196,7 +1261,7 @@ async function elevenSpeak(s,node=null) {
       elevenInputMsgs[0]["xi_api_key"] = apikey;
     } else {
       url = elevenTTSProxy[0];
-      // url += await jwtGet();
+      url += await jwtGet();
       url += elevenTTSProxy[1];
       url += cfg('voice-eleven-id');
       url += elevenTTSProxy[2];
@@ -1521,7 +1586,7 @@ async function whisperLoadMP3(file) {
         headers["Authorization"] = "Bearer " + apikey;
       } else {
         url = openaiAudioTranscriptionsProxy;
-        headers["Authorization"] = "Bearer "; //+ await jwtGet()
+        headers["Authorization"] = "Bearer " + await jwtGet();
       }
 
       const response = await fetch( url , {
@@ -1607,7 +1672,7 @@ async function whisperLoadMP3(file) {
         method: "POST",
         body: form,
         headers: {
-          "Authorization": "Bearer " // + await jwtGet()
+          "Authorization": "Bearer " + await jwtGet()
         }
       });
       if ( response.ok ) {
@@ -1858,7 +1923,7 @@ async function recordingRecord() {
               method: "POST",
               body: form,
               headers: {
-                "Authorization": "Bearer " // + await jwtGet()
+                "Authorization": "Bearer " + await jwtGet()
               }
             });
 
@@ -1890,7 +1955,7 @@ async function recordingRecord() {
               method: "POST",
               body: form,
               headers: {
-                "Authorization": "Bearer " // + await jwtGet()
+                "Authorization": "Bearer " + await jwtGet()
               }
             });
 
@@ -2381,7 +2446,7 @@ async function openaiModerateMessage(msgs) {
     headers["Authorization"] = "Bearer " + apikey;
   } else {
     url = openaiModerationsProxy;
-    headers["Authorization"] = "Bearer " // + await jwtGet()
+    headers["Authorization"] = "Bearer " + await jwtGet()
   }
 
   const text = modMsgs.map( x => x.content );
@@ -2446,7 +2511,7 @@ async function openaiSendMessage(node,msgs) {
     headers["Authorization"] = "Bearer " + apikey;
   } else {
     url = openaiChatCompletionsProxy;
-    headers["Authorization"] = "Bearer " // + await jwtGet()
+    headers["Authorization"] = "Bearer " + await jwtGet()
   }
 
   // Chat completion
@@ -2704,7 +2769,7 @@ async function grokSendMessage(node,msgs) {
     headers["Authorization"] = "Bearer " + apikey;
   } else {
     url = grokChatCompletionsProxy;
-    headers["Authorization"] = "Bearer " // + await jwtGet()
+    headers["Authorization"] = "Bearer " + await jwtGet()
   }
 
   // Chat completion
@@ -2901,7 +2966,7 @@ async function llamaSendMessage(node,msgs) {
       mode: "cors",
       headers: {
         "Content-Type": "application/json",
-        "Authorization": "Bearer " // + await jwtGet()
+        "Authorization": "Bearer " + await jwtGet() // TODO: apikey
       },
       body: JSON.stringify(body),
       signal
@@ -3029,7 +3094,7 @@ async function llamaSendMessage(node,msgs) {
                 mode: "cors",
                 headers: {
                   "Content-Type": "application/json",
-                  "Authorization": "Bearer " // + await jwtGet()
+                  "Authorization": "Bearer " + await jwtGet()
                 },
                 body: JSON.stringify(socket_body),
                 signal
@@ -3321,7 +3386,7 @@ async function geminiSendMessage(node,msgs) {
         headers["x-goog-api-key"] = apikey;
       } else {
         url = geminiProxy + cfg("ai-model") + ':streamGenerateContent?alt=sse';
-        headers["Authorization"] = "Bearer "; // + await jwtGet()
+        headers["Authorization"] = "Bearer " + await jwtGet()
       }
 
       // Fetch the response from the Vertex AI API
@@ -5482,7 +5547,7 @@ document.addEventListener('DOMContentLoaded', async function(e) {
   try {
 
     // Get token
-    jwt = ''; // await jwtGet();
+    jwt = await jwtGet();
 
     // Show last avatar
     let o = {};
