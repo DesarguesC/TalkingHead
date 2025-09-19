@@ -208,6 +208,48 @@ class TalkingHead {
     // NOTE: The body weight on each pose should be on left foot
     // for most natural result.
     this.poseCounter = {};
+    this.AnimationFA_route = {
+      'default': ['U_Idle_01_Cycle.glb'],
+      'standby1': ['Idle_01to03.glb', 'Idle_03_Cycle.glb', 'Idle_03to01.glb'],
+      'standby2': ['Idle_01to04.glb', 'Idle_04_Cycle.glb', 'Idle_04to01.glb'],
+      'talk-1': ['Idle_01to04.glb', 'Idle_04_Cycle.glb', 'Idle_04to01.glb', 'U_Speech_08_Cycle_T1_02.glb'],
+      'talk-2': ['Idle_01to04.glb', 'Idle_04_Cycle.glb', 'Idle_04to01.glb', 'U_Speech_08_Cycle_T1_04.glb'],
+      'talk-3': ['Idle_01to04.glb', 'Idle_04_Cycle.glb', 'Idle_04to01.glb', 'U_Speech_08_Cycle_T1_06.glb'],
+      'talk-4': ['Idle_01to04.glb', 'Idle_04_Cycle.glb', 'Idle_04to01.glb', 'U_Speech_08_Cycle_T1_08.glb'],
+      'speech-1': ['5Talk_03_01.glb'],
+      'speech-2': ['5Talk_03_02.glb']
+    }
+    this.TimeList = {
+      'default': 7.10,
+      'standby1': 21.27,
+      'standby2': 9.49,
+      'talk-1': 15.12,
+      'talk-2': 14.09,
+      'talk-3': 15.32,
+      'talk-4': 15.32,
+      'speech-1': 14.50,
+      'speech-2': 7.53
+    }
+    this.poseTransfer = { // 这里按照可待机的默认动作加
+      'default': '',  // 默认动作
+      'side': 'default',
+      'hip': 'standby-2',
+      'turn': '',
+      'bend': '',
+      'back': '',
+      'straight': 'standby-1',
+      'wide': '',
+      'oneknee': '',
+      'kneel': '',
+      'sitting': '',
+      'handup': '',
+      'index': '',
+      'ok': '',
+      'thumbup': '',
+      'thumbdown': '',
+      'shrug': '',
+      'namaste': ''
+    }; // 无填充的自动补全default
     this.poseTemplates = {
 
       'default': {
@@ -789,7 +831,7 @@ class TalkingHead {
 
     // Anim queues
     this.animQueue = [];
-
+    this.TalkQueue = []; // 讲话所需的动作控制
     this.UEanimQueue = [];
     // 对临界资源animSpeechQueue（在外部）的锁，默认为解锁状态，捕获到非零的animiSpeechQueue.length时锁定，长度置零时解锁 | 解锁时（false）可以this.UEanimQueue.push
     this.UEanimQueueActive = false;
@@ -2003,7 +2045,10 @@ class TalkingHead {
   * @param {Object} template Pose template, if null update current pose
   * @param {number} [ms=2000] Transition time in milliseconds
   */
-  setPoseFromTemplate(template, ms=2000) {
+  setPoseFromTemplate(template, ms=2000, useGLB=false, poseName=null) {
+    if (useGLB && poseName) {
+      // 使用 glb 文件中的姿势数据
+    }
 
     // Special cases
     const isIntermediate = template && this.poseTarget && this.poseTarget.template && ((this.poseTarget.template.standing && template.lying) || (this.poseTarget.template.lying && template.standing));
@@ -2124,7 +2169,6 @@ class TalkingHead {
       this.animQueue.push( this.animFactory( x, -1 ) ); // 表情控制，无需添加动作
     });
   
-
   }
 
 
@@ -2669,23 +2713,25 @@ class TalkingHead {
           break;
 
         case 'pose': // 「TODO3: 这里Templates中仅保留一个动作default动作，为默认的正常的待机静态动作；其余全部删除」
+          // 统计动作数量
+          console.log("动作触发:", j);
           if (this.poseCounter.hasOwnProperty(j)) {
             this.poseCounter[j] += 1;
           } else {
             this.poseCounter[j] = 1;
           }
-
-          if ( this.GLBmotion ) {
-            this.playAnimation( j ? j : this.GLBdefaultPose);
-          } else {
-            this.poseName = j;
-            this.setPoseFromTemplate( this.poseTemplates[ this.poseName ] ); // TODO：这里是加入glb动作的切口
-            // set this.poseTarget, act as [this.poseBase -> this.poseTarget]
-          }
+          // this.GLBmotion = true;
+          this.poseName = j;
+          this.setPoseFromTemplate(
+            this.poseTemplates[ this.poseName ], 
+            2000, this.GLBmotion, j
+          ); // TODO：这里是加入glb动作的切口
+          // set this.poseTarget, act as [this.poseBase -> this.poseTarget]
           break;
 
         case 'gesture':
-          this.playGesture( ...j );
+          // TODO: check type of `j`
+          this.playGesture( ...j, 3, false, 1000, this.GLBmotion, j ); // TODO：这里是加入glb动作的切口
           break;
 
         case 'function': // TODO: animate also can be added here
@@ -4450,7 +4496,10 @@ class TalkingHead {
   * @param {number} [ms=1000] Transition time in milliseconds
   */
   // 手势控制
-  playGesture(name, dur=3, mirror=false, ms=1000) {
+  playGesture(name, dur=3, mirror=false, ms=1000, useGLB=false, poseName=null) {
+    if (useGLB && poseName) {
+      // 同样使用 GLB 文件中的动作
+    }
 
     if ( !this.armature ) return;
 

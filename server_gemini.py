@@ -60,7 +60,10 @@ def get_or_create_session_id():
     return request.sid
 
 def get_conversation_id(session_id: str = None):
-    return request.json.get('conv_id', request.get("conv_id", request.cookies.get("conv_id", "")))
+    if not hasattr(request, 'conv_id'):
+        request.conv_id = request.cookies.get("conv_id", "")
+    return request.conv_id
+    # return request.get('conv_id', request.get("conv_id", request.cookies.get("conv_id", "")))
 
 def cleanup():
     """释放超时用户，并让等待队列的人进来"""
@@ -497,7 +500,7 @@ def yuexiaoyin_chat():
     # 请求结构转换
     query = request.json.get('messages', [{"content": ""}])[-1].get("content", "") # 只需要当前提问；单轮对话，无上下文
     session_id = get_or_create_session_id() # 此时必有id，直接获取
-    conv_id = get_conversation_id() # 获取上下文ID，可能为空（""），如果已经返回过，js中会放在cookies里
+    conv_id = get_conversation_id() # 获取上下文ID，可能为空（""），如果已经返回过，js中会放在cookies里 | 无需读写csv？
     logger.info(f"Extracted query: {query}") # DEBUG
     new_request = jsonify({
         "inputs": "", 
@@ -781,11 +784,11 @@ if __name__ == '__main__':
         log_thread.start()
         logger.info("后台用户状态日志记录线程已启动...")
 
-        init_dict = {'session_id': 'test_id', 'conversation_id': 'test_id'}
-        with open('./configs/key.csv', 'r') as f:
-            writer = csv.DictWriter(f, fieldnames=data.keys())
-            writer.writeheader()
-            writer.writerow(data)
+        # init_dict = {'session_id': 'test_id', 'conversation_id': 'test_id'}
+        # with open('./configs/key.csv', 'r') as f:
+        #     writer = csv.DictWriter(f, fieldnames=init_dict.keys())
+        #     writer.writeheader()
+        #     writer.writerow(data)
         
         # 网络诊断时注释掉 
         if os.environ.get('WERKZEUG_RUN_MAIN') == 'true' and UE_Animate:
