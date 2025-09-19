@@ -256,7 +256,6 @@ class SocketService:
         while True:
             cnt += 1
             try:
-                
                 self.handle_client(data_to_send)
                 break
             except KeyboardInterrupt:
@@ -389,7 +388,7 @@ def get_apikey(filePath='./key.csv'):
         return ""
 
 # 转发 llama 请求到指定服务器
-@app.route('/lllama/v1/chat/completions', methods=['POST'])
+@app.route('/llama/v1/chat/completions', methods=['POST'])
 def llama_chat():
     try:
         logger.info(f"Forwarding request to {LLAMA_SERVER}")
@@ -494,8 +493,8 @@ body [original]
 
 """
 
-# @app.route('/yuexiaoyin/v1/chat/completions', methods=['POST'])
-@app.route('/llama/v1/chat/completions', methods=['POST'])
+@app.route('/yuexiaoyin/v1/chat/completions', methods=['POST'])
+# @app.route('/llama/v1/chat/completions', methods=['POST'])
 def yuexiaoyin_chat():
     # 请求结构转换
     query = request.json.get('messages', [{"content": ""}])[-1].get("content", "") # 只需要当前提问；单轮对话，无上下文

@@ -2989,7 +2989,7 @@ async function llamaSendMessage(node,msgs) {
                   fn.arguments += obj?.choices?.[0]?.delta?.tool_calls?.[0]?.function?.arguments || '';
                   node.dataset.output += obj?.choices?.[0]?.delta?.content || '';
                   // ?
-                  tts += o+= obj?.data?.answer || '';
+                  tts += o+= obj?.data?.answer || ''; // TODO: obj.data中有无list形式？
                   conv_id += obj?.data?.conversation_id || '';
 
                 }
@@ -3017,7 +3017,7 @@ async function llamaSendMessage(node,msgs) {
         
         if (done) {
           if (conv_id) {
-            document.cookie = "conv_id=" + conv_id + "; path=" + PROXY;
+            document.cookies = "conv_id=" + conv_id + "; path=" + PROXY;
           }
           // 「TODO1: tts中的文字完全正常，仅前端显示不正常」
           if ( tts ) {
