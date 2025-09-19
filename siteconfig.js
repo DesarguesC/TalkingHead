@@ -89,7 +89,7 @@ export const site = {
     'test2': {url: './animations/U_Greet_05_Cycle_04.FBX', fi: 'Kävely' },
     'test3': {url: './animations/U_SceneChange_02_Cycle_01_03.FBX', fi: 'Kävely' },
 
-    'test_glb': {url: './animations/U_Idle_01_Short04_Cycle_test.glb', fi: 'Kävely' },
+    'test_glb': {url: './animations/U_Speech_08_Cycle_T1_06.glb', fi: 'Kävely' },
     'test_fbx': {url: './animations/Police_Webgl_Ani_002.fbx', fi: 'Kävely' }
   }, 
 

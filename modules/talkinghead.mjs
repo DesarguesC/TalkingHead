@@ -42,6 +42,7 @@ import{ DynamicBones } from './dynamicbones.mjs';
 
 import { segment, OutputFormat, addDict} from 'pinyin-pro';
 import CompleteDict from './complete.mjs';
+// import { linearToneMapping } from 'three/tsl';
 // import CompleteDict from "https://cdn.jsdelivr.net/npm/@pinyin-pro/data@1.2.0/dist/complete.min.js";
 addDict(CompleteDict);
 //  TODO: 就算加不了，分词以后把数字手动合并，给这部分做this.ReplaceNumberInString
@@ -209,7 +210,7 @@ class TalkingHead {
     // for most natural result.
     this.poseCounter = {};
     this.AnimationFA_route = {
-      'default': ['U_Idle_01_Cycle.glb'],
+      'standby0': ['U_Idle_01_Cycle.glb'],
       'standby1': ['Idle_01to03.glb', 'Idle_03_Cycle.glb', 'Idle_03to01.glb'],
       'standby2': ['Idle_01to04.glb', 'Idle_04_Cycle.glb', 'Idle_04to01.glb'],
       'talk-1': ['Idle_01to04.glb', 'Idle_04_Cycle.glb', 'Idle_04to01.glb', 'U_Speech_08_Cycle_T1_02.glb'],
@@ -219,10 +220,12 @@ class TalkingHead {
       'speech-1': ['5Talk_03_01.glb'],
       'speech-2': ['5Talk_03_02.glb']
     }
-    this.TimeList = {
-      'default': 7.10,
+    this.DefaultTimeList = {
+      'standby0': 7.10,
       'standby1': 21.27,
       'standby2': 9.49,
+    }
+    this.TalkTimeList = {
       'talk-1': 15.12,
       'talk-2': 14.09,
       'talk-3': 15.32,
@@ -232,12 +235,12 @@ class TalkingHead {
     }
     this.poseTransfer = { // 这里按照可待机的默认动作加
       'default': '',  // 默认动作
-      'side': 'default',
-      'hip': 'standby-2',
+      'side': 'standby0',
+      'hip': 'standby2',
       'turn': '',
       'bend': '',
       'back': '',
-      'straight': 'standby-1',
+      'straight': 'standby1',
       'wide': '',
       'oneknee': '',
       'kneel': '',
@@ -250,6 +253,10 @@ class TalkingHead {
       'shrug': '',
       'namaste': ''
     }; // 无填充的自动补全default
+
+
+
+
     this.poseTemplates = {
 
       'default': {
@@ -394,6 +401,11 @@ class TalkingHead {
         this.poseDelta.props[y+'_03'+x+'.quaternion'] = {x:0, y:0, z:0};
       });
     })
+
+    // Default Animations filter
+    Object.keys(this.poseTransfer).forEach( x => {
+      if (this.poseTransfer[x] === '') this.poseTransfer[x] == 'standby0';
+    });
 
     // Dynamically pick up all the property names that we need in the code
     const names = new Set();
@@ -832,11 +844,10 @@ class TalkingHead {
     // Anim queues
     this.animQueue = [];
     this.TalkQueue = []; // 讲话所需的动作控制
-    this.UEanimQueue = [];
     // 对临界资源animSpeechQueue（在外部）的锁，默认为解锁状态，捕获到非零的animiSpeechQueue.length时锁定，长度置零时解锁 | 解锁时（false）可以this.UEanimQueue.push
     this.UEanimQueueActive = false;
-    this.UElasttime = 0;
-    this.UEanimInterval = 0; // s
+    this.LastTime = 0;
+    this.animInterval = 0; // s
 
     this.duration_factor = 0.2;
 
@@ -2046,8 +2057,12 @@ class TalkingHead {
   * @param {number} [ms=2000] Transition time in milliseconds
   */
   setPoseFromTemplate(template, ms=2000, useGLB=false, poseName=null) {
+    // 已经规划好
     if (useGLB && poseName) {
       // 使用 glb 文件中的姿势数据
+      currentPose_candidates = this.poseTransfer.hasOwnProperty(poseName) ? this.poseTransfer[poseName] : 'standby0';
+      const animList = this.AnimationFA_route[currentPose_candidates]
+      animList.forEach(x => this.TalkQueue.push(x))
     }
 
     // Special cases
@@ -2573,30 +2588,6 @@ class TalkingHead {
     let isEyeContact = null;
     let isHeadMove = null;
     const tasks = [];
-
-    // 一个UE动作list[待机状态]
-    
-    if ( this.UEanimQueueActive && this.UEanimQueue.length === 0 ) {
-      if ( Date.now() - this.UElasttime >= this.UEanimInterval * 1000 ) {
-        this.UEanimQueue.push( `待机-${this.wait_ID%3+1}` ); // 开始执行时才计算Interval
-        this.wait_ID++;
-      }
-    }
-    // 间隔大于 interval 和 UEanimQueeu.length > 0 是等价的
-    // if ( Date.now() - this.UElasttime >= this.UEanimInterval * 1000 ) {
-      for( i=0, l=this.UEanimQueue.length; i<l; i++) {
-        const animID_string = this.UEanimQueue[i];
-        if (this.UEanimQueueActive) this.UEAnimateLike( animID_string );
-        this.UElasttime = Date.now();
-        this.UEanimQueue.splice(i--, 1);
-        l--;
-        this.UEanimInterval = this.DefaultAnimation[animID_string]
-          .map(x => this.UEAnimationCandidate[`UE-${x}`].duration)
-          .reduce((acc, curr) => acc + curr, 0);
-      }
-    // }
-    
-
     for( i=0, l=this.animQueue.length; i<l; i++ ) {
       // 仅允许eyecontact与viseme
       const x = this.animQueue[i];
@@ -2661,7 +2652,7 @@ class TalkingHead {
 
             // Update
             m.needsUpdate = true;
-
+          // TODO ***: candidate value of `mt` ?
           } else if ( mt === 'eyeContact' && vs[j] !== null && isEyeContact !== false ) {
             isEyeContact = Boolean(vs[j]) && this.useEyeContace;
           } else if ( mt === 'headMove' && vs[j] !== null && isHeadMove !== false ) {
@@ -2703,7 +2694,7 @@ class TalkingHead {
       switch(tasks[i].mt) {
 
         case 'speak':
-          this.speakText(j);
+          this.speakText(j); // j: 完整的文字返回
           break;
 
         case 'subtitles':
@@ -2714,7 +2705,7 @@ class TalkingHead {
 
         case 'pose': // 「TODO3: 这里Templates中仅保留一个动作default动作，为默认的正常的待机静态动作；其余全部删除」
           // 统计动作数量
-          console.log("动作触发:", j);
+          // console.log("动作触发:", j);
           if (this.poseCounter.hasOwnProperty(j)) {
             this.poseCounter[j] += 1;
           } else {
@@ -2722,6 +2713,7 @@ class TalkingHead {
           }
           // this.GLBmotion = true;
           this.poseName = j;
+          // this.poseTransfer表中的设定，这里只有待机动作，可以直接做
           this.setPoseFromTemplate(
             this.poseTemplates[ this.poseName ], 
             2000, this.GLBmotion, j
@@ -2781,7 +2773,7 @@ class TalkingHead {
     }
 
     // Eye contact
-    if (isEyeContact || isHeadMove) {
+    if (isEyeContact || isHeadMove) {
 
       // Get head position
       e.setFromQuaternion( this.poseAvatar.props['head.quaternion'] );
@@ -2798,26 +2790,28 @@ class TalkingHead {
         Object.assign( this.mtAvatar['EyeLookOutRight'], { system: e.y < 0 ? -e.y : 0, needsUpdate: true });
 
         // Head move
-        if ( isHeadMove ) {
-          i = - this.mtAvatar['bodyRotateY'].value;
-          j = this.gaussianRandom(-0.2,0.2);
-          this.animQueue.push( this.animFactory({ name: "headmove",
-            dt: [[1000,2000],[1000,2000,1,2],[1000,2000],[1000,2000,1,2]], vs: {
-              headRotateY: [i,i,0], headRotateX: [j,j,0], headRotateZ: [-i/4,-i/4,0]
-            }
-          }));
-        }
+        // if ( isHeadMove ) {
+        //   i = - this.mtAvatar['bodyRotateY'].value;
+        //   j = this.gaussianRandom(-0.2,0.2);
+        //   this.animQueue.push( this.animFactory({ name: "headmove",
+        //     dt: [[1000,2000],[1000,2000,1,2],[1000,2000],[1000,2000,1,2]], vs: {
+        //       headRotateY: [i,i,0], headRotateX: [j,j,0], headRotateZ: [-i/4,-i/4,0]
+        //     }
+        //   }));
+        // }
 
       } else {
         i = this.mtAvatar['EyeLookInLeft'].value - this.mtAvatar['EyeLookOutLeft'].value;
         j = this.gaussianRandom(-0.2,0.2);
-        this.animQueue.push( this.animFactory({ name: "headmove",
-          dt: [[1000,2000],[1000,2000,1,2],[1000,2000],[1000,2000,1,2]], vs: {
-            headRotateY: [null,i,i,0], headRotateX: [null,j,j,0], headRotateZ: [null,-i/4,-i/4,0],
-            EyeLookInLeft: [null,0], EyeLookOutLeft: [null,0], EyeLookInRight: [null,0], EyeLookOutRight: [null,0],
-            eyeContact: [0]
-          }
-        }));
+        // this.TalkQueue.
+        // this.animQueue.push( this.animFactory({ name: "headmove",
+        //   dt: [[1000,2000],[1000,2000,1,2],[1000,2000],[1000,2000,1,2]], vs: {
+        //     headRotateY: [null,i,i,0], headRotateX: [null,j,j,0], headRotateZ: [null,-i/4,-i/4,0],
+        //     EyeLookInLeft: [null,0], EyeLookOutLeft: [null,0], EyeLookInRight: [null,0], EyeLookOutRight: [null,0],
+        //     eyeContact: [0]
+        //   }
+        // }));
+
       }
 
     }
@@ -3092,7 +3086,13 @@ class TalkingHead {
     let ttsSentence = []; // Text-to-speech sentence
     let lipsyncAnim = []; // Lip-sync animation sequence
     let letters = [... this.lipsyncPreProcessText(s, lipsyncLang)];
-    // let Letters = " ";
+    const second_per_word = 0.25; // second
+    const time_estimated = second_per_word * letters.length;
+    const target_pose = time_estimated * 1.5 <= 7.53 ? 'speech-2' : [
+      'talk-1', 'talk-2', 'talk-3', 'talk-4', 'speech-1'
+    ][Math.floor(Math.random() * list.length)] ;
+    this.AnimationFA_route[target_pose].forEach(x => this.TalkQueue(x));
+
 
     if (this.containsChinese(letters)) {
       letters = this.preProcessChineseWords(letters);
@@ -3774,6 +3774,7 @@ class TalkingHead {
   * @param {number} t Time in milliseconds
   */
   lookAhead(t) {
+    return;
 
 
     if ( t ) {
@@ -3835,7 +3836,7 @@ class TalkingHead {
   * @param {number} t Time in milliseconds
   */
   lookAt(x,y,t) {
-    
+    return;
     // Eyes position
     const rect = this.nodeAvatar.getBoundingClientRect();
     this.objectLeftEye.updateMatrixWorld(true);
@@ -3973,6 +3974,7 @@ class TalkingHead {
   * @param {number} [prob=1] Probability of hand movement
   */
   speakWithHands(delay=0,prob=0.5,able_to_push=false) {
+    return;
 
       // Only if we are standing and not bending and probabilities match up
     
@@ -4035,29 +4037,24 @@ class TalkingHead {
         vs: { moveto: moveto }
       });
       this.animQueue.push( anim );
-    
 
-
-    if (able_to_push) {
+    // if (able_to_push) {
+    //   let add_flag = 0;
+    //   while( true ) {
+    //     let anim_string = `讲话-${this.animID_cnt%4+1}`;
+    //     let anim_time = this.DefaultAnimation[anim_string]
+    //                         .map(x => this.UEAnimationCandidate[`UE-${x}`].duration)
+    //                         .reduce((acc, curr) => acc + curr, 0);
+    //     this.animID_cnt++;
+    //     add_flag++;
+    //     if (anim_time < this.EvaluateTime) {
+    //       this.TalkQueue.push( `讲话-${this.animID_cnt%4+1}` );
+    //       break;
+    //     }
+    //     if (add_flag > 4) break;
       
-      let add_flag = 0;
-      while( true ) {
-        let anim_string = `讲话-${this.animID_cnt%4+1}`;
-        let anim_time = this.DefaultAnimation[anim_string]
-                            .map(x => this.UEAnimationCandidate[`UE-${x}`].duration)
-                            .reduce((acc, curr) => acc + curr, 0);
-        this.animID_cnt++;
-        add_flag++;
-        
-        if (anim_time < this.EvaluateTime) {
-          this.UEanimQueue.push( `讲话-${this.animID_cnt%4+1}` );
-          break;
-        }
-        if (add_flag > 4) break;
-      
-      }
-    }
-    
+    //   }
+    // }
     
   }
 
@@ -4176,8 +4173,6 @@ class TalkingHead {
     if ( !this.armature ) return;
     let item = this.animClips.find( x => x.url === url+'-'+ndx );
     if ( item ) {
-
-      
 
       // Reset pose update
       let anim = this.animQueue.find( x => x.template.name === 'pose' );
@@ -4586,8 +4581,9 @@ class TalkingHead {
           }
         }
 
-        this.animQueue.push( anim );}
-        this.UEanimQueue.push('讲话-1');
+        this.animQueue.push( anim );
+      }
+        // this.TalkQueue.push('讲话-1');
       
     }
 
