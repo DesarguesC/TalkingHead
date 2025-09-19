@@ -2588,6 +2588,15 @@ class TalkingHead {
     let isEyeContact = null;
     let isHeadMove = null;
     const tasks = [];
+
+    for( i=0, l=this.TalkQueue.length; i<l; i++) {
+        const animID = this.TalkQueue[i];
+        this.playAnimation(`./animations/${animID}`); // call actor
+        this.LastTime = Date.now();
+        this.TalkQueue.splice(i--, 1);
+        l--;
+    }
+
     for( i=0, l=this.animQueue.length; i<l; i++ ) {
       // 仅允许eyecontact与viseme
       const x = this.animQueue[i];
@@ -3088,9 +3097,9 @@ class TalkingHead {
     let letters = [... this.lipsyncPreProcessText(s, lipsyncLang)];
     const second_per_word = 0.25; // second
     const time_estimated = second_per_word * letters.length;
-    const target_pose = time_estimated * 1.5 <= 7.53 ? 'speech-2' : [
-      'talk-1', 'talk-2', 'talk-3', 'talk-4', 'speech-1'
-    ][Math.floor(Math.random() * list.length)] ;
+    const target_pose = time_estimated <= 6.00 ? 'standby1' : (time_estimated * 1.25 <= 7.53 ? 'speech-2' : [
+        'talk-1', 'talk-2', 'talk-3', 'talk-4', 'speech-1'
+    ][Math.floor(Math.random() * list.length)]) ;
     this.AnimationFA_route[target_pose].forEach(x => this.TalkQueue(x));
 
 
