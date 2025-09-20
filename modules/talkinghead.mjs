@@ -42,6 +42,7 @@ import{ DynamicBones } from './dynamicbones.mjs';
 
 import { segment, OutputFormat, addDict} from 'pinyin-pro';
 import CompleteDict from './complete.mjs';
+import { TechnicolorShader } from 'three/examples/jsm/Addons.js';
 // import { linearToneMapping } from 'three/tsl';
 // import CompleteDict from "https://cdn.jsdelivr.net/npm/@pinyin-pro/data@1.2.0/dist/complete.min.js";
 addDict(CompleteDict);
@@ -208,17 +209,17 @@ class TalkingHead {
     // Pose templates
     // NOTE: The body weight on each pose should be on left foot
     // for most natural result.
-    this.poseCounter = {};
+    this.poseTrace = [];
     this.AnimationFA_route = {
       'standby0': ['U_Idle_01_Cycle.glb'],
-      'standby1': ['Idle_01to03.glb', 'Idle_03_Cycle.glb', 'Idle_03to01.glb'],
-      'standby2': ['Idle_01to04.glb', 'Idle_04_Cycle.glb', 'Idle_04to01.glb'],
-      'talk-1': ['Idle_01to04.glb', 'Idle_04_Cycle.glb', 'Idle_04to01.glb', 'U_Speech_08_Cycle_T1_02.glb'],
-      'talk-2': ['Idle_01to04.glb', 'Idle_04_Cycle.glb', 'Idle_04to01.glb', 'U_Speech_08_Cycle_T1_04.glb'],
-      'talk-3': ['Idle_01to04.glb', 'Idle_04_Cycle.glb', 'Idle_04to01.glb', 'U_Speech_08_Cycle_T1_06.glb'],
-      'talk-4': ['Idle_01to04.glb', 'Idle_04_Cycle.glb', 'Idle_04to01.glb', 'U_Speech_08_Cycle_T1_08.glb'],
-      'speech-1': ['5Talk_03_01.glb'],
-      'speech-2': ['5Talk_03_02.glb']
+      'standby1': ['Idle_01to03.glb', 'U_Idle_03_Cycle.glb', 'Idle_03to01.glb', 'U_Idle_01_Cycle.glb'],
+      'standby2': ['Idle_01to04.glb', 'Idle_04_Cycle.glb', 'Idle_04to01.glb', 'U_Idle_01_Cycle.glb'],
+      'talk-1': ['Idle_01to04.glb', 'Idle_04_Cycle.glb', 'Idle_04to01.glb', 'U_Speech_08_Cycle_T1_02.glb', 'U_Idle_01_Cycle.glb'],
+      'talk-2': ['Idle_01to04.glb', 'Idle_04_Cycle.glb', 'Idle_04to01.glb', 'U_Speech_08_Cycle_T1_04.glb', 'U_Idle_01_Cycle.glb'],
+      'talk-3': ['Idle_01to04.glb', 'Idle_04_Cycle.glb', 'Idle_04to01.glb', 'U_Speech_08_Cycle_T1_06.glb', 'U_Idle_01_Cycle.glb'],
+      'talk-4': ['Idle_01to04.glb', 'Idle_04_Cycle.glb', 'Idle_04to01.glb', 'U_Speech_08_Cycle_T1_08.glb', 'U_Idle_01_Cycle.glb'],
+      'speech-1': ['5Talk_03_01.glb', 'U_Idle_01_Cycle.glb'],
+      'speech-2': ['5Talk_03_02.glb', 'U_Idle_01_Cycle.glb']
     }
     this.DefaultTimeList = {
       'standby0': 7.10,
@@ -232,6 +233,23 @@ class TalkingHead {
       'talk-4': 15.32,
       'speech-1': 14.50,
       'speech-2': 7.53
+    }
+    this.MetaTimeList = {
+      'Idle_04_Cycle.glb': 0.53,
+      'Idle_01to02.glb': 2.43,
+      'Idle_04to01': 4.17,
+      'U_Speech_08_Cycle_T1_04.glb': 4.60,
+      'Idle_01to04': 4.80,
+      'U_Speech_08_Cycle_T1_02.glb': 5.63,
+      'U_Speech_08_Cycle_T1_06.glb': 5.83,
+      'U_Speech_08_Cycle_T1_08.glb': 5.83,
+      'Idle_03to01': 6.67,
+      'U_Idle_03_Cycle': 7.10,
+      'U_Idle_02_Cycle': 7.10,
+      'U_Idle_01_Cylce': 7.10,
+      'Idle_01to03': 7.50,
+      '5Talk_03_02': 7.53,
+      '5Talk_03_01': 14.50
     }
     this.poseTransfer = { // 这里按照可待机的默认动作加
       'default': '',  // 默认动作
@@ -437,7 +455,7 @@ class TalkingHead {
 
     // Avatar height in meters
     // NOTE: The actual value is calculated based on the eye level on avatar load
-    this.avatarHeight = 1.7;
+    this.avatarHeight = 1.2;
 
 
     // Animation templates
@@ -843,11 +861,12 @@ class TalkingHead {
 
     // Anim queues
     this.animQueue = [];
+    this.startAnim = 'standby0';
     this.TalkQueue = []; // 讲话所需的动作控制
     // 对临界资源animSpeechQueue（在外部）的锁，默认为解锁状态，捕获到非零的animiSpeechQueue.length时锁定，长度置零时解锁 | 解锁时（false）可以this.UEanimQueue.push
     this.UEanimQueueActive = false;
     this.LastTime = 0;
-    this.animInterval = 0; // s
+    this.animInterval = 1; // s
 
     this.duration_factor = 0.2;
 
@@ -1832,80 +1851,81 @@ class TalkingHead {
       if ( o.applied > o.max ) o.applied = o.max;
 
       // Apply value
-      switch(mt) {
-
-      case 'headRotateX':
+      // new architecture of CPU
+      if (mt === 'headRotateX') {
         this.poseDelta.props['head.quaternion'].x = o.applied + this.mtAvatar['bodyRotateX'].applied;
-        break;
+      } else {
+        switch(mt) {
+          case 'headRotateY':
+            this.poseDelta.props['head.quaternion'].y = o.applied + this.mtAvatar['bodyRotateY'].applied;
+            break;
 
-      case 'headRotateY':
-        this.poseDelta.props['head.quaternion'].y = o.applied + this.mtAvatar['bodyRotateY'].applied;
-        break;
+          case 'headRotateZ':
+            this.poseDelta.props['head.quaternion'].z = o.applied + this.mtAvatar['bodyRotateZ'].applied;
+            break;
 
-      case 'headRotateZ':
-        this.poseDelta.props['head.quaternion'].z = o.applied + this.mtAvatar['bodyRotateZ'].applied;
-        break;
+          case 'bodyRotateX':
+            this.poseDelta.props['head.quaternion'].x = o.applied + this.mtAvatar['headRotateX'].applied;
+            this.poseDelta.props['spine_02.quaternion'].x = o.applied/2;
+            this.poseDelta.props['spine_01.quaternion'].x = o.applied/8;
+            this.poseDelta.props['pelvis.quaternion'].x = o.applied/24;
+            break;
 
-      case 'bodyRotateX':
-        this.poseDelta.props['head.quaternion'].x = o.applied + this.mtAvatar['headRotateX'].applied;
-        this.poseDelta.props['spine_02.quaternion'].x = o.applied/2;
-        this.poseDelta.props['spine_01.quaternion'].x = o.applied/8;
-        this.poseDelta.props['pelvis.quaternion'].x = o.applied/24;
-        break;
+          case 'bodyRotateY':
+            this.poseDelta.props['head.quaternion'].y = o.applied + this.mtAvatar['headRotateY'].applied;
+            this.poseDelta.props['spine_02.quaternion'].y = o.applied/2;
+            this.poseDelta.props['spine_01.quaternion'].y = o.applied/2;
+            this.poseDelta.props['pelvis.quaternion'].y = o.applied/4;
+            this.poseDelta.props['thigh_l.quaternion'].y = o.applied/2;
+            this.poseDelta.props['thigh_r.quaternion'].y = o.applied/2;
+            this.poseDelta.props['calf_l.quaternion'].y = o.applied/4;
+            this.poseDelta.props['calf_r.quaternion'].y = o.applied/4;
+            break;
 
-      case 'bodyRotateY':
-        this.poseDelta.props['head.quaternion'].y = o.applied + this.mtAvatar['headRotateY'].applied;
-        this.poseDelta.props['spine_02.quaternion'].y = o.applied/2;
-        this.poseDelta.props['spine_01.quaternion'].y = o.applied/2;
-        this.poseDelta.props['pelvis.quaternion'].y = o.applied/4;
-        this.poseDelta.props['thigh_l.quaternion'].y = o.applied/2;
-        this.poseDelta.props['thigh_r.quaternion'].y = o.applied/2;
-        this.poseDelta.props['calf_l.quaternion'].y = o.applied/4;
-        this.poseDelta.props['calf_r.quaternion'].y = o.applied/4;
-        break;
+          case 'bodyRotateZ':
+            this.poseDelta.props['head.quaternion'].z = o.applied + this.mtAvatar['headRotateZ'].applied;
+            this.poseDelta.props['spine_02.quaternion'].z = o.applied/12;
+            this.poseDelta.props['spine_01.quaternion'].z = o.applied/12;
+            this.poseDelta.props['pelvis.quaternion'].z = o.applied/24;
+            break;
 
-      case 'bodyRotateZ':
-        this.poseDelta.props['head.quaternion'].z = o.applied + this.mtAvatar['headRotateZ'].applied;
-        this.poseDelta.props['spine_02.quaternion'].z = o.applied/12;
-        this.poseDelta.props['spine_01.quaternion'].z = o.applied/12;
-        this.poseDelta.props['pelvis.quaternion'].z = o.applied/24;
-        break;
+          case 'handFistLeft':
+          case 'handFistRight':
+            const side = mt.substring(8);
+            if (side === "Left") {side = '_l'}
+            else {side = '_r'}
+            ['thumb', 'index','middle',
+            'ring', 'pinky'].forEach( (x,i) => {
+              if ( i === 0 ) {
+                this.poseDelta.props[x+'_01'+side+'.quaternion'].x = 0;
+                this.poseDelta.props[x+'_02'+side+'.quaternion'].z = (side === 'Left' ? -1 : 1) * o.applied;
+                this.poseDelta.props[x+'_03'+side+'.quaternion'].z = (side === 'Left' ? -1 : 1) * o.applied;
+              } else {
+                this.poseDelta.props[x+'_01'+side+'.quaternion'].x = o.applied;
+                this.poseDelta.props[x+'_02'+side+'.quaternion'].x = 1.5 * o.applied;
+                this.poseDelta.props[x+'_03'+side+'.quaternion'].x = 1.5 * o.applied;
+              }
+            });
+            break;
 
-      case 'handFistLeft':
-      case 'handFistRight':
-        const side = mt.substring(8);
-        if (side === "Left") {side = '_l'}
-        else {side = '_r'}
-        ['thumb', 'index','middle',
-        'ring', 'pinky'].forEach( (x,i) => {
-          if ( i === 0 ) {
-            this.poseDelta.props[x+'_01'+side+'.quaternion'].x = 0;
-            this.poseDelta.props[x+'_02'+side+'.quaternion'].z = (side === 'Left' ? -1 : 1) * o.applied;
-            this.poseDelta.props[x+'_03'+side+'.quaternion'].z = (side === 'Left' ? -1 : 1) * o.applied;
-          } else {
-            this.poseDelta.props[x+'_01'+side+'.quaternion'].x = o.applied;
-            this.poseDelta.props[x+'_02'+side+'.quaternion'].x = 1.5 * o.applied;
-            this.poseDelta.props[x+'_03'+side+'.quaternion'].x = 1.5 * o.applied;
-          }
-        });
-        break;
+          case 'chestInhale':
+            const scale = o.applied/20;
+            const d = { x: scale, y: (scale/2), z: (3 * scale) };
+            const dneg = { x: (1/(1+scale) - 1), y: (1/(1 + scale/2) - 1), z: (1/(1 + 3 * scale) - 1) };
+            this.poseDelta.props['spine_02.scale'] = d;
+            this.poseDelta.props['neck_01.scale'] = dneg;
+            this.poseDelta.props['upperarm_l.scale'] = dneg;
+            this.poseDelta.props['upperarm_r.scale'] = dneg;
+            break;
 
-      case 'chestInhale':
-        const scale = o.applied/20;
-        const d = { x: scale, y: (scale/2), z: (3 * scale) };
-        const dneg = { x: (1/(1+scale) - 1), y: (1/(1 + scale/2) - 1), z: (1/(1 + 3 * scale) - 1) };
-        this.poseDelta.props['spine_02.scale'] = d;
-        this.poseDelta.props['neck_01.scale'] = dneg;
-        this.poseDelta.props['upperarm_l.scale'] = dneg;
-        this.poseDelta.props['upperarm_r.scale'] = dneg;
-        break;
+          default:
+            for( let i=0,l=o.ms.length; i<l; i++ ) {
+              o.ms[i][o.is[i]] = o.applied;
+            }
 
-      default:
-        for( let i=0,l=o.ms.length; i<l; i++ ) {
-          o.ms[i][o.is[i]] = o.applied;
         }
-
       }
+      
     }
   }
 
@@ -2158,6 +2178,7 @@ class TalkingHead {
   */
   // 表情控制
   setMood(s) {
+    return; // no need of moods control
     
     s = (s || '').trim().toLowerCase();
     if ( !this.animMoods.hasOwnProperty(s) ) throw new Error("Unknown mood.");
@@ -2591,8 +2612,10 @@ class TalkingHead {
 
     for( i=0, l=this.TalkQueue.length; i<l; i++) {
         const animID = this.TalkQueue[i];
-        this.playAnimation(`./animations/${animID}`); // call actor
-        this.LastTime = Date.now();
+        this.poseTrace.push(animID);
+        // if (Date.now - this.LastTime >= this.animInterval * 1000)
+        this.playAnimation(`./animations/${animID}`, null, this.MetaTimeList[animID], 0, 0.01, false); // call actor
+        // this.LastTime = Date.now(); // 要不要控制时间？
         this.TalkQueue.splice(i--, 1);
         l--;
     }
@@ -2713,20 +2736,15 @@ class TalkingHead {
           break;
 
         case 'pose': // 「TODO3: 这里Templates中仅保留一个动作default动作，为默认的正常的待机静态动作；其余全部删除」
-          // 统计动作数量
-          // console.log("动作触发:", j);
-          if (this.poseCounter.hasOwnProperty(j)) {
-            this.poseCounter[j] += 1;
-          } else {
-            this.poseCounter[j] = 1;
-          }
-          // this.GLBmotion = true;
+          this.GLBmotion = true;
           this.poseName = j;
           // this.poseTransfer表中的设定，这里只有待机动作，可以直接做
-          this.setPoseFromTemplate(
-            this.poseTemplates[ this.poseName ], 
-            2000, this.GLBmotion, j
-          ); // TODO：这里是加入glb动作的切口
+          if (this.TalkQueue == 0) {
+              this.setPoseFromTemplate(
+              this.poseTemplates[ this.poseName ], 
+              2000, this.GLBmotion, j
+            );
+          } // TODO：这里是加入glb动作的切口
           // set this.poseTarget, act as [this.poseBase -> this.poseTarget]
           break;
 
@@ -2872,20 +2890,26 @@ class TalkingHead {
       this.objectNeck.quaternion.multiply(q);
     }
 
-    // Hip-feet balance
-    box.setFromObject( this.armature );
-    this.objectLeftToeBase.getWorldPosition(v);
-    this.objectRightToeBase.getWorldPosition(w);
-    this.objectHips.position.y -= box.min.y / 2;
-    this.objectHips.position.x -= (v.x+w.x)/4;
-    this.objectHips.position.z -= (v.z+w.z)/2;
+    
+    if (this.startAnim) {
+      // Hip-feet balance
+      box.setFromObject( this.armature );
+      // this.objectLeftToeBase.getWorldPosition(v);
+      // this.objectRightToeBase.getWorldPosition(w);
+      // this.objectHips.position.y -= box.min.y / 2;
+      // this.objectHips.position.x -= (v.x+w.x)/4;
+      // this.objectHips.position.z -= (v.z+w.z)/2;
+      this.playAnimation(`./animations/${this.AnimationFA_route[this.startAnim][0]}`, null, 200, 0, 0.01, false);
+      this.startAnim = null;
+    } else {
+      // Update Dynamic Bones
+      this.dynamicbones.update(dt);
+      // Update morph targets
+      this.updateMorphTargets(dt);
+    }
+    // this.setPoseFromTemplate('default', 2000, true, 'default'); // setPose only push name into this.TalkQueue
 
-    // Update Dynamic Bones
-    this.dynamicbones.update(dt);
-
-    // Update morph targets
-    this.updateMorphTargets(dt);
-
+    
     // Camera
     if ( this.cameraClock !== null && this.cameraClock < 1000 ) {
       this.cameraClock += dt;
@@ -2922,7 +2946,7 @@ class TalkingHead {
 
     this.render();
 
-    console.log('动作模板计数: ', this.poseCounter);
+    // console.log('Animation Trace: ', this.poseTrace);
 
   }
 
@@ -3099,8 +3123,8 @@ class TalkingHead {
     const time_estimated = second_per_word * letters.length;
     const target_pose = time_estimated <= 6.00 ? 'standby1' : (time_estimated * 1.25 <= 7.53 ? 'speech-2' : [
         'talk-1', 'talk-2', 'talk-3', 'talk-4', 'speech-1'
-    ][Math.floor(Math.random() * list.length)]) ;
-    this.AnimationFA_route[target_pose].forEach(x => this.TalkQueue(x));
+    ][Math.floor(Math.random() * 5)]) ;
+    this.AnimationFA_route[target_pose].forEach(x => this.TalkQueue.push(x));
 
 
     if (this.containsChinese(letters)) {
@@ -4177,57 +4201,105 @@ class TalkingHead {
   * @param {number} [scale=0.01] Position scale factor
   */
  // 动作控制
-  async playAnimation(url, onprogress=null, dur=200, ndx=0, scale=0.01) {
+  async playAnimation(url, onprogress=null, dur=200, ndx=0, scale=0.01, tween = true) {
+    // while ( Date.now() - this.LastTime < this.animInterval * 1000 );
     // TODO: 默认相机位置
     if ( !this.armature ) return;
-    let item = this.animClips.find( x => x.url === url+'-'+ndx );
-    if ( item ) {
+    // if ( this.animClips.length > 0)
+    // for ( idx = 0; idx < this.animClips.length; ++idx) {
+    this.animClips.forEach(item => {
+      // while ( Date.now() - this.LastTime < this.animInterval * 1000 );
+      // item = this.animClips[idx]
+      if ( item.url.endsWith('-'+ndx) ) {
+        Object.entries(item.pose.props).forEach( x => {
+          this.poseBase.props[x[0]] = x[1].clone();
+          this.poseTarget.props[x[0]] = x[1].clone();
+          this.poseTarget.props[x[0]].t = tween ? 0 : 1;
+          this.poseTarget.props[x[0]].d = tween ? Math.max(200, Math.min(dur, 1000)) : 0;
+        });
 
-      // Reset pose update
-      let anim = this.animQueue.find( x => x.template.name === 'pose' );
-      if ( anim ) {
-        anim.ts[0] = Infinity;
+        // Create a new mixer
+        this.mixer = new THREE.AnimationMixer(this.armature);
+        this.mixer.addEventListener( 'finished', this.stopAnimation.bind(this), { once: true });
+
+        // 创建补间动画 
+        // this.camera.position.set(0, 2, 4); // 增加 y 和 z 值,使相机位置更高更远
+        // this.camera.rotation.set(-0.2, 0, 0); // 减小 x 轴旋转角度,减少俯视程度
+        // this.camera.lookAt(this.armature.position);
+        // const from = this.camera.position.clone();
+        // const to = new THREE.Vector3(0, 2, 4); // 目标位置也要相应调整
+        // const duration = 1000; // 1秒      
+        // new TWEEN.Tween(from)
+        //     .to(to, duration)
+        //     .easing(TWEEN.Easing.Quadratic.InOut)
+        //     .onUpdate(() => {
+        //         this.camera.position.copy(from);
+        //         this.camera.lookAt(this.armature.position);
+        //     })
+        //     .start();
+
+
+        // Play action
+        const repeat = 1;
+        // const repeat = Math.ceil(dur / item.clip.duration);
+        const action = this.mixer.clipAction(item.clip);
+        this.animInterval = item.clip.duration;
+        this.LastTime = Date.now();
+        action.setLoop( THREE.LoopRepeat, repeat );
+        action.clampWhenFinished = true;
+        action.fadeIn(0.5).play();
+
       }
+    })
+    this.animClips = []
+    // let item = this.animClips.find( x => x.url === url+'-'+ndx );
+    // if ( item ) {
 
-      // Set new pose
-      Object.entries(item.pose.props).forEach( x => {
-        this.poseBase.props[x[0]] = x[1].clone();
-        this.poseTarget.props[x[0]] = x[1].clone();
-        this.poseTarget.props[x[0]].t = 0;
-        this.poseTarget.props[x[0]].d = 1000;
-      });
+    //   // Reset pose update
+    //   let anim = this.animQueue.find( x => x.template.name === 'pose' );
+    //   if ( anim ) {
+    //     anim.ts[0] = Infinity;
+    //   }
 
-      // Create a new mixer
-      this.mixer = new THREE.AnimationMixer(this.armature);
-      this.mixer.addEventListener( 'finished', this.stopAnimation.bind(this), { once: true });
+    //   // Set new pose && 补间动画
+    //   Object.entries(item.pose.props).forEach( x => {
+    //     this.poseBase.props[x[0]] = x[1].clone();
+    //     this.poseTarget.props[x[0]] = x[1].clone();
+    //     this.poseTarget.props[x[0]].t = tween ? 0 : 1;
+    //     this.poseTarget.props[x[0]].d = tween ? Math.max(200, Math.min(dur, 1000)) : 0;
+    //   });
 
-      // this.camera.position.set(0, 2, 4); // 增加 y 和 z 值,使相机位置更高更远
-      // this.camera.rotation.set(-0.2, 0, 0); // 减小 x 轴旋转角度,减少俯视程度
-      // this.camera.lookAt(this.armature.position);
+    //   // Create a new mixer
+    //   this.mixer = new THREE.AnimationMixer(this.armature);
+    //   this.mixer.addEventListener( 'finished', this.stopAnimation.bind(this), { once: true });
 
-      // 创建补间动画 
-      // const from = this.camera.position.clone();
-      // const to = new THREE.Vector3(0, 2, 4); // 目标位置也要相应调整
-      // const duration = 1000; // 1秒      
-      // new TWEEN.Tween(from)
-      //     .to(to, duration)
-      //     .easing(TWEEN.Easing.Quadratic.InOut)
-      //     .onUpdate(() => {
-      //         this.camera.position.copy(from);
-      //         this.camera.lookAt(this.armature.position);
-      //     })
-      //     .start();
+    //   // 创建补间动画 
+    //   // this.camera.position.set(0, 2, 4); // 增加 y 和 z 值,使相机位置更高更远
+    //   // this.camera.rotation.set(-0.2, 0, 0); // 减小 x 轴旋转角度,减少俯视程度
+    //   // this.camera.lookAt(this.armature.position);
+    //   // const from = this.camera.position.clone();
+    //   // const to = new THREE.Vector3(0, 2, 4); // 目标位置也要相应调整
+    //   // const duration = 1000; // 1秒      
+    //   // new TWEEN.Tween(from)
+    //   //     .to(to, duration)
+    //   //     .easing(TWEEN.Easing.Quadratic.InOut)
+    //   //     .onUpdate(() => {
+    //   //         this.camera.position.copy(from);
+    //   //         this.camera.lookAt(this.armature.position);
+    //   //     })
+    //   //     .start();
 
 
-      // Play action
-      const repeat = Math.ceil(dur / item.clip.duration);
-      const action = this.mixer.clipAction(item.clip);
-      action.setLoop( THREE.LoopRepeat, repeat );
-      action.clampWhenFinished = true;
-      action.fadeIn(0.5).play();
+    //   // Play action
+    //   const repeat = Math.ceil(dur / item.clip.duration);
+    //   const action = this.mixer.clipAction(item.clip);
+    //   action.setLoop( THREE.LoopRepeat, repeat );
+    //   action.clampWhenFinished = true;
+    //   action.fadeIn(0.5).play();
       
 
-    } else {
+    // } else 
+    {
       const scale_ = new THREE.Vector3(scale, scale, scale);
       // Load animation
       if (url.includes('.fbx')) {
@@ -4291,14 +4363,13 @@ class TalkingHead {
           });
 
           // Play
-          this.playAnimation(url, onprogress, dur, ndx, scale);
+          this.playAnimation(url, onprogress, dur, ndx, scale, tween);
 
         } else {
           const msg = 'Animation ' + url + ' (ndx=' + ndx + ') not found';
           console.error(msg);
         }
-      }
-      else if (url.includes('.glb')) {
+      } else if (url.includes('.glb')) {
         const loader = new GLTFLoader();
 
         let glb = await loader.loadAsync( url, onprogress );
@@ -4359,10 +4430,12 @@ class TalkingHead {
           });
 
           // Play
-          this.playAnimation(url, onprogress, dur, ndx, scale);
+          this.playAnimation(url, onprogress, dur, ndx, scale, tween);
         } else {
           throw new Error('Unsupported animation format: ' + url);
         }
+      } else {
+        console.log("here");
       }
     }
   }
