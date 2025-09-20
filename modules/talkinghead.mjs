@@ -39,6 +39,7 @@ import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import Stats from 'three/addons/libs/stats.module.js';
 
 import{ DynamicBones } from './dynamicbones.mjs';
+// import { SequencePlayer } from './sequential.mjs'
 
 import { segment, OutputFormat, addDict} from 'pinyin-pro';
 import CompleteDict from './complete.mjs';
@@ -863,6 +864,8 @@ class TalkingHead {
     this.animQueue = [];
     this.startAnim = 'standby0';
     this.TalkQueue = []; // 讲话所需的动作控制
+    this.isPlaying = false;
+    this.LoopCurrentIndex = 0;
     // 对临界资源animSpeechQueue（在外部）的锁，默认为解锁状态，捕获到非零的animiSpeechQueue.length时锁定，长度置零时解锁 | 解锁时（false）可以this.UEanimQueue.push
     this.UEanimQueueActive = false;
     this.LastTime = 0;
@@ -4192,6 +4195,70 @@ class TalkingHead {
     this.isListening = false;
   }
 
+  
+  start_loop(tween=true, dur=200) {
+    if (!this.animClips || this.animClips.length === 0) return;
+    if (this.isPlaying) return;
+    this.isPlaying = true;
+    this._playIndex(this.currentIndex, tween, dur);
+  }
+  stop_loop() {
+    this.isPlaying = false;
+    // 停掉当前 action
+    if (this.currentAction) {
+      this.currentAction.stop();
+      this.currentAction = null;
+    }
+    // 移除监听
+    this.mixer.removeEventListener('finished', this._onFinishedBound);
+  }
+  _playIndex(idx, tween=false, dur=200) {
+    if (!this.isPlaying) return;
+
+    const item = this.animClips[idx];
+    if (!item) return;
+
+    // 设置 pose（和你原来代码一样）
+    Object.entries(item.pose.props).forEach(([k, v]) => {
+      this.poseBase.props[k] = v.clone();
+      this.poseTarget.props[k] = v.clone();
+      this.poseTarget.props[k].t = tween ? 0 : 1;
+      this.poseTarget.props[k].d = tween ? Math.max(200, Math.min(dur, 1000)) : 0;
+    });
+
+    // 监听 finished （每次先移除再添加，防止重复）
+    this.mixer.removeEventListener('finished', this._onFinishedBound);
+    this.mixer.addEventListener('finished', this._onFinishedBound);
+
+    // 创建 action 并播放一次（如果要每 clip 播放一次）
+    const action = this.mixer.clipAction(item.clip);
+    action.reset();
+    action.clampWhenFinished = true;
+    action.setLoop(THREE.LoopOnce, 0); // 播放一次
+    action.fadeIn(0.2).play();
+
+    this.currentAction = action;
+    this.currentIndex = idx;
+    this.LastTime = Date.now();
+    this.animInterval = item.clip.duration; // 秒，注意你的代码中有单位问题
+  }
+  
+  _onFinished(event) {
+    // Three.js finished 事件可能在多个 action 完成时触发，检查来源 action
+    // event.action 是触发完成的 action（不同版本可能是 event.action 或 event）
+    // 计算下一个 index
+    this.currentIndex = (this.currentIndex + 1) % this.animClips.length;
+
+    // 如果仍然在播放状态，播放下一个
+    if (this.isPlaying) {
+      this._playIndex(this.currentIndex);
+    } else {
+      // 清理监听
+      this.mixer.removeEventListener('finished', this._onFinishedBound);
+    }
+  }
+
+
   /**
   * Play RPM/Mixamo animation clip.
   * @param {string|Object} url URL to animation file FBX
@@ -4207,51 +4274,16 @@ class TalkingHead {
     if ( !this.armature ) return;
     // if ( this.animClips.length > 0)
     // for ( idx = 0; idx < this.animClips.length; ++idx) {
-    this.animClips.forEach(item => {
-      // while ( Date.now() - this.LastTime < this.animInterval * 1000 );
-      // item = this.animClips[idx]
-      if ( item.url.endsWith('-'+ndx) ) {
-        Object.entries(item.pose.props).forEach( x => {
-          this.poseBase.props[x[0]] = x[1].clone();
-          this.poseTarget.props[x[0]] = x[1].clone();
-          this.poseTarget.props[x[0]].t = tween ? 0 : 1;
-          this.poseTarget.props[x[0]].d = tween ? Math.max(200, Math.min(dur, 1000)) : 0;
-        });
-
-        // Create a new mixer
-        this.mixer = new THREE.AnimationMixer(this.armature);
-        this.mixer.addEventListener( 'finished', this.stopAnimation.bind(this), { once: true });
-
-        // 创建补间动画 
-        // this.camera.position.set(0, 2, 4); // 增加 y 和 z 值,使相机位置更高更远
-        // this.camera.rotation.set(-0.2, 0, 0); // 减小 x 轴旋转角度,减少俯视程度
-        // this.camera.lookAt(this.armature.position);
-        // const from = this.camera.position.clone();
-        // const to = new THREE.Vector3(0, 2, 4); // 目标位置也要相应调整
-        // const duration = 1000; // 1秒      
-        // new TWEEN.Tween(from)
-        //     .to(to, duration)
-        //     .easing(TWEEN.Easing.Quadratic.InOut)
-        //     .onUpdate(() => {
-        //         this.camera.position.copy(from);
-        //         this.camera.lookAt(this.armature.position);
-        //     })
-        //     .start();
-
-
-        // Play action
-        const repeat = 1;
-        // const repeat = Math.ceil(dur / item.clip.duration);
-        const action = this.mixer.clipAction(item.clip);
-        this.animInterval = item.clip.duration;
-        this.LastTime = Date.now();
-        action.setLoop( THREE.LoopRepeat, repeat );
-        action.clampWhenFinished = true;
-        action.fadeIn(0.5).play();
-
-      }
-    })
-    this.animClips = []
+    if (this.animClips.length > 0) {
+      this.mixer = new THREE.AnimationMixer(this.armature);
+      this._onFinishedBound = this._onFinished.bind(this);
+      this.start_loop();
+      const delta = (Date.now() - this.LastTime) / 1000.;
+      this.LastTime = Date.now()
+      if (this.mixer) this.mixer.update(delta);
+      this.animClips = []
+    }
+      
     // let item = this.animClips.find( x => x.url === url+'-'+ndx );
     // if ( item ) {
 
