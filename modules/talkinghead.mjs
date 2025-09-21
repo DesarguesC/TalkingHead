@@ -2651,9 +2651,8 @@ class TalkingHead {
 
         for( let [mt,vs] of Object.entries(x.vs) ) {
           const meta = mt.includes('viseme_') ? mt.split('_')[1] : mt; // mt: e.g. 'viseme_PP'
-          // if (mete === 'SS') meta = 'sil';
           if ( this.mtAvatar.hasOwnProperty(meta) ) {
-            mt = meta==='SS' ? 'sil' : meta;
+            mt = meta;
             // TODO: 更新视素交互列表
             if ( vs[j+1] === null ) continue; // Last or unknown target, skip
 
@@ -2961,7 +2960,8 @@ class TalkingHead {
   resetLips() {
     this.visemeNames.forEach( x => {
       this.morphs.forEach( y => {
-        const ndx = y.morphTargetDictionary['viseme_'+x];
+        // const ndx = y.morphTargetDictionary['viseme_'+x];
+        const ndx = y.morphTargetDictionary[x];
         if ( ndx !== undefined ) {
           y.morphTargetInfluences[ndx] = 0;
         }
