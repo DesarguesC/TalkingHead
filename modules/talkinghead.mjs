@@ -2081,8 +2081,9 @@ class TalkingHead {
     if (useGLB && poseName) {
       // 使用 glb 文件中的姿势数据
       currentPose_candidates = this.poseTransfer.hasOwnProperty(poseName) ? this.poseTransfer[poseName] : 'standby0';
-      const animList = this.AnimationFA_route[currentPose_candidates]
-      animList.forEach(x => this.TalkQueue.push(x))
+      this.TalkQueue.push(currentPose_candidates);
+      // const animList = this.AnimationFA_route[currentPose_candidates]
+      // animList.forEach(x => this.TalkQueue.push(x))
     }
 
     // Special cases
@@ -2612,9 +2613,11 @@ class TalkingHead {
 
     for( i=0, l=this.TalkQueue.length; i<l; i++) {
         const animID = this.TalkQueue[i];
+        this.GroupAnimationConstruct(animID);
+        this.GroupAnimationPlayer(animID);
         this.poseTrace.push(animID);
         // if (Date.now - this.LastTime >= this.animInterval * 1000)
-        this.playAnimation(`./animations/${animID}`, null, this.MetaTimeList[animID], 0, 0.01, false); // call actor
+        // this.playAnimation(`./animations/${animID}`, null, this.MetaTimeList[animID], 0, 0.01, false); // call actor
         // this.LastTime = Date.now(); // 要不要控制时间？
         this.TalkQueue.splice(i--, 1);
         l--;
@@ -3119,12 +3122,13 @@ class TalkingHead {
     let ttsSentence = []; // Text-to-speech sentence
     let lipsyncAnim = []; // Lip-sync animation sequence
     let letters = [... this.lipsyncPreProcessText(s, lipsyncLang)];
-    const second_per_word = 0.25; // second
+    const second_per_word = 0.5; // second
     const time_estimated = second_per_word * letters.length;
     const target_pose = time_estimated <= 6.00 ? 'standby1' : (time_estimated * 1.25 <= 7.53 ? 'speech-2' : [
         'talk-1', 'talk-2', 'talk-3', 'talk-4', 'speech-1'
     ][Math.floor(Math.random() * 5)]) ;
-    this.AnimationFA_route[target_pose].forEach(x => this.TalkQueue.push(x));
+    this.TalkQueue.push(target_pose);
+    // this.AnimationFA_route[target_pose].forEach(x => this.TalkQueue.push(x));
 
 
     if (this.containsChinese(letters)) {
@@ -4192,6 +4196,195 @@ class TalkingHead {
     this.isListening = false;
   }
 
+
+  async GroupAnimationConstruct(groupName, onprogress=null, dur=200, ndx=0, scale=0.01, tween=true) {
+    const animList = this.AnimationFA_route[groupName];
+    const loader = new GLTFLoader();
+    let glb_list = []
+    if (animList.length <= 3) {
+      const url = `./animations/${animList[0]}`;
+      glb_list.push({'url': url, 'glb': await loader.loadAsync( url, onprogress)})
+    } else if (animList.length >= 3) {
+      const url_1 = `./animations/${animList[0]}`;
+      glb_list.push({'url': url_1, 'glb': await loader.loadAsync( url_1, onprogress )})
+      const url_2 = `./animations/${animList[1]}`;
+      glb_list.push({'url': url_2, 'glb': await loader.loadAsync( url_2, onprogress )})
+      const url_3 = `./animations/${animList[2]}`;
+      glb_list.push({'url': url_3, 'glb': await loader.loadAsync( url_3, onprogress )})
+    }
+    let glb_anims = [];
+    const scale_ = new THREE.Vector3(scale, scale, scale);
+    glb_list.forEach( item => {
+      const url = item['url']
+      const glb = item['glb']
+      if  ( glb && glb.animations && glb.animations[ndx] ) {
+        let anim = glb.animations[ndx];
+        const props = {};
+        anim.tracks.sort((a, b) => {
+            let ids1 = a.name.split('.');
+            let ids2 = b.name.split('.');
+            return ids2[1].localeCompare(ids1[1]); // scale first (scale, position, quaternion)
+          });
+        anim.tracks.forEach( t => {
+          if(t.name.includes('mixamorig')) t.name = t.name.replaceAll('mixamorig','');
+          const ids = t.name.split('.');
+          if ( ids[1] === 'position' ) { 
+            // [DONE] 初步定位是提供的ref文件中，带有position信息的t(即ids[1] === 'position'时)的time帧数不足；walking中是有 30帧就是30个time，ref中这部分只有2个time
+            const s_now = (ids[0]+'.scale' in props) ? props[ids[0]+'.scale'] : scale_ ;
+            for(let i=0; i<t.values.length; i++ ) {
+              t.values[i] = t.values[i] * (i%3===0?s_now.x:(i%3===1?s_now.y:s_now.z));
+            }
+            props[t.name] = new THREE.Vector3(t.values[0], t.values[1],t.values[2]);
+          } else if ( ids[1] === 'quaternion' ) {
+            props[t.name] = new THREE.Quaternion(t.values[0],t.values[1],t.values[2],t.values[3]);
+            // props[t.name].multiply(q_);
+          } else if ( ids[1] === 'rotation' ) {
+            props[ids[0]+".quaternion"] = new THREE.Quaternion().setFromEuler(new THREE.Euler(t.values[0],t.values[1],t.values[2],'XYZ')).normalize();
+          } 
+          else if  ( ids[1] === 'scale' ) {
+            // first
+            props[t.name] = new THREE.Vector3(t.values[0], t.values[1], t.values[2]);
+          }
+        });
+
+        const newPose = { props: props};
+        if ( props['pelvis.position'] ) {
+          if ( props['pelvis.position'].y < 0.5 ) {
+            newPose.lying = true;
+          } else {
+            newPose.standing = true; // 有关? 搜".standing"
+          }
+        }
+        glb_anims.push({
+          url: url+'-'-ndx,
+          clip: anim,
+          pose: newPose
+        })
+      }
+    })
+    this.animClips.push({
+      'name': groupName,
+      'pose': glb_anims
+    });
+  }
+
+  async GroupAnimationPlayer(groupName, onprogress=null, dur=200, ndx=0, scale=0.01, tween=true) {
+    let item = this.animClips.find( x => x.name === groupName) || null;
+    let seqItems = [];
+    if (item) item['pose'].forEach(x => {seqItems.push(x)});
+    // const seqItems = item['pose']; // list
+    const applyPoseFromItem = (item, tween = true, dur = 400) => {
+      if (!item || !item.pose) return;
+      // Reset pose update
+      let anim = this.animQueue.find( x => x.template && x.template.name === 'pose' );
+      if ( anim ) {
+        anim.ts[0] = Infinity;
+      }
+
+      Object.entries(item.pose.props).forEach( x => {
+        this.poseBase.props[x[0]] = x[1].clone();
+        this.poseTarget.props[x[0]] = x[1].clone();
+        this.poseTarget.props[x[0]].t = tween ? 0 : 1;
+        this.poseTarget.props[x[0]].d = tween ? Math.max(200, Math.min(dur, 1000)) : 0;
+      });
+    };
+    if (this.mixer) {
+      try { this.mixer.stopAllAction(); } catch(e) {}
+      if (this._seqFinishedHandler && this.mixer.removeEventListener) {
+        try { this.mixer.removeEventListener('finished', this._seqFinishedHandler); } catch(e) {}
+      }
+      // 不立即置 null — 在下面会重建
+      this.mixer = null;
+      this._seqFinishedHandler = null;
+    }
+    // multi animations
+    if (seqItems.length >= 2 && item) {
+      // 使用所有匹配到的 clip（按 seqItems 中的顺序）
+      this.mixer = new THREE.AnimationMixer(this.armature);
+
+      let idx = 0;
+      let currentAction = null;
+      const fadeTime = 0.5; // 可调整淡入/淡出时间（秒）
+
+      const playNext = (evt) => {
+        // 如果事件携带 action，确保它是当前 action 发出的（避免竞态）
+        if (evt && evt.action && currentAction && evt.action !== currentAction) {
+          return;
+        }
+
+        // fade out 旧 action
+        if (currentAction) {
+          try { currentAction.fadeOut(fadeTime); } catch(e) {}
+        }
+
+        // 取下一个 item
+        const itemNext = seqItems[idx];
+        idx = (idx + 1) % seqItems.length;
+
+        // 在开始新动作前应用 pose
+        applyPoseFromItem(itemNext, /*tween*/ true, /*dur*/ 400);
+
+        // 创建 action 并播放一次
+        const action = this.mixer.clipAction(itemNext.clip);
+        action.reset();
+        action.setLoop(THREE.LoopOnce, 0); // 播放一次
+        action.clampWhenFinished = true;
+        action.enabled = true;
+
+        // 启动（淡入）
+        action.fadeIn(fadeTime).play();
+
+        currentAction = action;
+      };
+
+      // 保存 handler 引用用于 later remove
+      this._seqFinishedHandler = (e) => playNext(e);
+      this.mixer.addEventListener('finished', this._seqFinishedHandler);
+
+      // 启动序列：先从 seqItems[0] 开始
+      playNext();
+
+      // 暴露停止函数（方便外部停止序列并清理）
+      this.stopSequence = () => {
+        if (!this.mixer) return;
+        if (this._seqFinishedHandler) {
+          try { this.mixer.removeEventListener('finished', this._seqFinishedHandler); } catch(e) {}
+          this._seqFinishedHandler = null;
+        }
+        try { this.mixer.stopAllAction(); } catch(e) {}
+        this.mixer = null;
+        currentAction = null;
+      };
+
+    // ---------- 情况 2：找到了单个 item（保留你原来的逻辑） ----------
+    } else {
+      if (!item) item = this.animClips.find( x => x.url.includes('U_Idle_01_Cycle.glb'));
+      else item = seqItems[0]; // 取出元素
+
+      // Set new pose && 补间动画
+      Object.entries(item.pose.props).forEach( x => {
+        this.poseBase.props[x[0]] = x[1].clone();
+        this.poseTarget.props[x[0]] = x[1].clone();
+        this.poseTarget.props[x[0]].t = tween ? 0 : 1;
+        this.poseTarget.props[x[0]].d = tween ? Math.max(200, Math.min(dur, 1000)) : 0;
+      });
+
+      // Create a new mixer
+      this.mixer = new THREE.AnimationMixer(this.armature);
+      this.mixer.addEventListener( 'finished', this.stopAnimation.bind(this), { once: true });
+
+      // Play action
+      const repeat = 0;// -> 1 time // Math.ceil(dur / item.clip.duration);
+      const action = this.mixer.clipAction(item.clip);
+      action.setLoop( THREE.LoopRepeat, repeat );
+      action.clampWhenFinished = true;
+      action.fadeIn(0.5).play();
+
+    }
+
+  }
+
+
   /**
   * Play RPM/Mixamo animation clip.
   * @param {string|Object} url URL to animation file FBX
@@ -4207,98 +4400,65 @@ class TalkingHead {
     if ( !this.armature ) return;
     // if ( this.animClips.length > 0)
     // for ( idx = 0; idx < this.animClips.length; ++idx) {
-    this.animClips.forEach(item => {
-      // while ( Date.now() - this.LastTime < this.animInterval * 1000 );
-      // item = this.animClips[idx]
-      if ( item.url.endsWith('-'+ndx) ) {
-        Object.entries(item.pose.props).forEach( x => {
-          this.poseBase.props[x[0]] = x[1].clone();
-          this.poseTarget.props[x[0]] = x[1].clone();
-          this.poseTarget.props[x[0]].t = tween ? 0 : 1;
-          this.poseTarget.props[x[0]].d = tween ? Math.max(200, Math.min(dur, 1000)) : 0;
-        });
+    // this.animClips.forEach(item => {
+    //   // while ( Date.now() - this.LastTime < this.animInterval * 1000 );
+    //   // item = this.animClips[idx]
+    //   if ( item.url.endsWith('-'+ndx) ) {
+    //     Object.entries(item.pose.props).forEach( x => {
+    //       this.poseBase.props[x[0]] = x[1].clone();
+    //       this.poseTarget.props[x[0]] = x[1].clone();
+    //       this.poseTarget.props[x[0]].t = tween ? 0 : 1;
+    //       this.poseTarget.props[x[0]].d = tween ? Math.max(200, Math.min(dur, 1000)) : 0;
+    //     });
 
-        // Create a new mixer
-        this.mixer = new THREE.AnimationMixer(this.armature);
-        this.mixer.addEventListener( 'finished', this.stopAnimation.bind(this), { once: true });
+    //     // Create a new mixer
+    //     this.mixer = new THREE.AnimationMixer(this.armature);
+    //     this.mixer.addEventListener( 'finished', this.stopAnimation.bind(this), { once: true });
+    //     // Play action
+    //     const repeat = 1;
+    //     // const repeat = Math.ceil(dur / item.clip.duration);
+    //     const action = this.mixer.clipAction(item.clip);
+    //     this.animInterval = item.clip.duration;
+    //     this.LastTime = Date.now();
+    //     action.setLoop( THREE.LoopRepeat, repeat );
+    //     action.clampWhenFinished = true;
+    //     action.fadeIn(0.5).play();
 
-        // 创建补间动画 
-        // this.camera.position.set(0, 2, 4); // 增加 y 和 z 值,使相机位置更高更远
-        // this.camera.rotation.set(-0.2, 0, 0); // 减小 x 轴旋转角度,减少俯视程度
-        // this.camera.lookAt(this.armature.position);
-        // const from = this.camera.position.clone();
-        // const to = new THREE.Vector3(0, 2, 4); // 目标位置也要相应调整
-        // const duration = 1000; // 1秒      
-        // new TWEEN.Tween(from)
-        //     .to(to, duration)
-        //     .easing(TWEEN.Easing.Quadratic.InOut)
-        //     .onUpdate(() => {
-        //         this.camera.position.copy(from);
-        //         this.camera.lookAt(this.armature.position);
-        //     })
-        //     .start();
-
-
-        // Play action
-        const repeat = 1;
-        // const repeat = Math.ceil(dur / item.clip.duration);
-        const action = this.mixer.clipAction(item.clip);
-        this.animInterval = item.clip.duration;
-        this.LastTime = Date.now();
-        action.setLoop( THREE.LoopRepeat, repeat );
-        action.clampWhenFinished = true;
-        action.fadeIn(0.5).play();
-
-      }
-    })
-    this.animClips = []
-    // let item = this.animClips.find( x => x.url === url+'-'+ndx );
-    // if ( item ) {
-
-    //   // Reset pose update
-    //   let anim = this.animQueue.find( x => x.template.name === 'pose' );
-    //   if ( anim ) {
-    //     anim.ts[0] = Infinity;
     //   }
+    // })
+    // this.animClips = []
+    let item = this.animClips.find( x => x.url === url+'-'+ndx );
+    // const seqItems = this.animClips.filter(x => typeof x.url === 'string' && x.url.startsWith(prefix));
+    if ( item ) {
 
-    //   // Set new pose && 补间动画
-    //   Object.entries(item.pose.props).forEach( x => {
-    //     this.poseBase.props[x[0]] = x[1].clone();
-    //     this.poseTarget.props[x[0]] = x[1].clone();
-    //     this.poseTarget.props[x[0]].t = tween ? 0 : 1;
-    //     this.poseTarget.props[x[0]].d = tween ? Math.max(200, Math.min(dur, 1000)) : 0;
-    //   });
+      // Reset pose update
+      let anim = this.animQueue.find( x => x.template.name === 'pose' );
+      if ( anim ) {
+        anim.ts[0] = Infinity;
+      }
 
-    //   // Create a new mixer
-    //   this.mixer = new THREE.AnimationMixer(this.armature);
-    //   this.mixer.addEventListener( 'finished', this.stopAnimation.bind(this), { once: true });
+      // Set new pose && 补间动画
+      Object.entries(item.pose.props).forEach( x => {
+        this.poseBase.props[x[0]] = x[1].clone();
+        this.poseTarget.props[x[0]] = x[1].clone();
+        this.poseTarget.props[x[0]].t = tween ? 0 : 1;
+        this.poseTarget.props[x[0]].d = tween ? Math.max(200, Math.min(dur, 1000)) : 0;
+      });
 
-    //   // 创建补间动画 
-    //   // this.camera.position.set(0, 2, 4); // 增加 y 和 z 值,使相机位置更高更远
-    //   // this.camera.rotation.set(-0.2, 0, 0); // 减小 x 轴旋转角度,减少俯视程度
-    //   // this.camera.lookAt(this.armature.position);
-    //   // const from = this.camera.position.clone();
-    //   // const to = new THREE.Vector3(0, 2, 4); // 目标位置也要相应调整
-    //   // const duration = 1000; // 1秒      
-    //   // new TWEEN.Tween(from)
-    //   //     .to(to, duration)
-    //   //     .easing(TWEEN.Easing.Quadratic.InOut)
-    //   //     .onUpdate(() => {
-    //   //         this.camera.position.copy(from);
-    //   //         this.camera.lookAt(this.armature.position);
-    //   //     })
-    //   //     .start();
+      // Create a new mixer
+      this.mixer = new THREE.AnimationMixer(this.armature);
+      this.mixer.addEventListener( 'finished', this.stopAnimation.bind(this), { once: true });
 
-
-    //   // Play action
-    //   const repeat = Math.ceil(dur / item.clip.duration);
-    //   const action = this.mixer.clipAction(item.clip);
-    //   action.setLoop( THREE.LoopRepeat, repeat );
-    //   action.clampWhenFinished = true;
-    //   action.fadeIn(0.5).play();
+      // Play action
+      const repeat = Math.ceil(dur / item.clip.duration);
+      // const repeat = 0;// -> 1 time // Math.ceil(dur / item.clip.duration);
+      const action = this.mixer.clipAction(item.clip);
+      action.setLoop( THREE.LoopRepeat, repeat );
+      action.clampWhenFinished = true;
+      action.fadeIn(0.5).play();
       
 
-    // } else 
+    } else 
     {
       const scale_ = new THREE.Vector3(scale, scale, scale);
       // Load animation
