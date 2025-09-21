@@ -2650,8 +2650,10 @@ class TalkingHead {
         if ( this.animClock < x.ts[j] ) break;
 
         for( let [mt,vs] of Object.entries(x.vs) ) {
-
-          if ( this.mtAvatar.hasOwnProperty(mt) ) {
+          const meta = mt.includes('viseme_') ? mt.split('_')[1] : mt; // mt: e.g. 'viseme_PP'
+          // if (mete === 'SS') meta = 'sil';
+          if ( this.mtAvatar.hasOwnProperty(meta) ) {
+            mt = meta==='SS' ? 'sil' : meta;
             // TODO: 更新视素交互列表
             if ( vs[j+1] === null ) continue; // Last or unknown target, skip
 
@@ -3671,9 +3673,9 @@ class TalkingHead {
 
           const res = await fetch( this.opt.ttsEndpoint + (this.opt.ttsApikey ? "?key=" + this.opt.ttsApikey : ''), o);
           const data = await res.json();
-          await this.syncSleep( Math.min(Math.floor(Math.random() * 1000) + 100, 2000) ); // 需要根据服务器性能调整
+          await this.syncSleep( Math.min(Math.floor(Math.random() * 100) + 10, 200) ); // 需要根据服务器性能调整 * 2~10
           
-          // TODO6：优化异步传输的数据同步，需要设置缓冲区
+
           if ( res.status === 200 && data && data.audioContent ) {
 
             // Audio data
@@ -3696,7 +3698,7 @@ class TalkingHead {
                 times.push( ms );
               }
             });
-            this.speakWithHands(undefined, undefined, able_to_push);
+            // this.speakWithHands(undefined, undefined, able_to_push);
 
             // Word-to-audio alignment
             const timepoints = [ { mark: 0, time: 0 } ];
