@@ -43,6 +43,7 @@ import{ DynamicBones } from './dynamicbones.mjs';
 import { segment, OutputFormat, addDict} from 'pinyin-pro';
 import CompleteDict from './complete.mjs';
 import { TechnicolorShader } from 'three/examples/jsm/Addons.js';
+
 // import { linearToneMapping } from 'three/tsl';
 // import CompleteDict from "https://cdn.jsdelivr.net/npm/@pinyin-pro/data@1.2.0/dist/complete.min.js";
 addDict(CompleteDict);
@@ -234,6 +235,9 @@ class TalkingHead {
       'speech-1': 14.50,
       'speech-2': 7.53
     }
+
+    
+    
     this.MetaTimeList = {
       'Idle_04_Cycle.glb': 0.53,
       'Idle_01to02.glb': 2.43,
@@ -246,7 +250,7 @@ class TalkingHead {
       'Idle_03to01': 6.67,
       'U_Idle_03_Cycle': 7.10,
       'U_Idle_02_Cycle': 7.10,
-      'U_Idle_01_Cylce': 7.10,
+      'U_Idle_01_Cycle': 7.10,
       'Idle_01to03': 7.50,
       '5Talk_03_02': 7.53,
       '5Talk_03_01': 14.50
@@ -271,10 +275,17 @@ class TalkingHead {
       'shrug': '',
       'namaste': ''
     }; // 无填充的自动补全default
+    this.singlePose = {
+      'default': 'U_Idle_01_Cycle',
+      'standby0': 'U_Idle_01_Cycle',
+      'standby1': 'U_Idle_02_Cycle',
+      'standby2': 'U_Idle_03_Cycle'
+    }
+    this.PoseGLB = true;
 
 
 
-
+    // useless
     this.poseTemplates = {
 
       'default': {
@@ -359,7 +370,7 @@ class TalkingHead {
       }
     };
 
-    // Gestures
+    // Gestures | useless
     // NOTE: For one hand gestures, use left left
     this.gestureTemplates = {
       'default': {
@@ -436,7 +447,7 @@ class TalkingHead {
     this.posePropNames = [...names];
 
     this.useEyeContace = true; // wheather to use eye contact or not 「应该直接可以了」
-    this.GLBmotion = false;
+    this.GLBmotion = true;
     this.GLBdefaultPose = './animations/U_Idle_01_Short04_Cycle_test.glb';
     this.GLBmotionList = []; // store GLB default animations as this.GLBmotion set to TRUE;
     // if this.GLBmotion is set to TRUE, execute this list instead of previous animation list / UE list;
@@ -747,7 +758,7 @@ class TalkingHead {
 
     this.duration_factor = 0.2;
 
-    this.second_per_word = 2.7; // 根据当前语速设置，向下取
+    this.word_per_second = 2.7; // 根据当前语速设置，向下取
     this.EvaluateTime = 999;
     
     this.animID_cnt = 0;
@@ -944,6 +955,17 @@ class TalkingHead {
   valueFn(x) {
     return (typeof x === 'function' ? x() : x);
   }
+
+  /**
+   * Calculate the total time as TalkQueue is consumed out
+  */
+  SumUpQueueTime () {
+      let sum = 0;
+      this.TalkQueue.forEach(x => {
+        sum += this.DefaultTimeList[x] || this.TalkTimeList[x];
+      });
+      return this.TalkQueue.length==0 ? 0 : sum;
+  };
 
   /**
   * Helper to deep copy and edit an object.
@@ -1836,13 +1858,32 @@ class TalkingHead {
   * @param {string} key Property key
   * @return {Quaternion|Vector3} Position or rotation
   */
-  getPoseTemplateProp(key) {
+  getPoseTemplateProp(key, UseglbTemplate=false) {
 
     const ids = key.split('.');
     let target = ids[0] + '.' + (ids[1] === 'rotation' ? 'quaternion' : ids[1]);
 
+    let val;
+
     if ( this.gesture && this.gesture.hasOwnProperty(target) ) {
       return this.gesture[target].clone();
+    } else if ( UseglbTemplate ) {
+      if ( this.poseTarget.props.hasOwnProperty(target) ) {
+        const o = {};
+        o[target] = this.poseTarget.props[target];
+        val = this.propsToThreeObjects( o )[target];
+      } else if ( this.poseTarget.props.hasOwnProperty(source) ) {
+        const o = {};
+        o[source] = this.poseTarget.props[source];
+        val = this.propsToThreeObjects( o )[target];
+      }
+
+      // Mirror
+      if ( val && !this.poseWeightOnLeft && val.isQuaternion ) {
+        val.x *= -1;
+        val.w *= -1;
+      }
+      return val;
     } else {
       let source = ids[0] + '.' + (ids[1] === 'quaternion' ? 'rotation' : ids[1]);
       if ( !this.poseWeightOnLeft ) {
@@ -1856,7 +1897,7 @@ class TalkingHead {
       }
 
       // Get value
-      let val;
+      // let val;
       if ( this.poseTarget.template.props.hasOwnProperty(target) ) {
         const o = {};
         o[target] = this.poseTarget.template.props[target];
@@ -1953,52 +1994,118 @@ class TalkingHead {
   * @param {Object} template Pose template, if null update current pose
   * @param {number} [ms=2000] Transition time in milliseconds
   */
-  setPoseFromTemplate(template, ms=2000, useGLB=false, poseName=null) {
+  async setPoseFromTemplate(template, ms=1500, useGLB=false, poseName=null, scale = 0.01, ndx=0) {
     // 已经规划好
-    if (useGLB && poseName) {
-      // 使用 glb 文件中的姿势数据
-      const currentPose_candidates = this.poseTransfer.hasOwnProperty(poseName) ? this.poseTransfer[poseName] : 'standby0';
-      this.TalkQueue.push(currentPose_candidates);
-      // const animList = this.AnimationFA_route[currentPose_candidates]
-      // animList.forEach(x => this.TalkQueue.push(x))
-    }
+    // if ( ! (useGLB && poseName) ) {  // && ! this.PoseGLB
+    //   // Special cases
+    //   const isIntermediate = template && this.poseTarget && this.poseTarget.template && ((this.poseTarget.template.standing && template.lying) || (this.poseTarget.template.lying && template.standing));
+    //   const isSameTemplate = poseName && (poseName === this.poseCurrentTemplate);
+    //   const isWeightOnLeft = this.poseWeightOnLeft;
+    //   let duration = isIntermediate ? 1000 : ms;
 
-    // Special cases
-    const isIntermediate = template && this.poseTarget && this.poseTarget.template && ((this.poseTarget.template.standing && template.lying) || (this.poseTarget.template.lying && template.standing));
-    const isSameTemplate = template && (template === this.poseCurrentTemplate);
-    const isWeightOnLeft = this.poseWeightOnLeft;
-    let duration = isIntermediate ? 1000 : ms;
+    //   // New pose template
+    //   if ( isIntermediate) {
+    //     this.poseCurrentTemplate = this.poseTemplates['oneknee'];
+    //     setTimeout( () => {
+    //       this.setPoseFromTemplate(template,ms);
+    //     }, duration);
+    //   } else {
+    //     this.poseCurrentTemplate = template || this.poseCurrentTemplate;
+    //   }
 
-    // New pose template
-    if ( isIntermediate) {
-      this.poseCurrentTemplate = this.poseTemplates['oneknee'];
-      setTimeout( () => {
-        this.setPoseFromTemplate(template,ms);
-      }, duration);
-    } else {
-      this.poseCurrentTemplate = template || this.poseCurrentTemplate;
-    }
+    //   // Set target
+    //   this.poseTarget = this.poseFactory(this.poseCurrentTemplate, duration);
+    //   this.poseWeightOnLeft = true;
 
-    // Set target
-    this.poseTarget = this.poseFactory(this.poseCurrentTemplate, duration);
-    this.poseWeightOnLeft = true;
+    //   // Mirror properties, if necessary
+    //   if ( (!isSameTemplate && !isWeightOnLeft) || (isSameTemplate && isWeightOnLeft ) ) {
+    //     this.poseTarget.props = this.mirrorPose(this.poseTarget.props);
+    //     this.poseWeightOnLeft = !this.poseWeightOnLeft;
+    //   }
 
-    // Mirror properties, if necessary
-    if ( (!isSameTemplate && !isWeightOnLeft) || (isSameTemplate && isWeightOnLeft ) ) {
-      this.poseTarget.props = this.mirrorPose(this.poseTarget.props);
-      this.poseWeightOnLeft = !this.poseWeightOnLeft;
-    }
+    //   Object.keys(this.poseDelta.props).forEach( key => {
+    //     if ( !this.poseTarget.props.hasOwnProperty(key) ) {
+    //       // console.log(key)
+    //       this.poseTarget.props[key] = this.poseBase.props[key].clone();
+    //       this.poseTarget.props[key].t = this.animClock;
+    //       this.poseTarget.props[key].d = duration;
+    //     }
+    //   });
+    //   return;
+    // }
 
-    // Gestures
-    if ( this.gesture ) {
-      for( let [p,val] of Object.entries(this.gesture) ) {
-        if ( this.poseTarget.props.hasOwnProperty(p) ) {
-          this.poseTarget.props[p].copy(val);
-          this.poseTarget.props[p].t = val.t;
-          this.poseTarget.props[p].d = val.d;
+    const loader = new GLTFLoader();
+    // 使用 glb 文件中的姿势数据
+    // const currentPose_candidates = this.poseTransfer.hasOwnProperty(poseName) ? this.poseTransfer[poseName] : ( this.poseDEFAULT.hasOwnProperty(poseName) ? this.poseDEFAULT[poseName] : 'standby0');
+    // this.TalkQueue.push(currentPose_candidates); // play
+    const currentPose_candedates = this.singlePose[poseName] || (['U_Idle_01_Cycle', 'U_Idle_02_Cycle', 'U_Idle_03_Cycle'][Math.floor(Math.random() * 3)]);
+    
+    // Priority: set single action for the default pose
+    const pose_path = `./animations/${currentPose_candedates}.glb`; // TODO: get path form private property
+    const scale_ = new THREE.Vector3(scale, scale, scale);
+    const glb = await loader.loadAsync( pose_path ); // without await ? || 将后面的移上来
+
+    let newPose = null;
+    const duration = this.TalkQueue.length===0 ? 100 : Math.max(ms, this.SumUpQueueTime())
+    console.log('SumUpTime = ' + this.SumUpQueueTime());
+    
+    if (glb && glb.animations && glb.animations[ndx]) {
+      let anim = glb.animations[ndx];
+      const props = {};
+      anim.tracks.sort((a, b) => {
+          let ids1 = a.name.split('.');
+          let ids2 = b.name.split('.');
+          return ids2[1].localeCompare(ids1[1]);
+        });
+      anim.tracks.forEach( t => {
+        if(t.name.includes('mixamorig')) t.name = t.name.replaceAll('mixamorig','');
+        const ids = t.name.split('.');
+        if ( ids[1] === 'position' ) { 
+          const s_now = (ids[0]+'.scale' in props) ? props[ids[0]+'.scale'] : scale_ ;
+          for(let i=0; i<t.values.length; i++ ) {
+            t.values[i] = t.values[i] * (i%3===0?s_now.x:(i%3===1?s_now.y:s_now.z));
+          }
+          props[t.name] = new THREE.Vector3(t.values[0], t.values[1],t.values[2]);
+        } else if ( ids[1] === 'quaternion' ) {
+          props[t.name] = new THREE.Quaternion(t.values[0],t.values[1],t.values[2],t.values[3]);
+        } else if ( ids[1] === 'rotation' ) {
+          props[ids[0]+".quaternion"] = new THREE.Quaternion().setFromEuler(new THREE.Euler(t.values[0],t.values[1],t.values[2],'XYZ')).normalize();
+        } 
+        else if  ( ids[1] === 'scale' ) {
+          props[t.name] = new THREE.Vector3(t.values[0], t.values[1], t.values[2]);
+        }
+      });
+
+      newPose = { props: props};
+      if ( props['pelvis.position'] ) {
+        if ( props['pelvis.position'].y < 0.5 ) {
+          newPose.lying = true;
+        } else {
+          newPose.standing = true; 
         }
       }
     }
+    const o = {
+      template: poseName, // 我的定义下template就是名字
+      props: this.propsToThreeObjects( newPose )
+    }
+    for( const [p,val] of Object.entries(o.props) ) {
+      // Restrain movement when standing
+      // if ( this.opt.modelMovementFactor < 1 && template.standing &&
+      //   (p === 'pelvis.quaternion' || p === 'spine_01.quaternion' ||
+      //   p === 'spine_02.quaternion' || p === 'spine_03.quaternion' ||
+      //   p === 'neck_01.quaternion' || p === 'thigh_l.quaternion' ||
+      //   p === 'calf_l.quaternion' || p === 'thigh_r.quaternion' ||
+      //   p === 'calf_r.quaternion') ) {
+      //   const ref = this.poseStraight[p];
+      //   const angle = val.angleTo( ref );
+      //   val.rotateTowards( ref, (1 - this.opt.modelMovementFactor) * angle );
+      // }
+      // Custom properties
+      val.t = this.animClock; // timestamp
+      val.d = ms; // Transition duration
+    }
+    this.poseTarget = o;
 
     // Make sure deltas are included in the target
     Object.keys(this.poseDelta.props).forEach( key => {
@@ -2009,6 +2116,7 @@ class TalkingHead {
         this.poseTarget.props[key].d = duration;
       }
     });
+    this.poseCurrentTemplate = poseName;
 
   }
 
@@ -2617,15 +2725,15 @@ class TalkingHead {
           break;
 
         case 'pose': // 「TODO3: 这里Templates中仅保留一个动作default动作，为默认的正常的待机静态动作；其余全部删除」
-          this.GLBmotion = true;
+          // this.GLBmotion = true;
           this.poseName = j;
           // this.poseTransfer表中的设定，这里只有待机动作，可以直接做
-          if (this.TalkQueue == 0) {
-              this.setPoseFromTemplate(
+          // if (this.TalkQueue == 0) {
+            this.setPoseFromTemplate(
               this.poseTemplates[ this.poseName ], 
               2000, this.GLBmotion, j
             );
-          } // TODO：这里是加入glb动作的切口
+          // } // TODO：这里是加入glb动作的切口
           // set this.poseTarget, act as [this.poseBase -> this.poseTarget]
           break;
 
@@ -3015,7 +3123,7 @@ class TalkingHead {
     } 
 
     let is_first = true;
-    this.EvaluateTime = letters.length / this.second_per_word;
+    this.EvaluateTime = letters.length / this.word_per_second;
     for( let i=0; i<letters.length; i++ ) {
       const isLast = i === (letters.length-1);
       const isSpeakable = letters[i].match(speakables);
@@ -3875,7 +3983,7 @@ class TalkingHead {
     } else {
       ["upperarm_l","lowerarm_l","hand_l","upperarm_r","lowerarm_r","hand_r"].forEach( x => {
         let key = x + ".quaternion";
-        this.poseTarget.props[key].copy( this.getPoseTemplateProp(key) );
+        this.poseTarget.props[key].copy( this.getPoseTemplateProp(key, UseglbTemplate=this.GLBmotion) );
         this.poseTarget.props[key].t = this.animClock;
         this.poseTarget.props[key].d = 1000;
       });
@@ -4728,7 +4836,7 @@ class TalkingHead {
       this.gesture = null;
       for( const [p,val] of gs ) {
         if ( this.poseTarget.props.hasOwnProperty(p) ) {
-          this.poseTarget.props[p].copy( this.getPoseTemplateProp(p) );
+          this.poseTarget.props[p].copy( this.getPoseTemplateProp(p, UseglbTemplate=this.GLBmotion) );
           this.poseTarget.props[p].t = this.animClock;
           this.poseTarget.props[p].d = ms;
         }
@@ -4773,7 +4881,7 @@ class TalkingHead {
     const links = ik.links;
     links.forEach( x => {
       x.bone = this.ikMesh.getObjectByName(x.link);
-      x.bone.quaternion.copy( this.getPoseTemplateProp(x.link+'.quaternion') );
+      x.bone.quaternion.copy( this.getPoseTemplateProp(x.link+'.quaternion', UseglbTemplate=this.GLBmotion) );
     });
     root.updateMatrixWorld(true);
     const iterations = ik.iterations || 10;
