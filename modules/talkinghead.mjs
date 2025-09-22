@@ -421,8 +421,8 @@ class TalkingHead {
     })
 
     // Default Animations filter
-    Object.keys(this.poseTransfer).forEach( x => {
-      if (this.poseTransfer[x] === '') this.poseTransfer[x] == 'standby0';
+    Object.keys(this.poseTransfer).forEach( x => { 
+      if (this.poseTransfer[x] === '') this.poseTransfer[x] == ['standby2', 'standby0', 'standby2', 'standby1', 'standby2'][Math.floor( Math.random() * 5 )];
     });
 
     // Dynamically pick up all the property names that we need in the code
@@ -518,12 +518,13 @@ class TalkingHead {
       { delay: [1000,4000,1,2], dt: [50,[100,200],100,[10,400,0],50,[100,200],100], vs: { EyeBlinkLeft: [1,1,0,0,1,1,0], EyeBlinkRight: [1,1,0,0,1,1,0] } }
     ]};
 
+    this.breath_factor = 0.6;
     this.animMoods = {
       'neutral' : {
         baseline: { eyesLookDown: 0.1 },
         speech: { deltaRate: 0, deltaPitch: 0, deltaVolume: 0 },
         anims: [
-          { name: 'breathing', delay: 1500, dt: [ 1200,500,1000 ], vs: { chestInhale: [0.5,0.5,0] } },
+          { name: 'breathing', delay: 1500, dt: [ 1200,500,1000 ], vs: { chestInhale: [0.5 * this.breath_factor,0.5 * this.breath_factor,0] } },
           { name: 'pose', alt: [
             { p: 0.5, delay: [5000,30000], vs: { pose: ['side'] } },
             { p: 0.3, delay: [5000,30000], vs: { pose: ['hip'] },
@@ -545,7 +546,7 @@ class TalkingHead {
         baseline: { mouthSmile: 0.2, eyesLookDown: 0.1 },
         speech: { deltaRate: 0, deltaPitch: 0.1, deltaVolume: 0 },
         anims: [
-          { name: 'breathing', delay: 1500, dt: [ 1200,500,1000 ], vs: { chestInhale: [0.5,0.5,0] } },
+          { name: 'breathing', delay: 1500, dt: [ 1200,500,1000 ], vs: { chestInhale: [0.5 * this.breath_factor,0.5 * this.breath_factor,0] } },
           { name: 'pose',
             idle: {
               alt: [
@@ -582,7 +583,7 @@ class TalkingHead {
         baseline: { eyesLookDown: 0.1, BrowDownLeft: 0.6, BrowDownRight: 0.6, jawForward: 0.3, mouthFrownLeft: 0.7, mouthFrownRight: 0.7, mouthRollLower: 0.2, mouthShrugLower: 0.3, handFistLeft: 1, handFistRight: 1 },
         speech: { deltaRate: -0.2, deltaPitch: 0.2, deltaVolume: 0 },
         anims: [
-          { name: 'breathing', delay: 500, dt: [ 1000,500,1000 ], vs: { chestInhale: [0.7,0.7,0] } },
+          { name: 'breathing', delay: 500, dt: [ 1000,500,1000 ], vs: { chestInhale: [0.7 * this.breath_factor,0.7 * this.breath_factor,0] } },
           { name: 'pose', alt: [
             { p: 0.4, delay: [5000,30000], vs: { pose: ['side'] } },
             { p: 0.4, delay: [5000,30000], vs: { pose: ['straight'] } },
@@ -604,7 +605,7 @@ class TalkingHead {
         baseline: { eyesLookDown: 0.2, BrowDownRight: 0.1, browInnerUp: 0.6, browOuterUpRight: 0.2, eyeSquintLeft: 0.7, eyeSquintRight: 0.7, mouthFrownLeft: 0.8, mouthFrownRight: 0.8, mouthLeft: 0.2, mouthPucker: 0.5, mouthRollLower: 0.2, mouthRollUpper: 0.2, mouthShrugLower: 0.2, mouthShrugUpper: 0.2, mouthStretchLeft: 0.4 },
         speech: { deltaRate: -0.2, deltaPitch: -0.2, deltaVolume: 0 },
         anims: [
-          { name: 'breathing', delay: 1500, dt: [ 1000,500,1000 ], vs: { chestInhale: [0.3,0.3,0] } },
+          { name: 'breathing', delay: 1500, dt: [ 1000,500,1000 ], vs: { chestInhale: [0.3 * this.breath_factor,0.3 * this.breath_factor,0] } },
           { name: 'pose', alt: [
             { p: 0.4, delay: [5000,30000], vs: { pose: ['side'] } },
             { p: 0.4, delay: [5000,30000], vs: { pose: ['straight'] } },
@@ -626,7 +627,7 @@ class TalkingHead {
         baseline: { browInnerUp: 0.7, eyeSquintLeft: 0.5, eyeSquintRight: 0.5, eyeWideLeft: 0.6, eyeWideRight: 0.6, mouthClose: 0.1, mouthFunnel: 0.3, mouthShrugLower: 0.5, mouthShrugUpper: 0.5 },
         speech: { deltaRate: -0.2, deltaPitch: 0, deltaVolume: 0 },
         anims: [
-          { name: 'breathing', delay: 500, dt: [ 1000,500,1000 ], vs: { chestInhale: [0.7,0.7,0] } },
+          { name: 'breathing', delay: 500, dt: [ 1000,500,1000 ], vs: { chestInhale: [0.7 * this.breath_factor,0.7 * this.breath_factor,0] } },
           { name: 'pose', alt: [
             { p: 0.8, delay: [5000,30000], vs: { pose: ['side'] } },
             { delay: [5000,30000], vs: { pose: ['straight'] } },
@@ -649,7 +650,7 @@ class TalkingHead {
         baseline: { BrowDownLeft: 0.7, BrowDownRight: 0.1, browInnerUp: 0.3, eyeSquintLeft: 1, eyeSquintRight: 1, eyeWideLeft: 0.5, eyeWideRight: 0.5, eyesRotateX: 0.05, mouthLeft: 0.4, mouthPressLeft: 0.3, mouthRollLower: 0.3, mouthShrugLower: 0.3, mouthShrugUpper: 0.8, mouthUpperUpLeft: 0.3, noseSneerLeft: 1, noseSneerRight: 0.7 },
         speech: { deltaRate: -0.2, deltaPitch: 0, deltaVolume: 0 },
         anims: [
-          { name: 'breathing', delay: 1500, dt: [ 1000,500,1000 ], vs: { chestInhale: [0.5,0.5,0] } },
+          { name: 'breathing', delay: 1500, dt: [ 1000,500,1000 ], vs: { chestInhale: [0.5 * this.breath_factor,0.5 * this.breath_factor,0] } },
           { name: 'pose', alt: [
             { delay: [5000,20000], vs: { pose: ['side'] } },
           ]},
@@ -667,7 +668,7 @@ class TalkingHead {
         baseline: { browInnerUp: 0.4, browOuterUpLeft: 0.2, browOuterUpRight: 0.2, mouthSmile: 0.2, EyeBlinkLeft: 0.6, EyeBlinkRight: 0.6, eyeWideLeft: 0.7, eyeWideRight: 0.7, bodyRotateX: 0.1, mouthDimpleLeft: 0.1, mouthDimpleRight: 0.1, mouthPressLeft: 0.2, mouthShrugUpper: 0.2, mouthUpperUpLeft: 0.1, mouthUpperUpRight: 0.1 },
         speech: { deltaRate: -0.1, deltaPitch: -0.7, deltaVolume: 0 },
         anims: [
-          { name: 'breathing', delay: 1500, dt: [ 1500,500,1500 ], vs: { chestInhale: [0.8,0.8,0] } },
+          { name: 'breathing', delay: 1500, dt: [ 1500,500,1500 ], vs: { chestInhale: [0.8 * this.breath_factor,0.8 * this.breath_factor,0] } },
           { name: 'pose', alt: [
             { p: 0.4, delay: [5000,30000], vs: { pose: ['side'] } },
             { p: 0.2, delay: [5000,30000], vs: { pose: ['straight'] } },
@@ -705,7 +706,7 @@ class TalkingHead {
         baseline: { EyeBlinkLeft: 1, EyeBlinkRight: 1, eyesClosed: 0.6 },
         speech: { deltaRate: 0, deltaPitch: -0.2, deltaVolume: 0 },
         anims: [
-          { name: 'breathing', delay: 1500, dt: [ 1000,500,1000 ], vs: { chestInhale: [0.6,0.6,0] } },
+          { name: 'breathing', delay: 1500, dt: [ 1000,500,1000 ], vs: { chestInhale: [0.6 * this.breath_factor,0.6 * this.breath_factor,0] } },
           { name: 'pose', alt: [
             { delay: [5000,20000], vs: { pose: ['side'] } }
           ]},
@@ -2080,7 +2081,7 @@ class TalkingHead {
     // 已经规划好
     if (useGLB && poseName) {
       // 使用 glb 文件中的姿势数据
-      currentPose_candidates = this.poseTransfer.hasOwnProperty(poseName) ? this.poseTransfer[poseName] : 'standby0';
+      const currentPose_candidates = this.poseTransfer.hasOwnProperty(poseName) ? this.poseTransfer[poseName] : 'standby0';
       this.TalkQueue.push(currentPose_candidates);
       // const animList = this.AnimationFA_route[currentPose_candidates]
       // animList.forEach(x => this.TalkQueue.push(x))
@@ -2179,7 +2180,7 @@ class TalkingHead {
   */
   // 表情控制
   setMood(s) {
-    return; // no need of moods control
+    // return; // no need of moods control
     
     s = (s || '').trim().toLowerCase();
     if ( !this.animMoods.hasOwnProperty(s) ) throw new Error("Unknown mood.");
@@ -2327,7 +2328,7 @@ class TalkingHead {
   */
   animFactory( t, loop = false, scaleTime = 1, scaleValue = 1, noClockOffset = false ) {
 
-    const o = { template: t, ts: [0], vs: {} };
+    const o = { template: t, ts: [0], vs: {} }; // t: {name: ..., dt: ..., vs: ...}
 
     // Follow the hierarchy of objects
     let a = t;
