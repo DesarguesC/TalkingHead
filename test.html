@@ -2338,7 +2338,7 @@ function openaiBuildMessage( extra_system_prompt = "") {
       msgs.push( { n: n, role: x.role, content: n.value } );
     }
     if(x.role === "system") {
-      n.value = condition + "仅返回不超过100字的中文, 禁用markdown格式, 禁止分点作答." + extra_system_prompt; // 约定只有中文且无markdown
+      n.value = condition + "仅返回不超过500字的中文, 禁用markdown格式, 禁止分点作答." + extra_system_prompt; // 约定只有中文且无markdown
       // TODO: 在此添加约束（如有需要）
     }
   });
@@ -2944,27 +2944,27 @@ async function llamaSendMessage(node,msgs) {
       const LengthThreshold = 10; // origin: 30
       let delta = 0;
       let adding = 0;
-      let keep_reading = true;
+      // let keep_reading = true;
 
-      while (keep_reading) {
+      while ( true ) {
         let { done, value } = await reader.read();
         // await SyncSleep( 50 );
         // await SyncSleep( Math.min(Math.floor(Math.random() * ( 70 * ++adding - 50 + 1)) + 100, 200) ); 
         // 需要随服务器响应速度调整
         //adding++;
         // Extract text data
-        let line = "";
-        if ( value && keep_reading ) {
+        // let line = "";
+        if ( value ) {
           decoder.decode(value).split('\n').forEach( data => {
             if ( data.startsWith("data: ") ) {
-              line += data.substring(6).trim(); // buffer
+              let line = data.substring(6).trim(); // buffer
               if ( line === '[DONE]' ) {
                 done = true;
               } else {
                 let obj;
                 try {
                   obj = JSON.parse( line );
-                  line = "";
+                  // line = "";
                 } catch(error) {
                   console.log("Error JSON parsing line: " + line);
                   // throw new Error( "Error JSON parsing line: " + line ); // TODO6：这里会出现奇怪的parsing错误，需要解决
@@ -2999,23 +2999,26 @@ async function llamaSendMessage(node,msgs) {
           });
         }
         
-        if ( tts.length > LengthThreshold + delta) {
-          const indices = ['。', '！', '？']
-                  .map(p => tts.indexOf(p, LengthThreshold)) // start ths 45-th letter
-                  .filter(index => index !== -1);
-          const idx = indices.length > 0 ? Math.min(...indices) : -1;
-          if (idx > 0) {
-            tts = tts.substring(0, idx+1);
-            done = true;
-            keep_reading = false;
-          } else {
-            delta = delta + 3;
-          }
-          
-        }
+        
         
         
         if (done) {
+
+          if ( tts.length > LengthThreshold + delta) {
+            const indices = ['。', '！', '？']
+                    .map(p => tts.indexOf(p, LengthThreshold)) // start ths 45-th letter
+                    .filter(index => index !== -1);
+            const idx = indices.length > 0 ? Math.min(...indices) : -1;
+            if (idx > 0) {
+              tts = tts.substring(0, idx+1);
+              // done = true;
+              // keep_reading = false;
+            } else {
+              delta = delta + 3;
+            }
+            
+          }
+
           if (conv_id) {
             document.cookies = "conv_id=" + conv_id + "; path=" + PROXY;
           }
