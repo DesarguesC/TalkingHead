@@ -3004,7 +3004,7 @@ async function llamaSendMessage(node,msgs) {
         
         if (done) {
 
-          if ( tts.length > LengthThreshold + delta) {
+          if ( tts.length > LengthThreshold + delta) { // 子串划分有问题
             const indices = ['。', '！', '？']
                     .map(p => tts.indexOf(p, LengthThreshold)) // start ths 45-th letter
                     .filter(index => index !== -1);
@@ -3115,6 +3115,8 @@ async function llamaSendMessage(node,msgs) {
             // Make sure we do not get another function call
             body.tool_choice = "none";
           }
+          
+          
           break;
         }
 
