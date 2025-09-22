@@ -213,14 +213,14 @@ class TalkingHead {
     this.poseTrace = [];
     this.AnimationFA_route = {
       'standby0': ['U_Idle_01_Cycle.glb'],
-      'standby1': ['Idle_01to03.glb', 'U_Idle_03_Cycle.glb', 'Idle_03to01.glb', 'U_Idle_01_Cycle.glb'],
-      'standby2': ['Idle_01to04.glb', 'Idle_04_Cycle.glb', 'Idle_04to01.glb', 'U_Idle_01_Cycle.glb'],
-      'talk-1': ['Idle_01to04.glb', 'Idle_04_Cycle.glb', 'Idle_04to01.glb', 'U_Speech_08_Cycle_T1_02.glb', 'U_Idle_01_Cycle.glb'],
-      'talk-2': ['Idle_01to04.glb', 'Idle_04_Cycle.glb', 'Idle_04to01.glb', 'U_Speech_08_Cycle_T1_04.glb', 'U_Idle_01_Cycle.glb'],
-      'talk-3': ['Idle_01to04.glb', 'Idle_04_Cycle.glb', 'Idle_04to01.glb', 'U_Speech_08_Cycle_T1_06.glb', 'U_Idle_01_Cycle.glb'],
-      'talk-4': ['Idle_01to04.glb', 'Idle_04_Cycle.glb', 'Idle_04to01.glb', 'U_Speech_08_Cycle_T1_08.glb', 'U_Idle_01_Cycle.glb'],
-      'speech-1': ['5Talk_03_01.glb', 'U_Idle_01_Cycle.glb'],
-      'speech-2': ['5Talk_03_02.glb', 'U_Idle_01_Cycle.glb']
+      'standby1': ['Idle_01to03.glb', 'U_Idle_03_Cycle.glb', 'Idle_03to01.glb'],
+      'standby2': ['Idle_01to04.glb', 'Idle_04_Cycle.glb', 'Idle_04to01.glb'],
+      'talk-1': ['Idle_01to04.glb', 'Idle_04_Cycle.glb', 'Idle_04to01.glb', 'U_Speech_08_Cycle_T1_02.glb'],
+      'talk-2': ['Idle_01to04.glb', 'Idle_04_Cycle.glb', 'Idle_04to01.glb', 'U_Speech_08_Cycle_T1_04.glb'],
+      'talk-3': ['Idle_01to04.glb', 'Idle_04_Cycle.glb', 'Idle_04to01.glb', 'U_Speech_08_Cycle_T1_06.glb'],
+      'talk-4': ['Idle_01to04.glb', 'Idle_04_Cycle.glb', 'Idle_04to01.glb', 'U_Speech_08_Cycle_T1_08.glb'],
+      'speech-1': ['5Talk_03_01.glb'],
+      'speech-2': ['5Talk_03_02.glb']
     }
     this.DefaultTimeList = {
       'standby0': 7.10,
@@ -529,7 +529,7 @@ class TalkingHead {
       { delay: [1000,4000,1,2], dt: [50,[100,200],100,[10,400,0],50,[100,200],100], vs: { EyeBlinkLeft: [1,1,0,0,1,1,0], EyeBlinkRight: [1,1,0,0,1,1,0] } }
     ]};
 
-    this.breath_factor = 0.6;
+    this.breath_factor = 0.4;
     this.animMoods = {
       'neutral' : {
         baseline: { eyesLookDown: 0.1 },
@@ -787,11 +787,10 @@ class TalkingHead {
       'UE-10': { name: "U_Hand_05_Cycle_01", description: "呼唤",  duration: 18},
       'UE-11': { name: "U_SceneChange_02_Cycle_01", description: "转场",  duration: 22},
       'UE-12': { name: "U_Speech_08_Cycle_01", description: "讲解",  duration: 25},
-      
     };
     this.UESocketProxy = "/socket:ue/animation";
 
-    this.animClips = [];
+    this.animClips = []; // 后续不清空，相当于缓存
     this.animPoses = [];
 
     // Clock
@@ -2596,8 +2595,10 @@ class TalkingHead {
     let isHeadMove = null;
     const tasks = [];
 
+    if ( Date.now() - this.LastTime >= this.animInterval * 1000 )
     for( i=0, l=this.TalkQueue.length; i<l; i++) {
         const animID = this.TalkQueue[i];
+        this.animInterval = this.SumUpQueueTime();
         this.GroupAnimationConstruct(animID);
         this.GroupAnimationPlayer(animID);
         this.poseTrace.push(animID);
@@ -3090,7 +3091,7 @@ class TalkingHead {
   * @param {subtitlesfn} [onsubtitles=null] Callback when a subtitle is written
   * @param {number[][]} [excludes=null] Array of [start, end] index arrays to not speak
   */
-  speakText(s, opt = null, onsubtitles = null, excludes = null ) {
+  speakText( s, opt = null, onsubtitles = null, excludes = null, full_string=null, motion_start=false ) {
 
     opt = opt || {};
 
@@ -3109,13 +3110,16 @@ class TalkingHead {
     let ttsSentence = []; // Text-to-speech sentence
     let lipsyncAnim = []; // Lip-sync animation sequence
     let letters = [... this.lipsyncPreProcessText(s, lipsyncLang)];
-    const second_per_word = 0.5; // second
-    const time_estimated = second_per_word * letters.length;
-    const target_pose = time_estimated <= 6.00 ? 'standby1' : (time_estimated * 1.25 <= 7.53 ? 'speech-2' : [
-        'talk-1', 'talk-2', 'talk-3', 'talk-4', 'speech-1'
-    ][Math.floor(Math.random() * 5)]) ;
-    this.TalkQueue.push(target_pose);
-    // this.AnimationFA_route[target_pose].forEach(x => this.TalkQueue.push(x));
+    if (motion_start && full_string) {
+      const second_per_word = 0.5; // second
+      const time_estimated = second_per_word * letters.length;
+      const target_pose = time_estimated <= 6.00 ? 'standby1' : (time_estimated * 1.25 <= 7.53 ? 'speech-2' : [
+          'talk-1', 'talk-2', 'talk-3', 'talk-4', 'speech-1'
+      ][Math.floor(Math.random() * 5)]) ;
+      this.TalkQueue.push(target_pose);
+      // this.AnimationFA_route[target_pose].forEach(x => this.TalkQueue.push(x));
+    }
+    
 
 
     if (this.containsChinese(letters)) {
@@ -4188,16 +4192,29 @@ class TalkingHead {
     const animList = this.AnimationFA_route[groupName];
     const loader = new GLTFLoader();
     let glb_list = []
-    if (animList.length <= 3) {
+    // animList.forEach( x => {
+    //   const url = `./animations/${x}`;
+    //   glb_list.push({'url': url, 'glb': loader.loadAsync( url, onprogress )});
+    // })
+    if (animList.length < 3) {
       const url = `./animations/${animList[0]}`;
-      glb_list.push({'url': url, 'glb': await loader.loadAsync( url, onprogress)})
-    } else if (animList.length >= 3) {
+      glb_list.push({'url': url, 'glb': await loader.loadAsync( url, onprogress )});
+    } else if (animList.length == 3) {
       const url_1 = `./animations/${animList[0]}`;
       glb_list.push({'url': url_1, 'glb': await loader.loadAsync( url_1, onprogress )})
       const url_2 = `./animations/${animList[1]}`;
       glb_list.push({'url': url_2, 'glb': await loader.loadAsync( url_2, onprogress )})
       const url_3 = `./animations/${animList[2]}`;
       glb_list.push({'url': url_3, 'glb': await loader.loadAsync( url_3, onprogress )})
+    } else if (animList.length == 4) {
+      const url_1 = `./animations/${animList[0]}`;
+      glb_list.push({'url': url_1, 'glb': await loader.loadAsync( url_1, onprogress )});
+      const url_2 = `./animations/${animList[1]}`;
+      glb_list.push({'url': url_2, 'glb': await loader.loadAsync( url_2, onprogress )});
+      const url_3 = `./animations/${animList[2]}`;
+      glb_list.push({'url': url_3, 'glb': await loader.loadAsync( url_3, onprogress )});
+      const url_4 = `./animations/${animList[3]}`;
+      glb_list.push({'url': url_4, 'glb': await loader.loadAsync( url_4, onprogress )});
     }
     let glb_anims = [];
     const scale_ = new THREE.Vector3(scale, scale, scale);
@@ -4248,7 +4265,7 @@ class TalkingHead {
           pose: newPose
         })
       }
-    })
+    });
     this.animClips.push({
       'name': groupName,
       'pose': glb_anims
@@ -4258,7 +4275,13 @@ class TalkingHead {
   async GroupAnimationPlayer(groupName, onprogress=null, dur=200, ndx=0, scale=0.01, tween=true) {
     let item = this.animClips.find( x => x.name === groupName) || null;
     let seqItems = [];
-    if (item) item['pose'].forEach(x => {seqItems.push(x)});
+
+    if ( !item ) {
+      await this.GroupAnimationConstruct(groupName, onprogress, dur, ndx, scale, tween);
+      item = this.animClips.find( x => x.name === groupName) || null;
+      if (!item) item = this.animClips.find( x => x.url.includes('U_Idle_01_Cycle.glb'));
+    }
+    item['pose'].forEach(x => {seqItems.push(x)});
     // const seqItems = item['pose']; // list
     const applyPoseFromItem = (item, tween = true, dur = 400) => {
       if (!item || !item.pose) return;
@@ -4319,7 +4342,8 @@ class TalkingHead {
         action.enabled = true;
 
         // 启动（淡入）
-        action.fadeIn(fadeTime).play();
+        this.LastTime = Date.now();
+        action.fadeIn(fadeTime).play(); // 开始播放
 
         currentAction = action;
       };
@@ -4368,6 +4392,9 @@ class TalkingHead {
       action.fadeIn(0.5).play();
 
     }
+
+    // this.animClips = [];
+    this.stopSequence();
 
   }
 
@@ -4442,7 +4469,8 @@ class TalkingHead {
       const action = this.mixer.clipAction(item.clip);
       action.setLoop( THREE.LoopRepeat, repeat );
       action.clampWhenFinished = true;
-      action.fadeIn(0.5).play();
+      // action.fadeIn(0.5).play();
+      action.play();
       
 
     } else 

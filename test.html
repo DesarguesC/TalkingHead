@@ -2946,7 +2946,10 @@ async function llamaSendMessage(node,msgs) {
       let adding = 0;
       // let keep_reading = true;
       let tts_substring = "";
-      let break_flag = false;
+      let Planning = {
+        flag: true,
+        full_string: ""
+      };
 
       
 
@@ -2963,7 +2966,7 @@ async function llamaSendMessage(node,msgs) {
             if (conv_id) {
               document.cookies = "conv_id=" + conv_id + "; path=" + PROXY;
             }
-            if ( data.startsWith("data: ") ) {
+            if ( data.startsWith("data: ") ) { // TODO: 这个字段也要改
               let line = data.substring(6).trim(); // buffer
               if ( line === '[DONE]' ) {
                 done = true;
@@ -3006,10 +3009,10 @@ async function llamaSendMessage(node,msgs) {
           });
         }
         
-        
-        
-        
         if (done && tts != '') {
+          if (Planning.flag) {
+            Planning.string = tts
+          }
 
           if ( tts.length > LengthThreshold + delta) { // 子串划分有问题
             const indices = ['。', '！', '？']
@@ -3047,7 +3050,8 @@ async function llamaSendMessage(node,msgs) {
                 ttsVoice: cfg('voice-google-id'),
                 ttsRate: cfg('voice-google-rate'),
                 ttsPitch: cfg('voice-google-pitch')
-              }, addText.bind(null,node), exclude.excludes );
+              }, addText.bind(null,node), exclude.excludes, Planning.string, Planning.flag );
+              Planning.flag = false;
             }
           }
           // 在原来的WebGL逻辑中加入UE的动作控制，保持并发 | fn中无内容，以下代码不被执行
