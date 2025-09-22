@@ -2338,7 +2338,7 @@ function openaiBuildMessage( extra_system_prompt = "") {
       msgs.push( { n: n, role: x.role, content: n.value } );
     }
     if(x.role === "system") {
-      n.value = condition + "仅返回不超过500字的中文, 禁用markdown格式, 禁止分点作答." + extra_system_prompt; // 约定只有中文且无markdown
+      n.value = condition + "仅返回不超过100字的中文, 禁用markdown格式, 禁止分点作答." + extra_system_prompt; // 约定只有中文且无markdoswn
       // TODO: 在此添加约束（如有需要）
     }
   });
@@ -2945,6 +2945,10 @@ async function llamaSendMessage(node,msgs) {
       let delta = 0;
       let adding = 0;
       // let keep_reading = true;
+      let tts_substring = "";
+      let break_flag = false;
+
+      
 
       while ( true ) {
         let { done, value } = await reader.read();
@@ -2956,6 +2960,9 @@ async function llamaSendMessage(node,msgs) {
         // let line = "";
         if ( value ) {
           decoder.decode(value).split('\n').forEach( data => {
+            if (conv_id) {
+              document.cookies = "conv_id=" + conv_id + "; path=" + PROXY;
+            }
             if ( data.startsWith("data: ") ) {
               let line = data.substring(6).trim(); // buffer
               if ( line === '[DONE]' ) {
@@ -3002,7 +3009,7 @@ async function llamaSendMessage(node,msgs) {
         
         
         
-        if (done) {
+        if (done && tts != '') {
 
           if ( tts.length > LengthThreshold + delta) { // 子串划分有问题
             const indices = ['。', '！', '？']
@@ -3010,21 +3017,22 @@ async function llamaSendMessage(node,msgs) {
                     .filter(index => index !== -1);
             const idx = indices.length > 0 ? Math.min(...indices) : -1;
             if (idx > 0) {
-              tts = tts.substring(0, idx+1);
-              // done = true;
-              // keep_reading = false;
+              tts_substring = tts.substring(0, idx+1); // 左闭右开
+              tts = tts.substring(idx+1,); // till the end
+              
             } else {
               delta = delta + 3;
             }
             
+          } else {
+            tts_substring = tts;
+            tts = '';
           }
 
-          if (conv_id) {
-            document.cookies = "conv_id=" + conv_id + "; path=" + PROXY;
-          }
+          
           // 「TODO1: tts中的文字完全正常，仅前端显示不正常」
-          if ( tts ) {
-            let msg_ = tts.trimStart();
+          if ( tts_substring ) {
+            let msg_ = tts_substring.trimStart();
             if( /[\u4e00-\u9fa5]/.test(msg_) ) {
               msg_ = msg_.trimEnd();
             }
@@ -3116,13 +3124,12 @@ async function llamaSendMessage(node,msgs) {
             body.tool_choice = "none";
           }
           
-          
-          break;
+          if (tts === '') break;
         }
 
         // modified: 测试动作控制
         // 「TODO2: 此处能看到全部的文字信息，据此规划动作序列」 
-         try {
+        try {
             // motion('test_glb', null, null, null); // TODO: test only
             // motion('test_fbx', null, null, null); // TODO: test only
             // test only when FBX exported
