@@ -527,7 +527,6 @@ class TalkingHead {
           { name: 'breathing', delay: 1500, dt: [ 1200,500,1000 ], vs: { chestInhale: [0.5 * this.breath_factor,0.5 * this.breath_factor,0] } },
           this.animTemplateEyes,
           this.animTemplateBlink,
-          { name: 'mouth', delay: [1000,5000], dt: [ [100,500],[100,5000,2] ], vs : { mouthRollLower: [[0,0.3,2]], mouthRollUpper: [[0,0.3,2]], mouthStretchLeft: [[0,0.3]], mouthStretchRight: [[0,0.3]], mouthPucker: [[0,0.3]] } },
         ]
       },
       'happy' : {
@@ -537,7 +536,6 @@ class TalkingHead {
           { name: 'breathing', delay: 1500, dt: [ 1200,500,1000 ], vs: { chestInhale: [0.5 * this.breath_factor,0.5 * this.breath_factor,0] } },
           this.animTemplateEyes,
           this.animTemplateBlink,
-          { name: 'mouth', delay: [1000,5000], dt: [ [100,500],[100,5000,2] ], vs : { mouthLeft: [[0,0.3,2]], mouthSmile: [[0,0.2,3]], mouthRollLower: [[0,0.3,2]], mouthRollUpper: [[0,0.3,2]], mouthStretchLeft: [[0,0.3]], mouthStretchRight: [[0,0.3]], mouthPucker: [[0,0.3]] } },
         ]
       },
       'angry' : {
@@ -547,7 +545,6 @@ class TalkingHead {
           { name: 'breathing', delay: 500, dt: [ 1000,500,1000 ], vs: { chestInhale: [0.7 * this.breath_factor,0.7 * this.breath_factor,0] } },
           this.animTemplateEyes,
           this.animTemplateBlink,
-          { name: 'mouth', delay: [1000,5000], dt: [ [100,500],[100,5000,2] ], vs : { mouthRollLower: [[0,0.3,2]], mouthRollUpper: [[0,0.3,2]], mouthStretchLeft: [[0,0.3]], mouthStretchRight: [[0,0.3]], mouthPucker: [[0,0.3]] } },
         ]
       },
       'sad' : {
@@ -557,7 +554,6 @@ class TalkingHead {
           { name: 'breathing', delay: 1500, dt: [ 1000,500,1000 ], vs: { chestInhale: [0.3 * this.breath_factor,0.3 * this.breath_factor,0] } },
           this.animTemplateEyes,
           this.animTemplateBlink,
-          { name: 'mouth', delay: [1000,5000], dt: [ [100,500],[100,5000,2] ], vs : { mouthRollLower: [[0,0.3,2]], mouthRollUpper: [[0,0.3,2]], mouthStretchLeft: [[0,0.3]], mouthStretchRight: [[0,0.3]], mouthPucker: [[0,0.3]] } },
         ]
       },
       'fear' : {
@@ -567,7 +563,6 @@ class TalkingHead {
           { name: 'breathing', delay: 500, dt: [ 1000,500,1000 ], vs: { chestInhale: [0.7 * this.breath_factor,0.7 * this.breath_factor,0] } },
           this.animTemplateEyes,
           this.animTemplateBlink,
-          { name: 'mouth', delay: [1000,5000], dt: [ [100,500],[100,5000,2] ], vs : { mouthRollLower: [[0,0.3,2]], mouthRollUpper: [[0,0.3,2]], mouthStretchLeft: [[0,0.3]], mouthStretchRight: [[0,0.3]], mouthPucker: [[0,0.3]] } },
         ]
       },
       'disgust' : {
@@ -577,7 +572,6 @@ class TalkingHead {
           { name: 'breathing', delay: 1500, dt: [ 1000,500,1000 ], vs: { chestInhale: [0.5 * this.breath_factor,0.5 * this.breath_factor,0] } },
           this.animTemplateEyes,
           this.animTemplateBlink,
-          { name: 'mouth', delay: [1000,5000], dt: [ [100,500],[100,5000,2] ], vs : { mouthRollLower: [[0,0.3,2]], mouthRollUpper: [[0,0.3,2]], mouthStretchLeft: [[0,0.3]], mouthStretchRight: [[0,0.3]], mouthPucker: [[0,0.3]] } },
         ]
       },
       'love' : {
@@ -587,7 +581,6 @@ class TalkingHead {
           { name: 'breathing', delay: 1500, dt: [ 1500,500,1500 ], vs: { chestInhale: [0.8 * this.breath_factor,0.8 * this.breath_factor,0] } },
           this.animTemplateEyes,
           this.deepCopy(this.animTemplateBlink,(o) => { o.alt[0].delay[0] = o.alt[1].delay[0] = 2000; }),
-          { name: 'mouth', delay: [1000,5000], dt: [ [100,500],[100,5000,2] ], vs : { mouthLeft: [[0,0.3,2]], mouthRollLower: [[0,0.3,2]], mouthRollUpper: [[0,0.3,2]], mouthStretchLeft: [[0,0.3]], mouthStretchRight: [[0,0.3]], mouthPucker: [[0,0.3]] } },
         ]
       },
       // 'sleep' : {
