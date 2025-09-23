@@ -2846,6 +2846,15 @@ class TalkingHead {
     }
 
     // Animate
+    // this.updatePoseDelta();
+    // const mixerHasActive = this.mixer && this.mixer._actions && this.mixer._actions.some(a => a.getEffectiveWeight() > 1e-3);
+    // if (!mixerHasActive) {
+    //   this.updatePoseDelta();
+    // } else {
+    //   // 可选：仍更新内部 pose 状态，但不要把它写回骨骼
+    //   this.updatePoseDelta(true); // 需要你改函数以支持仅内部更新
+    // }
+
     this.updatePoseBase(this.animClock);
     if ( this.mixer ) {
       this.mixer.update(dt / 1000 * this.mixer.timeScale);
@@ -4286,10 +4295,10 @@ class TalkingHead {
     const applyPoseFromItem = (item, tween = true, dur = 400) => {
       if (!item || !item.pose) return;
       // Reset pose update
-      let anim = this.animQueue.find( x => x.template && x.template.name === 'pose' );
-      if ( anim ) {
-        anim.ts[0] = Infinity;
-      }
+      // let anim = this.animQueue.find( x => x.template && x.template.name === 'pose' );
+      // if ( anim ) {
+      //   anim.ts[0] = Infinity;
+      // }
 
       Object.entries(item.pose.props).forEach( x => {
         this.poseBase.props[x[0]] = x[1].clone();
@@ -4312,40 +4321,78 @@ class TalkingHead {
       // 使用所有匹配到的 clip（按 seqItems 中的顺序）
       this.mixer = new THREE.AnimationMixer(this.armature);
 
-      let idx = 0;
+      // let idx = 0;
       let currentAction = null;
       const fadeTime = 0.5; // 可调整淡入/淡出时间（秒）
 
-      const playNext = (evt) => {
-        // 如果事件携带 action，确保它是当前 action 发出的（避免竞态）
+      const cleanupSequence = () => {
+        if (!this.mixer) return;
+        if (this._seqFinishedHandler) {
+          try { this.mixer.removeEventListener('finished', this._seqFinishedHandler); } catch(e) {}
+          this._seqFinishedHandler = null;
+        }
+        try { this.mixer.stopAllAction(); } catch(e) {}
+        try {
+          // 可选：uncache 所有已缓存的 actions/clips
+          if (this.mixer._actions) {
+            this.mixer._actions.forEach(a => {
+              try { this.mixer.uncacheAction(a.getClip(), this.armature); } catch(e) {}
+            });
+          }
+        } catch(e) {}
+        this.mixer = null;
+        currentAction = null;
+        // 可选：移除外部 stopSequence 引用
+        this.stopSequence = null;
+      };
+
+      const playNext = (evt) => { // 迭代器
+        // 只有当前 action 自己的 finished 事件才触发下一步（避免竞态）
         if (evt && evt.action && currentAction && evt.action !== currentAction) {
           return;
         }
 
-        // fade out 旧 action
+        // 如果队列已空，清理并返回
+        if ( !seqItems || seqItems.length === 0 ) {
+          if (!currentAction) {
+            cleanupSequence();
+          } // TODO: 后续default动作是否能正常播放
+          return;
+        }
+
+        // fade out 旧 action（若存在）
         if (currentAction) {
           try { currentAction.fadeOut(fadeTime); } catch(e) {}
         }
 
-        // 取下一个 item
-        const itemNext = seqItems[idx];
-        idx = (idx + 1) % seqItems.length;
-
-        // 在开始新动作前应用 pose
+        // 从队列头取下一个 item（只播放一次）
+        const itemNext = seqItems.shift(); // <- 这是关键：移除已播放的项
+        // 在开始新动作前应用 pose（如果不想补间，把 tween 设为 false）
         applyPoseFromItem(itemNext, /*tween*/ true, /*dur*/ 400);
 
-        // 创建 action 并播放一次
+        // 创建 action 并配置（播放一次）
         const action = this.mixer.clipAction(itemNext.clip);
         action.reset();
         action.setLoop(THREE.LoopOnce, 0); // 播放一次
         action.clampWhenFinished = true;
         action.enabled = true;
 
-        // 启动（淡入）
+        // 启动（淡入/播放）
         this.LastTime = Date.now();
-        action.fadeIn(fadeTime).play(); // 开始播放
+        if (fadeTime > 0) {
+          action.fadeIn(fadeTime).play();
+        } else {
+          action.play();
+          action.setEffectiveWeight(1);
+        }
 
+        // 保存当前 action 引用（finished 事件时用来比对）
         currentAction = action;
+
+        // 如果队列在此时已空，说明这是最后一个动作
+        // 但不要在这里 cleanup：等待该 action 的 finished 事件触发后再 cleanup，
+        // 这样可以保证动作完整播放结束后再销毁 mixer。
+        // （如果你想在播放最后一个动作时马上移除队列引用也可）
       };
 
       // 保存 handler 引用用于 later remove
@@ -4357,14 +4404,15 @@ class TalkingHead {
 
       // 暴露停止函数（方便外部停止序列并清理）
       this.stopSequence = () => {
-        if (!this.mixer) return;
-        if (this._seqFinishedHandler) {
-          try { this.mixer.removeEventListener('finished', this._seqFinishedHandler); } catch(e) {}
-          this._seqFinishedHandler = null;
-        }
-        try { this.mixer.stopAllAction(); } catch(e) {}
-        this.mixer = null;
-        currentAction = null;
+        cleanupSequence();
+        // if (!this.mixer) return;
+        // if (this._seqFinishedHandler) {
+        //   try { this.mixer.removeEventListener('finished', this._seqFinishedHandler); } catch(e) {}
+        //   this._seqFinishedHandler = null;
+        // }
+        // try { this.mixer.stopAllAction(); } catch(e) {}
+        // this.mixer = null;
+        // currentAction = null;
       };
 
     // ---------- 情况 2：找到了单个 item（保留你原来的逻辑） ----------
