@@ -7,7 +7,8 @@
   <meta content="width=device-width, height=device-height, minimum-scale=1.0, maximum-scale=1.0, initial-scale=1.0, user-scalable=no, interactive-widget=resizes-content" name="viewport">
   <link rel="icon" type="image/jpg" href="favicon.jpg">
 
-  <style>
+
+<style>
 
   html {
     width:100%; height:100%; height: -webkit-fill-available; font-size: 14px;
@@ -15,18 +16,21 @@
 
   /* Color themes */
   :root, .theme-dark {
-    --colorBody: #88ccff;
-    --colorBackground: #202020;
-    --colorPanel: rgba(190, 183, 193, 0.85);
-    --colorBorderPassive: rgba(136,204,255,0.6);
-    --colorBorderActive: rgba(168, 169, 226, 0.9);/*#88ccff;*/
-    --colorUserText: #90e7fa;/*#d3c6e0;*/
-    --colorSystemText: #3c096c;
-    --colorToolbarPassive: rgba(58, 1, 92, 0.9);
-    --colorToolbarPassive2: #d4adf8;/*rgba(136,204,255,0.3);*/
-    --colorToolbarActive: #8314eb;/*#88ccff;*/
-    --widthLabel: 5rem;
-    --colorGlow: rgba(94,96,206, 0.9);  /*#80ffdb*/
+      --colorBody: #88ccff;
+      --colorBackground: #2d2d2d; /* 1. 将背景设置为深灰色 | TODO: 可以在这里修改背景颜色 */ 
+      --colorPanel: rgba(25, 28, 36, 0.85); /* 调整面板颜色以适应新背景 */
+      --colorBorderPassive: rgba(136,204,255,0.4);
+      --colorBorderActive: rgba(168, 169, 226, 0.9);
+      --colorUserText: #90e7fa;
+      --colorSystemText: #d4adf8; /* 调整系统文本颜色以提高对比度 */
+      --colorToolbarPassive: rgba(58, 1, 92, 0.9);
+      --colorToolbarPassive2: #d4adf8;
+      --colorToolbarActive: #8314eb;
+      --widthLabel: 5rem;
+      --colorGlow: rgba(94,96,206, 0.9);
+      /* 为气泡样式新增颜色变量 */
+      --system-bubble-bg: rgba(131, 20, 235, 0.3);
+      --user-bubble-bg: rgba(144, 231, 250, 0.2);
   }
   .theme-light {
     --colorBody: #505050;
@@ -85,60 +89,97 @@
   
     /* animation: colorChange 6s infinite alternate; */
 }
-/*
-@keyframes colorChange {
-    0% {
-        --colorBackground: rgba(255, 0, 0, 0.5);
-        --colorGlow: rgba(255, 100, 100, 0.8);
-        --colorPanel: rgba(255, 200, 200, 0.5);
-    }
-    25% {
-        --colorBackground: rgba(0, 255, 0, 0.5);
-        --colorGlow: rgba(100, 255, 100, 0.8);
-        --colorPanel: rgba(200, 255, 200, 0.5);
-    }
-    50% {
-        --colorBackground: rgba(0, 0, 255, 0.5);
-        --colorGlow: rgba(100, 100, 255, 0.8);
-        --colorPanel: rgba(200, 200, 255, 0.5);
-    }
-    75% {
-        --colorBackground: rgba(255, 255, 0, 0.5);
-        --colorGlow: rgba(255, 255, 100, 0.8);
-        --colorPanel: rgba(255, 255, 200, 0.5);
-    }
-    100% {
-        --colorBackground: rgba(255, 0, 255, 0.5);
-        --colorGlow: rgba(255, 100, 255, 0.8);
-        --colorPanel: rgba(255, 200, 255, 0.5);
-    }
-}
-    */
 
   body {
-    width: 100%; height: 100%; min-height: 100vh;
-    min-height: -webkit-fill-available; margin: 0; padding: 0;
-    background-color: #032343; /* 设置浅色背景 */
-    color: var(--colorBody);
-    overflow: hidden; text-align: left; touch-action: manipulation;
-    font-family: "SansRegular", sans-serif; font-size: 1.4rem;
-    line-height: 1.4rem; scrollbar-color: var(--colorToolbarPassive) transparent;
-    scrollbar-width: 20px; scrollbar-height: 20px;
+      width: 100%; height: 100vh;
+      margin: 0; padding: 0;
+      background-color: var(--colorBackground);
+      color: var(--colorBody);
+      overflow: hidden;
+      font-family: "SansRegular", sans-serif;
+      line-height: 1.4rem;
+      /* --- 新的 Grid 布局 --- */
+      display: grid;
+      grid-template-columns: 2fr 5fr 2fr; /* 左聊天 : Canvas : 右聊天 = 2:5:2 */
+      /* grid-template-columns: 480px 1fr 480px;  */
+      grid-template-rows: 1fr; /* 单行填满高度 */
+      gap: 15px;
+      padding: 15px;
+      box-sizing: border-box;
+  }
+  .chat-container {
+      background-color: var(--colorPanel);
+      border: 2px solid var(--colorBorderPassive);
+      border-radius: 10px;
+      display: flex;
+      font-size: 1.4rem;
+      flex-direction: column;
+      overflow: hidden;
+      padding: 15px;
+      box-sizing: border-box;
+      flex: 0 0 85%; /* 占父容器的80% */
+      /* height: 100%; 确保填满网格单元 */
   }
 
-  ::-webkit-scrollbar { width: 20px; height: 20px; }
-  ::-webkit-scrollbar-track {
-    background: linear-gradient(
-      to right, transparent,
-      transparent 9px,
-      var(--colorToolbarPassive) 9px,
-      var(--colorToolbarPassive) 11px,
-      transparent 11px
-    );
+  #right-column-wrapper {
+      /* position: relative; */
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+      padding: 5px;
+      /* border: 2px solid var(--colorBorderPassive); */
+      border: none;
+      flex-direction: column;
+      flex: 1;
+      overflow: hidden;
   }
+  /* 在聊天框和输入框之间增加间距 */
+
+  #chat-container-left {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+  }
+  #chat-container-left .messages-area {
+    flex-grow: 1;
+    min-height: 0;
+    overflow-y: auto;
+  }
+
+  #chat-container-right {
+      display: flex;
+      flex-direction: column;
+      /* height: auto; */
+      flex-grow: 1; /* 占据所有可用空间 */
+      min-height: 0; /* 防止 flex 溢出 */
+  }
+
+  .chat-container h3 {
+      margin: 0 0 10px 0;
+      font-size: 1.2rem;
+      padding-bottom: 10px;
+      border-bottom: 1px solid var(--colorBorderPassive);
+      color: var(--colorToolbarPassive2);
+      text-align: center;
+      font-family: "SansRegularCondensed", sans-serif;
+      flex-shrink: 0;
+  }
+
+  .messages-area {
+      flex-grow: 1;
+      min-height: 0;
+      overflow-y: auto;
+      padding: 5px;
+      /* padding-right: 10px;  */
+      /* 为滚动条留出空间 */
+  }
+
+  ::-webkit-scrollbar { width: 8px; height: 8px; }
+  ::-webkit-scrollbar-track { background: transparent; }
   ::-webkit-scrollbar-thumb {
-    background-color: var(--colorPanel); border-radius: 10px;
-    border: 2px solid var(--colorToolbarPassive);
+      background-color: var(--colorToolbarPassive);
+      border-radius: 4px;
+      border: 2px solid transparent;
   }
 
   input[type="range"] {
@@ -208,20 +249,61 @@
     flex-shrink: 0; flex-grow: 1; flex-basis: 0; min-width: 0;
   }
   .filler { visibility: hidden; pointer-events: none; }
+
   .command, .text {
-    display: inline-flex; height: calc( 2rem + 2px); font-size: 1.4rem;
-    line-height: calc( 2rem + 2px); padding: 0 6px; gap: 12px;
-    vertical-align: middle; text-align: left; font-family: "SansRegularCondensed";
-    color: var(--colorToolbarPassive); white-space: nowrap; overflow: hidden;
-  }
-  .command, .text {
-    font-family: "SansRegularCondensed"; color: var(--colorToolbarPassive);
+      display: inline-flex; height: calc( 2rem + 2px); font-size: 1.4rem;
+      line-height: calc( 2rem + 2px); padding: 0 6px; gap: 12px;
+      vertical-align: middle; text-align: left; font-family: "SansRegularCondensed";
+      color: var(--colorToolbarPassive); white-space: nowrap; overflow: hidden;
   }
   .command { cursor: pointer; pointer-events: auto; }
   .command > svg, .text > svg {
-    height: 2rem; width: 2rem; padding: 1px 0;
-    min-height: 2rem; min-width: 2rem;
+      height: 2rem; width: 2rem; padding: 1px 0;
+      min-height: 2rem; min-width: 2rem;
   }
+  .filler {
+      flex-shrink: 0; flex-grow: 1; flex-basis: 0; min-width: 0;
+  }
+  .command.selected, .command:hover {
+        color: var(--colorToolbarActive);
+  }
+
+
+
+
+/* 
+  备选的旋转型加载动画
+  .llama-controls { display: flex; gap: 8px; justify-content: flex-end; }
+  .llama-btn {
+      background-color: rgba(131, 20, 235, 0.3);
+      border: 1px solid var(--colorToolbarActive);
+      color: var(--colorToolbarActive);
+      padding: 5px 10px;
+      border-radius: 5px;
+      cursor: pointer;
+      font-family: "SansRegularCondensed";
+      font-size: 1.2rem;
+      transition: all 0.2s ease;
+  }
+  .llama-btn:hover { background-color: var(--colorToolbarActive); color: var(--colorPanel); }
+
+  .loading-spinner { display: flex; justify-content: center; align-items: center; padding: 10px; }
+  .spinner {
+      border: 4px solid rgba(255, 255, 255, 0.2);
+      border-left-color: var(--colorSystemText);
+      border-radius: 50%;
+      width: 24px;
+      height: 24px;
+      animation: spin 1s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+ */
+
+
+
+
+
+
   .label {
     width: var(--widthLabel); flex-shrink: 0; color: var(--colorToolbarPassive2);
   }
@@ -234,29 +316,38 @@
   .glow { box-shadow: 0 0 25px 5px var(--colorGlow); }
   .theme-light .glow { box-shadow: none; }
 
-  /* Main */
+  /* #main 不再需要作为主要布局容器 */
   #main {
-    position: absolute; top: 50%; left: 50%;
-    transform: translate(-50%,-50%); background-color: transparent;
-  } /*整体背景：background-color*/
+      position: relative;
+      width: 100%;
+      height: 100%;
+  }
 
-  /* Left panel */
+   /* #left 现在是 Canvas 的直接容器 */
   #left {
-    position: absolute; margin: 4px; pointer-events: none;
-    background-color: var(--colorPanel);
+      position: relative;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      background-color: #1a1a1a; /* 给Canvas一个深色背景 */
+      border-radius: 10px;
+      border: 2px solid var(--colorBorderPassive);
   }
   #avatar, #view {
-    position: absolute; opacity: 0; top: 0; left: 0; right: 0;
-    bottom: 0; pointer-events: auto; overflow: hidden;
-    border-radius: inherit;
-  }
-  #view {
-    background-image: none; background-repeat:no-repeat;
-    background-position: center center; background-size: cover;
+      position: absolute;
+      opacity: 1; /* 确保可见 */
+      top: 0; left: 0; right: 0; bottom: 0;
+      pointer-events: auto;
+      overflow: hidden;
+      border-radius: inherit;
   }
   #video {
-    position: absolute; height: 100%; width: 100%;
-    object-position: center center; object-fit: cover;
+      position: absolute; height: 100%; width: 100%;
+      object-position: center center; object-fit: cover;
+  }
+  /* 隐藏原始的右侧面板 */
+  #right {
+      display: none;
   }
 
   /* Loading */
@@ -301,26 +392,126 @@
   #right .border { border-color: var(--colorBorderPassive); }
   .session { display: none; width: 100%; }
   .session.selected { display: block; }
+
+  /*Messages*/
+  /* 聊天气泡基础样式 */
   .message {
-    position: relative; display: block; width: 100%; min-height: 2rem;
+    margin-bottom: 15px; /* 增加间距以容纳气泡尾巴 */
+    padding: 10px 15px; /* 2px 12px; */
+    border-radius: 10px;
+    line-height: 1.5;
+    max-width: 90%;
+    word-wrap: break-word;
+    position: relative;
+    opacity: 0;
+    transform: translateY(10px);
+    animation: fadeIn 0.5s forwards;
   }
-  .message * {
-    text-align:left; font-size: 1.4rem; line-height: 2rem;
-  } /*所有行间距*/
-  .message > * {
-    display: block; padding: 0 calc(6rem + 8px) 0 calc(4rem + 4px);
-    color: var(--colorSystemText);  z-index: 10;
-  } /*所有显示message内容的框*/
-  .message ul, .message ol { margin: 0 0 0 2rem; }
-  .message.user > * { color: var(--colorUserText); text-align: right;}
-  .message > .toolbar-left {
+
+  @keyframes fadeIn {
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  
+
+  /* 系统消息气泡 (左侧) */
+  .system-message {
+    background-color: var(--system-bubble-bg); /* rgba(131, 20, 235, 0.3); */
+    color: var(--colorSystemText);
+    margin-right: auto;
+    border-bottom-left-radius: 0; /* 尾巴连接处的圆角变直角 */
+  }
+  .system-message::after {
+    content: '';
+    position: absolute;
+    left: -10px;
+    bottom: 0;
+    width: 0;
+    height: 0;
+    border-bottom: 15px solid var(--system-bubble-bg);
+    border-left: 15px solid transparent;
+  }
+
+   /* 用户消息气泡 (右侧) */
+  .user-message {
+    position: relative; /* 让子元素的 absolute 相对它定位 */
+    background-color:  var(--user-bubble-bg); /* rgba(144, 231, 250, 0.2); */
+    color: var(--colorUserText);
+    margin-left: auto;
+    text-align: left; /* 气泡内文本左对齐 */
+    border-bottom-right-radius: 0; /* 尾巴连接处的圆角变直角 */
+  }
+  .user-message::after {
+    content: '';
+    position: absolute;
+    right: -10px;
+    bottom: 0;
+    width: 0;
+    height: 0;
+    border-bottom: 15px solid var(--user-bubble-bg);
+    border-right: 15px solid transparent;
+  }
+
+  .user-message > .message.user {
+    display: grid;
+    grid-template-columns: 1fr auto; /* 创建两列：第一列占满，第二列自适应 */
+    gap: 8px; /* 工具栏和文字的垂直间距 */
+    width: 100%; /* 确保内部容器撑满气泡宽度 */
+  }
+
+  /* 2. 将文字 <p> 放置在第一行，并让它跨越两列 */
+  .user-message > .message.user > p {
+    grid-column: 1 / -1; /* 从第一列 span 到最后一列 */
+  }
+
+  /* 3. 取消工具栏的绝对定位，让它们参与网格布局 */
+  /* 注意这里的选择器，确保我们只修改了 message.user 内部的 toolbar */
+  .user-message > .message.user > .toolbar-left,
+  .user-message > .message.user > .toolbar-right {
+    position: static; /* 覆盖 absolute 定位 */
+  }
+
+  .system-message > .message.system {
+    display: grid;
+    grid-template-columns: 1fr auto; /* 创建两列：第一列占满，第二列自适应 */
+    gap: 8px; /* 工具栏和文字的垂直间距 */
+    width: 100%; /* 确保内部容器撑满气泡宽度 */
+  }
+
+  /* 2. 将文字 <p> 放置在第一行，并让它跨越两列 */
+  .system-message > .message.system > p {
+    grid-column: 1 / -1; /* 从第一列 span 到最后一列 */
+  }
+
+  /* 3. 取消工具栏的绝对定位，让它们参与网格布局 */
+  /* 注意这里的选择器，确保我们只修改了 message.user 内部的 toolbar */
+  .system-message > .message.system > .toolbar-left,
+  .system-message > .message.system > .toolbar-right {
+    position: static; /* 覆盖 absolute 定位 */
+  }
+
+
+  .user-message > .toolbar-left {
     position: absolute; left:0; bottom:0; padding: 0;
     display: flex; row-gap: 0; column-gap: 4px;
   }
-  .message > .toolbar-right {
+  .user-message > .toolbar-right {
     position: absolute; right: 0; bottom:0; padding: 0;
     display: flex; row-gap: 0; column-gap: 4px;
+  } 
+  
+  #canvas-container {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100%;
+      width: 100%;
+      grid-column: 2 / 3; /* 放置在网格的第二列 */
   }
+
+
   code { font-family: monospace; font-size: 1rem; }
   #directory div:first-child div[data-entry-move="up"] { visibility: hidden; }
   #directory div:last-child div[data-entry-move="down"] { visibility: hidden; }
@@ -340,18 +531,72 @@
   #morphs .label { width: calc( 2.5 * var(--widthLabel) ); }
   #right-sessions { scrollbar-gutter: stable; }
 
-  /* Bottom panel */
+  /* .chat-container {
+      background-color: var(--colorPanel);
+      border: 2px solid var(--colorBorderPassive);
+      border-radius: 10px;
+      display: flex;
+      font-size: 1.4rem;
+      flex-direction: column;
+      overflow: hidden;
+      padding: 15px;
+      box-sizing: border-box;
+      height: 100%;
+  } */
+
   #bottom {
-    position: absolute; margin: 4px; padding: 25px 25px 60px 25px;
-    background-color: var(--colorPanel);
+      /* 从 absolute 改为 static */
+      position: static; 
+      width: 100%; /* 宽度自动充满父容器 */
+      /* height: 20%; */
+      /* max-height: 15%; */
+      flex-shrink: 0; /* 禁止此元素收缩 */
+
+      background-color: var(--colorPanel);
+      border: 2px solid var(--colorBorderPassive);
+      border-radius: 10px;
+      padding: 10px;
+      box-sizing: border-box;
+      display: flex;
+      flex-direction: column;
+      flex: 0 0 15%; /* 占父容器的20% */
+      gap: 10px;
   }
-  #bottom .border { border-color: var(--colorBorderPassive); }
-  #bottom textarea {
-    flex: 1; min-height: 2rem; margin: 0; background: transparent;
-    border: 0; font-family: "SansRegular"; font-size: 1.4rem;
-    line-height: 2rem; resize: none; outline: none; color: var(--colorUserText);
-    pointer-events: auto; box-sizing: border-box;
+  #bottom .pages {
+      position: static;
+      display: flex;
+      flex-direction: column;
+      height: 100%;
   }
+  #bottom .page.fill {
+      flex-grow: 1;
+      display: flex;
+  }
+  #bottom .row.fill {
+      flex-grow: 1;
+  }
+  #bottom textarea#input {
+      flex: 1;
+      width: 100%;
+      height: 60px;
+      margin: 0;
+      background: transparent;
+      border: 0;
+      font-family: "SansRegular";
+      font-size: 1.4rem;
+      line-height: 1.6rem;
+      resize: vertical;
+      outline: none;
+      color: var(--colorUserText);
+      pointer-events: auto;
+      box-sizing: border-box;
+      padding: 0;
+  }
+  #bottom .row:not(.fill) {
+      flex-shrink: 0;
+  }
+  #bottom .border { display: none; } /* 移除内部边框 */
+
   #bottom textarea::placeholder { color: var(--colorToolbarPassive2); opacity: 0.5; }
   #flag, #score, #scripttag, #scriptstatus { color: var(--colorToolbarPassive2); }
 
@@ -425,37 +670,61 @@
     src: url("./fonts/FiraSansExtraCondensed-Bold.ttf") format('truetype');
   }
 
-  /* Layouts */
-  #main.ratio-wide { width: min(96vw, 192vh, 1400px); height: min(48vw,96vh,700px); } /* 1:2 */
-  #main.ratio-normal { width: min(96vw, 128vh, 1040px); height: min(72vw,96vh,780px); } /* 3:4 */
-  #main.layout-full { width: 100%; height: 100%; }
-  #main.layout-land #left { top: 0; left: 0; bottom: 38%; right: 50%; }
-  #main.layout-port #left { top: 0; left: 0; bottom: 0; right: 60%; }
-  #main.layout-full #left { top: 0; left: 0; bottom: 0; right: 0; margin: 0; }
-  #main.layout-full #left .border { display: none; }
-  #main.layout-land #right { top: 0; left: 50%; bottom: 0; right: 0; }
-  #main.layout-port #right { top: 0; left: 40%; bottom: 30%; right: 0; }
-  #main.layout-full #right { top: 10%; left: 45%; bottom: 30%; right: 5%; max-width: 800px; }
-  #main.layout-land #bottom { top: 62%; left: 0; bottom: 0; right: 50%; }
-  #main.layout-port #bottom { top: 70%; left: 40%; bottom: 0; right: 0; }
-  #main.layout-full #bottom { top: 70%; left: 45%; bottom: 10%; right: 5%; max-width: 750px; }
-  #main.presence-vr #left { box-shadow: none; background-color: transparent; }
-  #main.presence-vr #view { display: none; }
-  #main.presence-vr #left .border { display: none; }
-  #main.presence-vr #avatar { bottom: -8px; left: -400px; right: -400px; }
-  #main.layout-full #avatar { top: 0; left: 0; bottom: 0; right: 45%; }
+  #canvas-container.ratio-wide { width: min(96vw, 192vh, 1400px); height: min(48vw,96vh,700px); } /* 1:2 */
+  #canvas-container.ratio-normal { width: min(96vw, 128vh, 1040px); height: min(72vw,96vh,780px); } /* 3:4 */
+  #canvas-container.layout-full { width: 100%; height: 100%; }
+  #canvas-container.layout-land #left { top: 0; left: 0; bottom: 38%; right: 50%; }
+  #canvas-container.layout-port #left { top: 0; left: 0; bottom: 0; right: 60%; }
+  #canvas-container.layout-full #left { top: 0; left: 0; bottom: 0; right: 0; margin: 0; }
+  #canvas-container.layout-full #left .border { display: none; }
+  #canvas-container.layout-land #right { top: 0; left: 50%; bottom: 0; right: 0; }
+  #canvas-container.layout-port #right { top: 0; left: 40%; bottom: 30%; right: 0; }
+  #canvas-container.layout-full #right { top: 10%; left: 45%; bottom: 30%; right: 5%; max-width: 800px; }
+  #canvas-container.layout-land #bottom { top: 62%; left: 0; bottom: 0; right: 50%; }
+  #canvas-container.layout-port #bottom { top: 70%; left: 40%; bottom: 0; right: 0; }
+  #canvas-container.layout-full #bottom { top: 70%; left: 45%; bottom: 10%; right: 5%; max-width: 750px; }
+  #canvas-container.presence-vr #left { box-shadow: none; background-color: transparent; }
+  #canvas-container.presence-vr #view { display: none; }
+  #canvas-container.presence-vr #left .border { display: none; }
+  #canvas-container.presence-vr #avatar { bottom: -8px; left: -400px; right: -400px; }
+  #canvas-container.layout-full #avatar { top: 0; left: 0; bottom: 0; right: 45%; }
 
-  @media (max-width: 1000px) {
-    #main.ratio-wide, #main.ratio-normal { width: 96vw; height: 90vh; }
-    #main.layout-full { width: 100%; height: 100%; }
-    #main.layout-land #left { top: 0; left: 0; bottom: 62%; right: 0; }
-    #main.layout-port #left { top: 0; left: 0; bottom: 24%; right: 62%; }
-    #main.layout-land #right { top: 38%; left: 0; bottom: 24%; right: 0; }
-    #main.layout-port #right { top: 0; left: 38%; bottom: 24%; right: 0; }
-    #main.layout-full #right { top: 0; left: 38%; bottom: 24%; right: 0; max-width: none; }
-    #main.layout-land #bottom { top: 76%; left: 0; bottom: 0; right: 0; }
-    #main.layout-port #bottom { top: 76%; left: 0; bottom: 0; right: 0; }
-    #main.layout-full #bottom { top: 76%; left: 38%; bottom: 0; right: 0; max-width: none; }
+  @media (max-width: 1200px) {
+    
+     body {
+      display: grid;
+      grid-template-columns: 4fr 19fr 4fr;     /* 左列 | 右列 */
+      grid-template-rows: auto 1fr auto;    /* 头 | 中 | 尾（举例）*/
+      min-height: 100vh;
+      gap: 10px;
+    }
+
+    /* 右侧整列容器：放到第2列，并跨越所有行 */
+    #right-column-wrapper {
+      grid-column: 2 / 3;
+      grid-row: 1 / -1;           /* ★ 关键：跨越所有行，填满整列 */
+      align-self: stretch;        /* 保险：拉伸填满网格轨道 */
+      display: grid;              /* 右侧内部再做80/20分配更稳 */
+      grid-template-rows: 4fr 1fr;/* ★ 精准：上80% 下20% */
+      min-height: 0;              /* 防止内容把轨道撑爆 */
+      padding: 5px;
+      border: 2px solid var(--colorBorderPassive);
+      box-sizing: border-box;
+    }
+
+    /* 右侧内部：上80% */
+    #right-column-wrapper .chat-container {
+      min-height: 0;   /* 允许滚动而不是撑高 */
+      overflow: hidden;
+    }
+
+    /* 右侧内部：下20% */
+    #right-column-wrapper .bottom {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      box-sizing: border-box;
+    }
   }
 
   /*控制浅色背景*/
@@ -486,6 +755,7 @@
     transition: background 0.3s ease;
   }
 </style>
+
 <script nomodule>alert("You browser doesn't seem to support modules. Use a modern browser to run Enterprise.");</script>
 
 
@@ -509,103 +779,8 @@
 <!-- importmap的末项绝对不能加逗号 -->
 <script src="https://cdn.jsdelivr.net/npm/microsoft-cognitiveservices-speech-sdk@latest/distrib/browser/microsoft.cognitiveservices.speech.sdk.bundle-min.js"></script>
 
-<!--   document.querySelector(".command.starttransparent").classList.add("newDefiner");
-   document.querySelector("row.text.label").classList.add("newDefined");
-    document.querySelector(".newDefiner").style.display="none";
-       document.querySelector(".newDefined").style.display="none";
-       document.querySelector(".hiddenRow").style.display="none";
-  document.querySelector(".row").classList.add("hiddenRow");
-  -->
+
 <script src="https://cdn.socket.io/4.6.1/socket.io.min.js"></script>
-<!-- <script>
-    const serverURL = window.location.origin;
-    const socket = io(serverURL, {
-        transports: ['websocket']
-    });
-
-    const statusBox = document.getElementById('status-box');
-    const infoBox = document.getElementById('info-box');
-    let heartbeatInterval = null;
-
-    // --- 新增代码：用于状态追踪和弹窗 ---
-    let previousStatus = null; // 用于存储上一次的状态
-    let timeoutAlertShown = false; // 确保弹窗只显示一次
-    // --- 新增代码结束 ---
-
-    socket.on('connect', () => {
-        console.log('✅ WebSocket 连接成功!');
-        if (heartbeatInterval) {
-            clearInterval(heartbeatInterval);
-        }
-        heartbeatInterval = setInterval(() => {
-            console.log('❤️ 发送心跳包到服务器...');
-            socket.emit('heartbeat');
-        }, 25000);
-    });
-
-    socket.on('disconnect', () => {
-        console.error('❌ WebSocket 连接已断开!');
-        statusBox.className = 'status error';
-        statusBox.textContent = '连接已断开';
-        if (heartbeatInterval) {
-            clearInterval(heartbeatInterval);
-        }
-    });
-
-    function checkStatus() {
-        fetch('/status')
-            .then(response => {
-                if (!response.ok) {
-                    if (response.status === 429 || response.status === 503) {
-                         return response.text().then(text => {
-                            statusBox.className = 'status waiting';
-                            statusBox.textContent = text || '⏳ 人数已满，您正在等待队列中...';
-                         });
-                    }
-                    throw new Error('网络响应错误');
-                }
-                return response.json();
-            })
-            .then(data => {
-                if (!data) return;
-                const currentStatus = data.status;
-
-                // --- 新增代码：超时弹窗判断逻辑 ---
-                // 如果上一次状态是 'active'，而当前状态不再是 'active'
-                // 这就意味着用户刚刚被服务器判定为超时
-                if (previousStatus === 'active' && currentStatus !== 'active' && !timeoutAlertShown) {
-                    alert('您的会話已因超时而释放。您已被移至等待队列。');
-                    timeoutAlertShown = true; // 将标志位设为 true，防止重复弹窗
-                }
-                // --- 新增代码结束 ---
-
-                // 更新页面显示
-                if (currentStatus === 'active') {
-                    statusBox.className = 'status active';
-                    statusBox.textContent = '✅ 您已进入网站';
-                    infoBox.textContent = '';
-                    timeoutAlertShown = false; // 如果用户重新变为活跃状态，重置弹窗标志
-                } else if (currentStatus === 'waiting') {
-                    statusBox.className = 'status waiting';
-                    statusBox.textContent = '⏳ 您正在等待队列中...';
-                    if(data.position && data.total) {
-                       infoBox.textContent = `当前排在第 ${data.position} 位，共 ${data.total} 人在等待。`;
-                    }
-                }
-
-                // 在所有逻辑最后，更新上一次的状态记录
-                previousStatus = currentStatus;
-            })
-            .catch(error => {
-                console.error('获取状态失败:', error);
-            });
-    }
-
-    // 页面加载后立即检查一次，然后每5秒检查一次
-    checkStatus();
-    setInterval(checkStatus, 5000);
-
-</script> -->
 <script>
     // --- 心跳机制核心脚本 ---
 
@@ -615,8 +790,8 @@
         transports: ['websocket'] // 强制使用 WebSocket
     });
 
-    const statusBox = document.getElementById('status-box');
-    const infoBox = document.getElementById('info-box');
+    const statusBox = document.getElementById('status-box') || {};
+    const infoBox = document.getElementById('info-box') || {};
     
     // --- 将定时器ID提升为全局变量，以便随时清除 ---
     let heartbeatInterval = null;
@@ -716,44 +891,7 @@
 
 </script>
 
-
 <script type="module">
-
-/// session_id控制存活用户数
-  // const socket = io();
-
-  // // 每10秒发一个心跳包
-  // setInterval(() => {
-  //     socket.emit("heartbeat");
-  // }, 3000);
-
-  // // 定时检查是否仍然active（2分钟无操作会被踢）
-  // setInterval(() => {
-  //     fetch("/status")
-  //         .then(res => res.json())
-  //         .then(data => {
-  //             if (data.status === "waiting") {
-  //                 alert("会话已过期，请重新打开页面");
-  //                 window.location.reload();
-  //             }
-  //         });
-  // }, 5000);
-
-  // // 鼠标点击、键盘输入都视为操作
-  // ["click", "keydown"].forEach(evt => {
-  //     document.addEventListener(evt, () => {
-  //         socket.emit("heartbeat"); // 操作时也发送心跳
-  //     });
-  // });
-
-  // socket.on("connect", () => {
-  //     console.log("✅ WebSocket连接成功");
-  // });
-
-  // socket.on("disconnect", () => {
-  //     console.log("❌ WebSocket断开");
-  // });
-
   
 import { site } from './siteconfig.js'
 import { TalkingHead } from "./modules/talkinghead.mjs";
@@ -774,6 +912,9 @@ const geminiProxy = "/gemini/";
 
 const grokChatCompletionsProxy = "/grok/v1/chat/completions"; // Grok-beta
 const llamaChatCompletionsProxy = "/llama/v1/chat/completions"; // Local llama.cpp server proxy
+
+const Yue_Xiaoyin_ChatCompletionsProxy = "/yuexiaoyin/v1/chat/completions"; // outside API proxy
+// TODO: 接入时用这个代理替代llamaChatCompletionsProxy即可
 
 const UESocketProxy = "/socket:ue/animation";
 
@@ -925,7 +1066,7 @@ const i18n = {
     'ai-ai2': 'AI response #2', 'Example1': 'Example-1', 'Example2': 'Example-2',
     'theme-wide': 'Widescreen', 'theme-43': '4:3', 'theme-landscape': 'Landscape',
     'theme-portrait': 'Portrait', 'voice-test': 'Speak', 'ai-stop': 'Stop',
-    'ai-user': 'User', 'input': 'Message.', 'en': 'English', 'fi': 'Finnish',
+    'ai-user': 'User', 'input': '给 粤晓隐 发送消息', 'en': 'English', 'fi': 'Finnish',
     'ai-stopword': 'Word', 'ai-username': 'Name', 'LightAmbient': 'Ambient',
     'LightDirect': 'Direct', 'LightSpot': 'Spot', 'theme-full': "Fullscreen",
     'lt': 'Lithuanian', 'test-sentence': "Write your test sentence.",
@@ -1001,8 +1142,25 @@ let jwtExpires = 0;
 let jwt = '';
 
 // Get JSON Web Token
-async function jwtGet() {
-  return "";
+async function jwtGet(filePath='./key.csv') {
+  return ""; // 用在server中获得
+  const apikey = await (await fetch( jwtEndpoint, {
+      method: "POST",
+      mode: "cors",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": "Bearer",
+      },
+      body: JSON.stringify({
+        filePath: filePath
+      }),
+    })).json();
+  
+  if ( !apikey || apikey.code != 200 ) { return ""; }
+  else { 
+    // console.log("GET JWT from server: ", apikey.data['jwt']);
+    return apikey.data['jwt'];
+  }
   const limit = Math.round(Date.now() / 1000) + 60;
   if ( jwtExpires < limit ) {
     try {
@@ -1058,7 +1216,7 @@ async function elevenSpeak(s,node=null) {
       elevenInputMsgs[0]["xi_api_key"] = apikey;
     } else {
       url = elevenTTSProxy[0];
-      // url += await jwtGet();
+      url += await jwtGet();
       url += elevenTTSProxy[1];
       url += cfg('voice-eleven-id');
       url += elevenTTSProxy[2];
@@ -1383,7 +1541,7 @@ async function whisperLoadMP3(file) {
         headers["Authorization"] = "Bearer " + apikey;
       } else {
         url = openaiAudioTranscriptionsProxy;
-        headers["Authorization"] = "Bearer "; //+ await jwtGet()
+        headers["Authorization"] = "Bearer " + await jwtGet();
       }
 
       const response = await fetch( url , {
@@ -1469,7 +1627,7 @@ async function whisperLoadMP3(file) {
         method: "POST",
         body: form,
         headers: {
-          "Authorization": "Bearer " // + await jwtGet()
+          "Authorization": "Bearer " + await jwtGet()
         }
       });
       if ( response.ok ) {
@@ -1720,7 +1878,7 @@ async function recordingRecord() {
               method: "POST",
               body: form,
               headers: {
-                "Authorization": "Bearer " // + await jwtGet()
+                "Authorization": "Bearer " + await jwtGet()
               }
             });
 
@@ -1752,7 +1910,7 @@ async function recordingRecord() {
               method: "POST",
               body: form,
               headers: {
-                "Authorization": "Bearer " // + await jwtGet()
+                "Authorization": "Bearer " + await jwtGet()
               }
             });
 
@@ -1895,7 +2053,8 @@ let CFG = {
       voice: { background: "NONE", type: "google", google:{ id: "en-GB-Standard-A"}, lipsync:{ lang: 'zh' } }
     },
     {
-      name: "Nimetön 2",
+      // name: "Nimetön 2",
+      name: "",
 
       theme: { lang: 'en', brightness: "dark", ratio: "wide", layout: "land" },
       view: { image: 'NONE' },
@@ -2130,6 +2289,7 @@ function SyncSleep(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
 
+let default_animation_url = null;
 function motion( action, pose, gesture, mood ) {
   try {
     head.setMood(mood || 'neutral');
@@ -2178,7 +2338,7 @@ function openaiBuildMessage( extra_system_prompt = "") {
       msgs.push( { n: n, role: x.role, content: n.value } );
     }
     if(x.role === "system") {
-      n.value = condition + "仅返回不超过100字的中文, 禁用markdown格式, 禁止分点作答." + extra_system_prompt; // 约定只有中文且无markdown
+      n.value = condition + "仅返回不超过100字的中文, 禁用markdown格式, 禁止分点作答." + extra_system_prompt; // 约定只有中文且无markdoswn
       // TODO: 在此添加约束（如有需要）
     }
   });
@@ -2241,7 +2401,7 @@ async function openaiModerateMessage(msgs) {
     headers["Authorization"] = "Bearer " + apikey;
   } else {
     url = openaiModerationsProxy;
-    headers["Authorization"] = "Bearer " // + await jwtGet()
+    headers["Authorization"] = "Bearer " + await jwtGet()
   }
 
   const text = modMsgs.map( x => x.content );
@@ -2306,7 +2466,7 @@ async function openaiSendMessage(node,msgs) {
     headers["Authorization"] = "Bearer " + apikey;
   } else {
     url = openaiChatCompletionsProxy;
-    headers["Authorization"] = "Bearer " // + await jwtGet()
+    headers["Authorization"] = "Bearer " + await jwtGet()
   }
 
   // Chat completion
@@ -2564,7 +2724,7 @@ async function grokSendMessage(node,msgs) {
     headers["Authorization"] = "Bearer " + apikey;
   } else {
     url = grokChatCompletionsProxy;
-    headers["Authorization"] = "Bearer " // + await jwtGet()
+    headers["Authorization"] = "Bearer " + await jwtGet()
   }
 
   // Chat completion
@@ -2638,11 +2798,8 @@ async function grokSendMessage(node,msgs) {
             }
           });
         }
-
         // Break, if done
         if (done) {
-
-
           if ( tts ) {
             if ( cfg('voice-type') === 'eleven' ) {
               await elevenSpeak( tts.trimStart() + " ", node );
@@ -2684,7 +2841,10 @@ async function grokSendMessage(node,msgs) {
                   ttsVoice: cfg('voice-google-id'),
                   ttsRate: cfg('voice-google-rate'),
                   ttsPitch: cfg('voice-google-pitch')
-                }, addText.bind(null,node), exclude.excludes );
+                }, 
+                // addText.bind(null,node), 
+                () => {},
+                exclude.excludes );
               }
             }
           }
@@ -2721,6 +2881,8 @@ async function grokSendMessage(node,msgs) {
 // TODO: 加入动作option，仿照openaiSendMessage
 async function llamaSendMessage(node,msgs) {
 
+  const PROXY = llamaChatCompletionsProxy; // 部署时替换为Yue_Xiaoyin_ChatCompletionsProxy
+
   // Create a new AbortController instance
   aiController = new AbortController();
   const signal = aiController.signal;
@@ -2752,22 +2914,22 @@ async function llamaSendMessage(node,msgs) {
     // Elements
     node.dataset.output = '';
     let tts = '';
+    let conv_id = '';
     let fn = { id: '', name: '', arguments: '' }
 
     // Fetch the response from the Llama.cpp server
-    tts = '';
-    const res = await fetch( llamaChatCompletionsProxy, {
+    // console.log(body)
+    const res = await fetch( PROXY, {
       method: "POST",
       mode: "cors",
       headers: {
         "Content-Type": "application/json",
-        "Authorization": "Bearer " // + await jwtGet()
+        "Authorization": "Bearer " + await jwtGet() // TODO: apikey
       },
       body: JSON.stringify(body),
       signal
     });
 
-    
 
     if ( res.ok ) {
 
@@ -2777,77 +2939,102 @@ async function llamaSendMessage(node,msgs) {
       let exclude = null; // Exclude object
 
       let done = false;
-      // let value = '';
-      
       let buffer = "";
       const speakQueue = [];
-      const LengthThreshold = 30;
+      const LengthThreshold = 10; // origin: 30
       let delta = 0;
       let adding = 0;
+      // let keep_reading = true;
+      let tts_substring = "";
+      let Planning = {
+        flag: true,
+        full_string: ""
+      };
 
-      let keep_reading = true;
+      
 
-      while (keep_reading) {
-
+      while ( true ) {
         let { done, value } = await reader.read();
-        // await SyncSleep( 200 );
+        // await SyncSleep( 50 );
         // await SyncSleep( Math.min(Math.floor(Math.random() * ( 70 * ++adding - 50 + 1)) + 100, 200) ); 
         // 需要随服务器响应速度调整
         //adding++;
         // Extract text data
-        if ( value && keep_reading ) {
+        // let line = "";
+        if ( value ) {
           decoder.decode(value).split('\n').forEach( data => {
-            if ( data.startsWith("data: ") ) {
-              let line = data.substring(6).trim();
+            if (conv_id) {
+              document.cookies = "conv_id=" + conv_id + "; path=" + PROXY;
+            }
+            if ( data.startsWith("data: ") ) { // TODO: 这个字段也要改
+              let line = data.substring(6).trim(); // buffer
               if ( line === '[DONE]' ) {
                 done = true;
               } else {
                 let obj;
                 try {
                   obj = JSON.parse( line );
+                  // line = "";
                 } catch(error) {
-                  throw new Error( "Error JSON parsing line: " + line );
+                  console.log("Error JSON parsing line: " + line);
+                  // throw new Error( "Error JSON parsing line: " + line ); // TODO6：这里会出现奇怪的parsing错误，需要解决
                 }
 
                 if ( obj && obj.error ) throw new Error( obj.error.message || ''+res.status );
                 // modified: 目前与async function openaiSendMessage一致，想加入action等
-                fn.id += obj?.choices?.[0]?.delta?.tool_calls?.[0]?.id || '';
-                fn.name += obj?.choices?.[0]?.delta?.tool_calls?.[0]?.function?.name || '';
-                fn.arguments += obj?.choices?.[0]?.delta?.tool_calls?.[0]?.function?.arguments || '';
-                // modified: 目前与async function openaiSendMessage一致，想加入action等
-                node.dataset.output += obj?.choices?.[0]?.delta?.content || '';
-                tts += obj?.choices?.[0]?.delta?.content || '';
+                if (PROXY === llamaChatCompletionsProxy) {
+                  fn.id += obj?.choices?.[0]?.delta?.tool_calls?.[0]?.id || '';
+                  fn.name += obj?.choices?.[0]?.delta?.tool_calls?.[0]?.function?.name || '';
+                  fn.arguments += obj?.choices?.[0]?.delta?.tool_calls?.[0]?.function?.arguments || '';
+                  // modified: 目前与async function openaiSendMessage一致，想加入action等
+                  node.dataset.output += obj?.choices?.[0]?.delta?.content || '';
+                  tts += obj?.choices?.[0]?.delta?.content || '';
+                } else if (PROXY === Yue_Xiaoyin_ChatCompletionsProxy) {
+
+                  // TODO***: 解码后的格式？设置cookies，并连接好用于做tts的文字
+
+                  // ?
+                  fn.id += obj?.choices?.[0]?.delta?.tool_calls?.[0]?.id || '';
+                  fn.name += obj?.choices?.[0]?.delta?.tool_calls?.[0]?.function?.name || '';
+                  fn.arguments += obj?.choices?.[0]?.delta?.tool_calls?.[0]?.function?.arguments || '';
+                  node.dataset.output += obj?.choices?.[0]?.delta?.content || '';
+                  // ?
+                  tts += o+= obj?.data?.answer || ''; // TODO: obj.data中有无list形式？
+                  conv_id += obj?.data?.conversation_id || '';
+
+                }
 
               }
             }
           });
         }
-
-        tts = tts.trimStart().trimEnd();
-        if (! /[\u4e00-\u9fa5]/.test(tts)) {
-          tts += ' ';
-        }
         
-        if ( tts.length > LengthThreshold + delta) {
-          const indices = ['。', '！', '？']
-                  .map(p => tts.indexOf(p, LengthThreshold)) // start ths 45-th letter
-                  .filter(index => index !== -1);
-          const idx = indices.length > 0 ? Math.min(...indices) : -1;
-          if (idx > 0) {
-            tts = tts.substring(0, idx+1);
-            done = true;
-            keep_reading = false;
-          } else {
-            delta = delta + 3;
+        if (done && tts != '') {
+          if (Planning.flag) {
+            Planning.string = tts
           }
-          
-        }
-        
-        
-        if (done) {
 
-          if ( tts ) {
-            let msg_ = tts.trimStart();
+          if ( tts.length >= LengthThreshold + delta && delta <= 27 ) { // 子串划分有问题
+            const indices = ['；', '。', '！', '？'] // 对非正常断句标点结尾的对象添加delta上界
+                    .map(p => tts.indexOf(p, LengthThreshold)) // start ths 45-th letter
+                    .filter(index => index !== -1);
+            const idx = indices.length > 0 ? Math.min(...indices) : -1;
+            if (idx > 0) {
+              tts_substring = tts.substring(0, idx+1); // 左闭右开
+              tts = tts.substring(idx+1,); // till the end
+            } else {
+              delta = delta + 3;
+              tts_substring = '';
+            }
+          } else {
+            tts_substring = tts;
+            tts = '';
+          }
+
+          
+          // 「TODO1: tts中的文字完全正常，仅前端显示不正常」
+          if ( tts_substring ) {
+            let msg_ = tts_substring.trimStart();
             if( /[\u4e00-\u9fa5]/.test(msg_) ) {
               msg_ = msg_.trimEnd();
             }
@@ -2862,69 +3049,13 @@ async function llamaSendMessage(node,msgs) {
                 ttsVoice: cfg('voice-google-id'),
                 ttsRate: cfg('voice-google-rate'),
                 ttsPitch: cfg('voice-google-pitch')
-              }, addText.bind(null,node), exclude.excludes );
+              }, addText.bind(null,node), exclude.excludes, Planning.string, Planning.flag );
+              Planning.flag = false;
             }
           }
-          
-          
-          
-
-
-          // 在原来的WebGL逻辑中加入UE的动作控制，保持并发
+          // 在原来的WebGL逻辑中加入UE的动作控制，保持并发 | fn中无内容，以下代码不被执行
           if ( fn.id ) { 
-            /*
-                TODO: 通过llama控制动作、手势、表情、姿势
-                UE - 完整逻辑：
-                  1. tts串 + 动作prompt => 动作id序列
-                  2. 发送id序列 
-            */
-            /////////////////////////////////////////////////
-            //       构造请求llama获得动作规划的请求体         //
-            ///////////////////////////////////////////////
-            /*
-            animation_msg.push({
-              "role":  "user",
-              "content": tts
-            })
-            const animation_body = {
-              model: cfg('ai-model'),
-              messages: animation_msg.map( x => {
-                const {role,content,name} = x;
-                return (name ? {role,content,name} : {role,content});
-              }),
-              temperature: cfg('ai-openai-temperature'),
-              presence_penalty: cfg('ai-openai-presence'),
-              frequency_penalty: cfg('ai-openai-frequency'),
-              max_tokens: cfg('ai-openai-output'),
-              stream: false
-            };
-            // TODO: system prompt = ... | user query = tts
-            const stop = cfg('ai-llama-stop');
-            if ( stop && stop.length ) {
-              animation_body.stop = [ stop ];
-            }
-            const user = cfg('ai-llama-user');
-            if ( user && user.length ) {
-              animation_body.user = user;
-            }
-            */
-            
-            ////////////////////////////////////////
-            //      请求llama所在服务器获得动作规划    //
-            ////////////////////////////////////////
-            /*
-            const annimation_res = await fetch( llamaChatCompletionsProxy, {
-              method: "POST",
-              mode: "cors",
-              headers: {
-                "Content-Type": "application/json",
-                "Authorization": "Bearer " + await jwtGet()
-              },
-              animation_body: JSON.stringify(animation_body), // 格式错误？
-              signal
-            });
-            */
-
+            // 已经废弃UE socket通信，仅模拟通信维持结构
             const animation_res = {
               'ok': true,
               'choices': [{
@@ -2947,7 +3078,7 @@ async function llamaSendMessage(node,msgs) {
                 mode: "cors",
                 headers: {
                   "Content-Type": "application/json",
-                  "Authorization": "Bearer " // + await jwtGet()
+                  "Authorization": "Bearer " + await jwtGet()
                 },
                 body: JSON.stringify(socket_body),
                 signal
@@ -2961,8 +3092,6 @@ async function llamaSendMessage(node,msgs) {
               console.error( await animation_res.text() );
               throw new Error( json.error ? json.error.message : ''+animation_res.status );
             }
-            // await sendSocketMessage(UESocketHost, UESocketPort, socket_body);
-
             // WebGL
             body.messages.push({
               role: "assistant",
@@ -2980,7 +3109,7 @@ async function llamaSendMessage(node,msgs) {
             });
             
             try {
-              
+              // 动作驱动只能在web端完成，写入html中 | 以motion方式控制
               const m = JSON.parse(fn.arguments);
               // TODO: 控制动作、手势、表情、姿势的方法 → 在fn.arguments添加如下字段
               // m: { action: '...', stillpose: '...', gesture: '...', mood: '...' }
@@ -2997,22 +3126,21 @@ async function llamaSendMessage(node,msgs) {
             // Make sure we do not get another function call
             body.tool_choice = "none";
           }
-
           
-          break;
+          if (tts === '') break;
         }
 
         // modified: 测试动作控制
-         try {
-            motion('test_glb', null, null, null); // TODO: test only
+        // 「TODO2: 此处能看到全部的文字信息，据此规划动作序列」 
+        try {
+            // motion('test_glb', null, null, null); // TODO: test only
             // motion('test_fbx', null, null, null); // TODO: test only
             // test only when FBX exported
          } catch(motionError) {
            console.error(motionError);
          }
 
-        // Speak
-        
+        // Speak | Useless ?
         if ( tts ) {
           let idx = 0;
           ['.','!','?','\n'].forEach( x => {
@@ -3022,10 +3150,7 @@ async function llamaSendMessage(node,msgs) {
           if ( idx > 10 ) {
             let s = tts.substring(0, idx);
             if ( s && s.length ) {
-              tts = tts.substring(idx).trimStart();
-              if( /[\u4e00-\u9fa5]/.test(s) ) {
-                s = s.trimEnd()
-              }
+              tts = tts.substring(idx);
               if ( cfg('voice-type') === 'eleven' ) {
                 await elevenSpeak( s , node );
               } else if ( cfg('voice-type') === 'microsoft' ) {
@@ -3044,7 +3169,6 @@ async function llamaSendMessage(node,msgs) {
         }
 
       }
-      // await Promise.all(speakQueue);
 
     } else {
       console.error( await res.text() );
@@ -3247,7 +3371,7 @@ async function geminiSendMessage(node,msgs) {
         headers["x-goog-api-key"] = apikey;
       } else {
         url = geminiProxy + cfg("ai-model") + ':streamGenerateContent?alt=sse';
-        headers["Authorization"] = "Bearer "; // + await jwtGet()
+        headers["Authorization"] = "Bearer " + await jwtGet()
       }
 
       // Fetch the response from the Vertex AI API
@@ -3412,98 +3536,105 @@ async function geminiSendMessage(node,msgs) {
 
 // Add new message to UI
 function addMessage(user = false) {
-  const session = d3.select(".session.selected");
+  const session = user ? d3.select(".message.user-message") : d3.select(".message.system-message");
   const message = session.append("div");
+  // const container = user ? d3.select("#user-messages") : d3.select("#system-messages");
+  // const message = container.append("div")
+  //   classed("message", true)
+  //   .classed(user ? "user-message" : "system-message", true);
+
   message.classed("message", true)
     .classed("user",user)
     .classed("blink",!user);
 
   // Add selection 「选中消息框」
-  const toolbarLeft = message.append("div");
-  toolbarLeft.classed("toolbar-left", true);
-  toolbarLeft.append("div")
-    .classed("command",true)
-    .classed("select", true )
-    .on('click', function(ev) {
-      let e = d3.select(this);
-      let mode = !e.classed("selected");
-      e.classed("selected", mode );
-      d3.select(this.parentNode.parentNode).classed("grayed", mode );
-    })
-    .html(svgSelect);
+  // const toolbarLeft = message.append("div");
+  // toolbarLeft.classed("toolbar-left", true);
+  // toolbarLeft.append("div")
+  //   .classed("command",true)
+  //   .classed("select", true )
+  //   .on('click', function(ev) {
+  //     let e = d3.select(this);
+  //     let mode = !e.classed("selected");
+  //     e.classed("selected", mode );
+  //     d3.select(this.parentNode.parentNode).classed("grayed", mode );
+  //   })
+  //   .html(svgSelect);
+  // // toolbar-right / toolbar-left => 左右侧的小按钮
+  // if ( user ) {
+  //   // 「添加用户输入的消息」
+  //   const toolbarRight = message.append("div");
+  //   toolbarRight.classed("toolbar-right", true);
+  //   toolbarRight.append("div")
+  //     .classed("command", true)
+  //     .on('click', function(ev) {
+  //       let n = this.parentNode.parentNode;
+  //       const text = d3.select(n).attr('data-input');
+  //       while(n) {
+  //         // 用了重新处理消息的按钮以后会调用这里
+  //         let e = d3.select(n);
+  //         e.classed("grayed",true);
+  //         e.select(".select").classed("selected", true );
+  //         n = n.nextSibling;
+  //       }
+  //       let node = d3.select("#input").property("value",text).dispatch("change").node();
+  //       node.scrollTop = node.scrollHeight;
+  //       node.focus();
+  //     })
+  //     .html(svgRepost);
 
-  if ( user ) {
-    // 「添加用户输入的消息」
-    const toolbarRight = message.append("div");
-    toolbarRight.classed("toolbar-right", true);
-    toolbarRight.append("div")
-      .classed("command", true)
-      .on('click', function(ev) {
-        let n = this.parentNode.parentNode;
-        const text = d3.select(n).attr('data-input');
-        while(n) {
-          let e = d3.select(n);
-          e.classed("grayed",true);
-          e.select(".select").classed("selected", true );
-          n = n.nextSibling;
-        }
-        let node = d3.select("#input").property("value",text).dispatch("change").node();
-        node.scrollTop = node.scrollHeight;
-        node.focus();
-      })
-      .html(svgRepost);
+  // } else {
+  //   // system message
+  //   const toolbarRight = message.append("div");
+  //   toolbarRight.classed("toolbar-right", true);
+  //   toolbarRight.append("div")
+  //     .classed("command", true)
+  //     .on('click', function(ev) {
+  //       const e = d3.select(this.parentNode.parentNode);
+  //       let text = e.attr("data-output");
+  //       if ( text && text.length ) {
+  //         if ( cfg('voice-type') === 'eleven' ) {
+  //           elevenSpeak( text + " " );
+  //           elevenSpeak( "" );
+  //         } else if ( cfg('voice-type') === 'microsoft' ) {
+  //           microsoftSpeak( text );
+  //           microsoftSpeak( null );
+  //         } else {
+  //           head.speakText( text, {
+  //             lipsyncLang: cfg('voice-lipsync-lang'),
+  //             ttsVoice: cfg('voice-google-id'),
+  //             ttsRate: cfg('voice-google-rate'),
+  //             ttsPitch: cfg('voice-google-pitch')
+  //           } );
+  //         }
+  //       }
+  //     })
+  //     .html(svgSpeak);
 
-  } else {
-    const toolbarRight = message.append("div");
-    toolbarRight.classed("toolbar-right", true);
-    toolbarRight.append("div")
-      .classed("command", true)
-      .on('click', function(ev) {
-        const e = d3.select(this.parentNode.parentNode);
-        let text = e.attr("data-output");
-        if ( text && text.length ) {
-          if ( cfg('voice-type') === 'eleven' ) {
-            elevenSpeak( text + " " );
-            elevenSpeak( "" );
-          } else if ( cfg('voice-type') === 'microsoft' ) {
-            microsoftSpeak( text );
-            microsoftSpeak( null );
-          } else {
-            head.speakText( text, {
-              lipsyncLang: cfg('voice-lipsync-lang'),
-              ttsVoice: cfg('voice-google-id'),
-              ttsRate: cfg('voice-google-rate'),
-              ttsPitch: cfg('voice-google-pitch')
-            } );
-          }
-        }
-      })
-      .html(svgSpeak);
-
-    toolbarRight.append("div")
-      .classed("command", true)
-      .on('click', function(ev) {
-        head.stopSpeaking();
-        // Abort the fetch request by calling abort() on the AbortController instance
-        if (aiController) {
-          aiController.abort();
-          aiController = null;
-        }
-      })
-      .html(svgStop);
-  }
+  //   toolbarRight.append("div")
+  //     .classed("command", true)
+  //     .on('click', function(ev) {
+  //       head.stopSpeaking();
+  //       // Abort the fetch request by calling abort() on the AbortController instance
+  //       if (aiController) {
+  //         aiController.abort();
+  //         aiController = null;
+  //       }
+  //     })
+  //     .html(svgStop);
+  // }
 
   message.append('p');
 
-  const nodeSessions = d3.select("#right-sessions").node();
+  const nodeSessions = user ? d3.select("#user-messages").node() : d3.select("#system-messages").node();
   nodeSessions.scrollTop = nodeSessions.scrollHeight;
 
   return message.node();
 }
 
 // Add text to session
-function addText(node,s) {
-  const nodeSessions = d3.select("#right-sessions").node();
+function addText(node,s) { // s是新的词（prepocess已经分词过的）
+  const nodeSessions = node.className === "user-messages" ? d3.select("#system-messages").node() : d3.select("#user-messsages").node;
   const onbottom = Math.abs( nodeSessions.scrollHeight - nodeSessions.scrollTop - nodeSessions.clientHeight) < 20;
   let last = node.lastElementChild;
   let markdown = (last.dataset.markdown || '') + s;
@@ -4948,7 +5079,9 @@ document.addEventListener('DOMContentLoaded', async function(e) {
         d3.select("#right-sessions").classed("hidden", false);
       }
     }
-  });
+  }); 
+  // right-sessions => chat-container-right
+  // 这里做配置面板的显示，始终展示在右侧，无需修改 
 
   d3.selectAll("[data-theme-ratio]").on('click.command', function(ev) {
     const e = d3.select(this);
@@ -5341,7 +5474,8 @@ document.addEventListener('DOMContentLoaded', async function(e) {
   d3.select("#session-duplicate").on('click', function(ev) {
     let id = CFG.sessions.length;
     let clone = JSON.parse( JSON.stringify(cfg()) );
-    clone.name = 'Nimetön';
+    // clone.name = 'Nimetön';
+    clone.name = '';
     CFG.sessions.push(clone);
     saveConfig();
     loadConfig(id);
@@ -5393,111 +5527,12 @@ document.addEventListener('DOMContentLoaded', async function(e) {
     document.body.removeChild(textarea);
   });
 
-  d3.select(window).on('resize.updatesvg', function(ev) {
-    d3.selectAll("textarea").dispatch("keyup");
-  });
 
-  d3.selectAll("#json").on("blur", function(ev) {
-    let e = d3.select(this);
-    const json = e.property("value");
-    try {
-      const c = JSON.parse( json );
-      CFG.sessions[CFG.session] = c;
-      saveConfig();
-      loadConfig();
-      i18nTranslate();
-    } catch(error) {
-      console.error(error);
-    }
-  });
-
-  // Motion (experimental)
-  d3.selectAll("#motion").on("click", function(ev) {
-    const e = d3.select(this);
-    const sel = e.classed("selected");
-    e.classed("selected", !sel );
-  });
-
-  // Record
-  d3.select('#record').on('click', async function(ev) {
-    const x = d3.select(this);
-    const mode = !x.classed("selected");
-    x.classed("selected",mode);
-    // recordingPlaySound();
-    if ( mode ) { 
-      recordingRecord();
-    } else {
-      if ( recordingMediaRecorder ) {
-        if ( recordingMediaRecorder.state === 'recording' ) {
-          recordingIgnoreData = true;
-          recordingMediaRecorder.stop();
-        }
-        recordingMediaRecorder.stream.getTracks().forEach( track => track.stop() );
-        recordingMediaRecorder = null;
-      }
-      head.stopListening();
-    }
-  });
-
-  // 执行完 record ? ↑ ？↓ ？
-
-  // Viseme tester
-  d3.select('#visemeword').on('input change keyup paste', function(ev) {
-    const e = d3.select(this);
-    const word = e.property("value");
-    if ( word ) {
-      try {
-        const preprocessed = head.lipsyncPreProcessText( word, cfg('voice-lipsync-lang')  );
-        const visemes = head.lipsyncWordsToVisemes( preprocessed, cfg('voice-lipsync-lang') );
-        d3.select('#visemedata').property("value", JSON.stringify( visemes ) ).dispatch("change");
-      } catch(error) {
-        d3.select('#visemedata').property("value", error ).dispatch("change");
-      }
-    } else {
-      d3.select('#visemedata').property("value", "" ).dispatch("change");
-    }
-  });
-
-  // Scripts
-  // d3.select("#script").on('input change keyup paste', scriptInit);
-  d3.select("body").on('keydown', scriptCommand);
-
-  // Pause animation when not visible
-  document.addEventListener("visibilitychange", async function (ev) {
-    if (document.visibilityState === "visible") {
-      if ( !d3.select("#pause").classed("selected") ) {
-        head.start();
-      }
-    } else {
-      head.stop();
-    }
-  });
-
-  // API keys
-  d3.select("#apikey-gtts").on('input change keyup paste', function (ev) {
-    const e = d3.select(this);
-    const apikey = e.property("value");
-
-    // Change the API key
-    if ( apikey ) {
-      head.opt.ttsEndpoint = googleTTSEndpoint;
-      head.opt.ttsApikey = apikey;
-      head.opt.jwtGet = null;
-    } else {
-      head.opt.ttsEndpoint = googleTTSProxy;
-      head.opt.ttsApikey = null;
-      head.opt.jwtGet = jwtGet;
-    }
-  });
-
-  d3.select("#apikey-microsoft").on('input change keyup paste', function (ev) {
-    microsoftSpeak(null); // Closes the current connection, if any
-  });
 
   try {
 
     // Get token
-    jwt = ''; // await jwtGet();
+    jwt = await jwtGet();
 
     // Show last avatar
     let o = {};
@@ -5523,37 +5558,57 @@ document.addEventListener('DOMContentLoaded', async function(e) {
 });
 
 </script>
+
+
 </head>
+
 <body class="theme-dark">
 
-  <div id="main" class="ratio-wide layout-land presence-video">
-
-    <div id="left" class="noselect nodrag">
-
-      <div id="view">
+  <div id="chat-container-left" class="chat-container">
+    <h3>系统回复</h3>
+      <!-- <div id="view">
         <video id="video" autoplay loop muted playsinline>
           <source id="view-video" src="" type="video/mp4">
         </video>
       </div>
-
       <div id="avatar"></div>
-
-      <div class="border starttransparent"></div>
-
-      <div id="loading">
-        <div id="loading-back"></div>
-        <div id="loading-top"></div>
-        <div id="loading-value"></div>
+      <div class="border starttransparent"></div> -->
+      <div id="system-messages" class="messages-area">
+        <!-- <div class="sessions"> -->
+            <div id="session-0" class="message system-message"></div>
+            <div id="session-1" class="session"></div>
+        <!-- </div> -->
       </div>
+      
+  </div>
 
-    </div>
+  <div id="canvas-container">
+      <!-- 原始的 #main 和 #left 结构被保留并放入中央容器 -->
+      <div id="main" class="ratio-wide layout-land presence-video">
+          <div id="left" class="noselect nodrag">
+            <!-- loading 元素等保持不变 -->
+              <div id="view">
+                  <video id="video" autoplay loop muted playsinline>
+                      <source id="view-video" src="" type="video/mp4">
+                  </video>
+              </div>
+              <div id="avatar"></div>
+              <div class="border starttransparent"></div>
+                <div id="loading">
+                  <div id="loading-back"></div>
+                  <div id="loading-top"></div>
+                  <div id="loading-value"></div>
+                </div>
+          </div>
+      </div>
+  </div>
 
+  <div id="right-column-wrapper">
+    <div id="chat-container-right" class="chat-container">
 
-    <div id="right">
+      <!-- <div class="pages"> -->
 
-      <div class="pages">
-
-        <div class="row noselect nodrag">
+        <div class="row noselect nodrag" style="display: none;">
 
           <div class="command starttransparent" data-i18n-title="Session" data-show="right-session">
             <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
@@ -5614,7 +5669,7 @@ document.addEventListener('DOMContentLoaded', async function(e) {
 
         </div>
 
-        <div id="right-ai" class="page noselect nodrag hidden">
+        <div id="right-ai" class="page noselect nodrag hidden" style="display: none;">
 
           <div class="vbar"></div>
 
@@ -6037,7 +6092,7 @@ document.addEventListener('DOMContentLoaded', async function(e) {
 
         </div>
 
-        <div id="right-view" class="page noselect nodrag hidden">
+        <div id="right-view" class="page noselect nodrag hidden" style="display: none;">
 
           <div class="vbar"></div>
 
@@ -6119,7 +6174,7 @@ document.addEventListener('DOMContentLoaded', async function(e) {
 
         </div>
 
-        <div id="right-avatar" class="page noselect nodrag hidden">
+        <div id="right-avatar" class="page noselect nodrag hidden" style="display: none;">
 
           <div class="vbar"></div>
 
@@ -6310,7 +6365,7 @@ document.addEventListener('DOMContentLoaded', async function(e) {
 
         </div>
 
-        <div id="right-bones" class="page noselect nodrag hidden">
+        <div id="right-bones" class="page noselect nodrag hidden" style="display: none;">
 
           <div class="vbar"></div>
 
@@ -6736,7 +6791,7 @@ document.addEventListener('DOMContentLoaded', async function(e) {
 
         </div>
 
-        <div id="right-camera" class="page noselect nodrag hidden">
+        <div id="right-camera" class="page noselect nodrag hidden" style="display: none;">
 
           <div class="vbar"></div>
 
@@ -6846,7 +6901,7 @@ document.addEventListener('DOMContentLoaded', async function(e) {
 
         </div>
 
-        <div id="right-audio" class="page noselect nodrag hidden">
+        <div id="right-audio" class="page noselect nodrag hidden" style="display: none;">
 
           <div class="vbar"></div>
 
@@ -7033,11 +7088,18 @@ document.addEventListener('DOMContentLoaded', async function(e) {
 
         </div>
 
-        <div id="right-sessions" class="page">
-          <div id="sessions">
-            <div id="session-0" class="session selected"></div>
+        <div id="user-messages" class="messages-area">
+          <h3>用户输入</h3>
+          <div class="sessions">
+            <div id="session-0" class="message user-message"></div>
             <div id="session-1" class="session"></div>
           </div>
+          <!-- 插入的：
+            <div class="message user-message">你好</div> -->
+          <!-- <div id="sessions">
+            <div id="user-message" class="messages-area"></div>
+            <div id="session-1" class="session"></div>
+          </div> -->
         </div>
 
         <div id="right-session" class="page noselect nodrag hidden">
@@ -7081,20 +7143,6 @@ document.addEventListener('DOMContentLoaded', async function(e) {
           <div class="row">
             <div class="text label" data-i18n-text="Title"></div>
             <input class="fill" type="text" data-i18n-placeholder="Name" data-item="name" data-type="value">
-            <!-- <div id="session-duplicate" class="command">
-              <svg viewBox="-2 -2 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M19 5H7V3H21V17H19V5Z" fill="currentColor" />
-                <path d="M9 13V11H11V13H13V15H11V17H9V15H7V13H9Z" fill="currentColor" />
-                <path fill-rule="evenodd" clip-rule="evenodd" d="M3 7H17V21H3V7ZM5 9H15V19H5V9Z" fill="currentColor" />
-              </svg>
-            </div> -->
-            <!-- <div id="session-delete" class="command">
-              <svg viewBox="-1 -1 26 26" xmlns="http://www.w3.org/2000/svg">
-                <path fill-rule="evenodd" clip-rule="evenodd" d="M17 5V4C17 2.89543 16.1046 2 15 2H9C7.89543 2 7 2.89543 7 4V5H4C3.44772 5 3 5.44772 3 6C3 6.55228 3.44772 7 4 7H5V18C5 19.6569 6.34315 21 8 21H16C17.6569 21 19 19.6569 19 18V7H20C20.5523 7 21 6.55228 21 6C21 5.44772 20.5523 5 20 5H17ZM15 4H9V5H15V4ZM17 7H7V18C7 18.5523 7.44772 19 8 19H16C16.5523 19 17 18.5523 17 18V7Z" fill="currentColor" />
-                <path d="M9 9H11V17H9V9Z" fill="currentColor" />
-                <path d="M13 9H15V17H13V9Z" fill="currentColor" />
-              </svg>
-            </div> -->
           </div>
 
           <div class="row">
@@ -7163,75 +7211,80 @@ document.addEventListener('DOMContentLoaded', async function(e) {
 
         </div>
 
-      </div>
+      <!-- </div> -->
+        <!-- ↑ for class="pages" -->
 
       <div class="border starttransparent"></div>
     </div>
 
 
-      <div id="bottom">
-        <div class="pages noselect nodrag">
+    <div id="bottom">
+      <div class="pages noselect nodrag">
 
-          <div class="page fill">
-            <div class="row fill">
-              <textarea id="input" class="starttransparent"  data-i18n-placeholder="input" autocapitalize="sentences"></textarea>
-            </div>
+        <div class="page fill">
+          <div class="row fill">
+            <textarea id="input" class="starttransparent"  data-i18n-placeholder="input" autocapitalize="sentences"></textarea>
           </div>
+        </div>
 
-          <div class="row" style="column-gap:0;">
-            <div id="flag" class="command starttransparent" style="display: none;">
-              <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path fill-rule="evenodd" clip-rule="evenodd" d="M7 8V13C7 15.7614 9.23858 18 12 18C14.7614 18 17 15.7614 17 13V8H7ZM5 4H19V13C19 16.866 15.866 20 12 20C8.13401 20 5 16.866 5 13V4Z" fill="currentColor" />
-              </svg>
-            </div>
-            <!-- 用于评估消息内容潜在风险、不适当性的分值 [0.,1.] -->
-            <!-- <div id="score" class="text starttransparent" style="margin-left:-8px;">0</div> -->
-            <div id="scripttag" class="command starttransparent" style="display: none;">
-              <svg viewBox="-4 -4 32 32" xmlns="http://www.w3.org/2000/svg">
-                <path d="M17 9H7V7H17V9Z" fill="currentColor" /><path d="M7 13H17V11H7V13Z" fill="currentColor" /><path fill-rule="evenodd" clip-rule="evenodd" d="M2 18V2H22V18H16V22H14C11.7909 22 10 20.2091 10 18H2ZM12 16V18C12 19.1046 12.8954 20 14 20V16H20V4H4V16H12Z" fill="currentColor" />
-              </svg>
-            </div>
-            <div id="scriptstatus" class="text starttransparent" style="margin-left:-8px;">1/1</div>
-            <div class="filler"></div>
-            <div id="selectall" class="command starttransparent">
-              <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                <path d="M10.5858 13.4142L7.75735 10.5858L6.34314 12L10.5858 16.2427L17.6568 9.1716L16.2426 7.75739L10.5858 13.4142Z" fill="currentColor" />
-              </svg>
-            </div>
-            <div id="record" class="command starttransparent" data-i18n-title="Record">
-              <svg viewBox="-2 -2 28 28" xmlns="http://www.w3.org/2000/svg">
-                <path fill-rule="evenodd" clip-rule="evenodd" d="M9 4C9 2.34315 10.3431 1 12 1C13.6569 1 15 2.34315 15 4V12C15 13.6569 13.6569 15 12 15C10.3431 15 9 13.6569 9 12V4ZM13 4V12C13 12.5523 12.5523 13 12 13C11.4477 13 11 12.5523 11 12V4C11 3.44772 11.4477 3 12 3C12.5523 3 13 3.44772 13 4Z" fill="currentColor" />
-                <path d="M18 12C18 14.973 15.8377 17.441 13 17.917V21H17V23H7V21H11V17.917C8.16229 17.441 6 14.973 6 12V9H8V12C8 14.2091 9.79086 16 12 16C14.2091 16 16 14.2091 16 12V9H18V12Z" fill="currentColor" />
-              </svg>
-            </div>
-            <div id="motion" class="command starttransparent" data-i18n-title="Motion" style="display: none;">
-              <svg viewBox="0 0 50 50" xmlns="http://www.w3.org/2000/svg">
-                <path d="M 34.498047 3 C 32.014047 3 30 5.0150469 30 7.4980469 C 30 9.9830469 32.014047 12 34.498047 12 C 36.987047 12 39 9.9830469 39 7.4980469 C 39 5.0150469 36.987047 3 34.498047 3 z M 20 10 A 2 2 0 0 0 18.919922 10.316406 L 18.917969 10.316406 L 18.886719 10.322266 L 11.957031 15.294922 A 2 2 0 0 0 11 17 A 2 2 0 0 0 13 19 A 2 2 0 0 0 14.287109 18.527344 L 14.289062 18.529297 L 20.283203 14.21875 L 24.691406 15.619141 L 19.757812 23.660156 L 19.757812 23.664062 A 4 4 0 0 0 19 26 A 4 4 0 0 0 21.210938 29.572266 L 28.755859 34.226562 L 27.048828 43.009766 A 2.5 2.5 0 0 0 27 43.5 A 2.5 2.5 0 0 0 29.5 46 A 2.5 2.5 0 0 0 31.955078 43.962891 L 31.957031 43.962891 L 33.984375 33.289062 L 33.978516 33.273438 A 2 2 0 0 0 34 33 A 2 2 0 0 0 33.345703 31.523438 L 33.339844 31.507812 L 27.9375 26.720703 L 32.607422 17.486328 L 32.605469 17.482422 A 3 3 0 0 0 33 16 A 3 3 0 0 0 31.193359 13.248047 L 31.191406 13.244141 L 28.685547 11.849609 L 20.519531 10.066406 L 20.507812 10.068359 A 2 2 0 0 0 20 10 z M 34.212891 18.742188 L 31.972656 23.171875 L 33.181641 25.837891 L 33.193359 25.845703 C 33.513359 26.525703 34.199 27 35 27 L 42 27 C 43.105 27 44 26.105 44 25 C 44 23.895 43.105 23 42 23 L 36 23 L 34.212891 18.742188 z M 17.517578 28.414062 L 15.242188 32 L 7.5 32 C 6.119 32 5 33.119 5 34.5 C 5 35.881 6.119 37 7.5 37 L 15.931641 37 C 17.228641 37 18.445312 36.3705 19.195312 35.3125 L 21.480469 32.089844 C 20.653469 31.578844 20.055828 31.208125 20.048828 31.203125 C 18.904828 30.555125 18.031578 29.569062 17.517578 28.414062 z"  fill="currentColor"/>
-              </svg>
-            </div>
-            <div id="copy" class="command starttransparent" style="display: none;">
-              <svg viewBox="-2 -2 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M13 7H7V5H13V7Z" fill="currentColor" />
-                <path d="M13 11H7V9H13V11Z" fill="currentColor" />
-                <path d="M7 15H13V13H7V15Z" fill="currentColor" />
-                <path fill-rule="evenodd" clip-rule="evenodd" d="M3 19V1H17V5H21V23H7V19H3ZM15 17V3H5V17H15ZM17 7V19H9V21H19V7H17Z" fill="currentColor" />
-              </svg>
-            </div>
-            <div id="delete" class="command starttransparent" style="display: none;">
-              <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+        <div class="row" style="column-gap:0;">
+          <div id="flag" class="command starttransparent" style="display: none;">
+            <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path fill-rule="evenodd" clip-rule="evenodd" d="M7 8V13C7 15.7614 9.23858 18 12 18C14.7614 18 17 15.7614 17 13V8H7ZM5 4H19V13C19 16.866 15.866 20 12 20C8.13401 20 5 16.866 5 13V4Z" fill="currentColor" />
+            </svg>
+          </div>
+          <div id="scripttag" class="command starttransparent" style="display: none;">
+            <svg viewBox="-4 -4 32 32" xmlns="http://www.w3.org/2000/svg">
+              <path d="M17 9H7V7H17V9Z" fill="currentColor" /><path d="M7 13H17V11H7V13Z" fill="currentColor" /><path fill-rule="evenodd" clip-rule="evenodd" d="M2 18V2H22V18H16V22H14C11.7909 22 10 20.2091 10 18H2ZM12 16V18C12 19.1046 12.8954 20 14 20V16H20V4H4V16H12Z" fill="currentColor" />
+            </svg>
+          </div>
+          <div id="scriptstatus" class="text starttransparent" style="margin-left:-8px;">1/1</div>
+          <div class="filler"></div>
+          <div id="selectall" class="command starttransparent">
+            <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+              <path d="M10.5858 13.4142L7.75735 10.5858L6.34314 12L10.5858 16.2427L17.6568 9.1716L16.2426 7.75739L10.5858 13.4142Z" fill="currentColor" />
+            </svg>
+          </div>
+          <div id="record" class="command starttransparent" data-i18n-title="Record">
+            <svg viewBox="-2 -2 28 28" xmlns="http://www.w3.org/2000/svg">
+              <path fill-rule="evenodd" clip-rule="evenodd" d="M9 4C9 2.34315 10.3431 1 12 1C13.6569 1 15 2.34315 15 4V12C15 13.6569 13.6569 15 12 15C10.3431 15 9 13.6569 9 12V4ZM13 4V12C13 12.5523 12.5523 13 12 13C11.4477 13 11 12.5523 11 12V4C11 3.44772 11.4477 3 12 3C12.5523 3 13 3.44772 13 4Z" fill="currentColor" />
+              <path d="M18 12C18 14.973 15.8377 17.441 13 17.917V21H17V23H7V21H11V17.917C8.16229 17.441 6 14.973 6 12V9H8V12C8 14.2091 9.79086 16 12 16C14.2091 16 16 14.2091 16 12V9H18V12Z" fill="currentColor" />
+            </svg>
+          </div>
+          <div id="motion" class="command starttransparent" data-i18n-title="Motion" style="display: none;">
+            <svg viewBox="0 0 50 50" xmlns="http://www.w3.org/2000/svg">
+              <path d="M 34.498047 3 C 32.014047 3 30 5.0150469 30 7.4980469 C 30 9.9830469 32.014047 12 34.498047 12 C 36.987047 12 39 9.9830469 39 7.4980469 C 39 5.0150469 36.987047 3 34.498047 3 z M 20 10 A 2 2 0 0 0 18.919922 10.316406 L 18.917969 10.316406 L 18.886719 10.322266 L 11.957031 15.294922 A 2 2 0 0 0 11 17 A 2 2 0 0 0 13 19 A 2 2 0 0 0 14.287109 18.527344 L 14.289062 18.529297 L 20.283203 14.21875 L 24.691406 15.619141 L 19.757812 23.660156 L 19.757812 23.664062 A 4 4 0 0 0 19 26 A 4 4 0 0 0 21.210938 29.572266 L 28.755859 34.226562 L 27.048828 43.009766 A 2.5 2.5 0 0 0 27 43.5 A 2.5 2.5 0 0 0 29.5 46 A 2.5 2.5 0 0 0 31.955078 43.962891 L 31.957031 43.962891 L 33.984375 33.289062 L 33.978516 33.273438 A 2 2 0 0 0 34 33 A 2 2 0 0 0 33.345703 31.523438 L 33.339844 31.507812 L 27.9375 26.720703 L 32.607422 17.486328 L 32.605469 17.482422 A 3 3 0 0 0 33 16 A 3 3 0 0 0 31.193359 13.248047 L 31.191406 13.244141 L 28.685547 11.849609 L 20.519531 10.066406 L 20.507812 10.068359 A 2 2 0 0 0 20 10 z M 34.212891 18.742188 L 31.972656 23.171875 L 33.181641 25.837891 L 33.193359 25.845703 C 33.513359 26.525703 34.199 27 35 27 L 42 27 C 43.105 27 44 26.105 44 25 C 44 23.895 43.105 23 42 23 L 36 23 L 34.212891 18.742188 z M 17.517578 28.414062 L 15.242188 32 L 7.5 32 C 6.119 32 5 33.119 5 34.5 C 5 35.881 6.119 37 7.5 37 L 15.931641 37 C 17.228641 37 18.445312 36.3705 19.195312 35.3125 L 21.480469 32.089844 C 20.653469 31.578844 20.055828 31.208125 20.048828 31.203125 C 18.904828 30.555125 18.031578 29.569062 17.517578 28.414062 z"  fill="currentColor"/>
+            </svg>
+          </div>
+          <div id="copy" class="command starttransparent" style="display: none;">
+            <svg viewBox="-2 -2 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M13 7H7V5H13V7Z" fill="currentColor" />
+              <path d="M13 11H7V9H13V11Z" fill="currentColor" />
+              <path d="M7 15H13V13H7V15Z" fill="currentColor" />
+              <path fill-rule="evenodd" clip-rule="evenodd" d="M3 19V1H17V5H21V23H7V19H3ZM15 17V3H5V17H15ZM17 7V19H9V21H19V7H17Z" fill="currentColor" />
+            </svg>
+          </div>
+          <div id="delete" class="command starttransparent" style="display: none;">
+            <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                 <path fill-rule="evenodd" clip-rule="evenodd" d="M17 5V4C17 2.89543 16.1046 2 15 2H9C7.89543 2 7 2.89543 7 4V5H4C3.44772 5 3 5.44772 3 6C3 6.55228 3.44772 7 4 7H5V18C5 19.6569 6.34315 21 8 21H16C17.6569 21 19 19.6569 19 18V7H20C20.5523 7 21 6.55228 21 6C21 5.44772 20.5523 5 20 5H17ZM15 4H9V5H15V4ZM17 7H7V18C7 18.5523 7.44772 19 8 19H16C16.5523 19 17 18.5523 17 18V7Z" fill="currentColor" />
                 <path d="M9 9H11V17H9V9Z" fill="currentColor" />
                 <path d="M13 9H15V17H13V9Z" fill="currentColor" />
-              </svg>
-            </div>
+            </svg>
           </div>
         </div>
       </div>
-
-      <div class="border starttransparent"></div>
     </div>
-
   </div>
+  
+  <div class="border starttransparent"></div>
+  
+  
+  
+</div>
+  
+
+
+  
 
 </body>
 </html>
