@@ -4352,13 +4352,7 @@ class TalkingHead {
           return;
         }
 
-        // 如果队列已空，清理并返回
-        if ( !seqItems || seqItems.length === 0 ) {
-          if (!currentAction) {
-            cleanupSequence();
-          } // TODO: 后续default动作是否能正常播放
-          return;
-        }
+        
 
         // fade out 旧 action（若存在）
         if (currentAction) {
@@ -4393,6 +4387,13 @@ class TalkingHead {
         // 但不要在这里 cleanup：等待该 action 的 finished 事件触发后再 cleanup，
         // 这样可以保证动作完整播放结束后再销毁 mixer。
         // （如果你想在播放最后一个动作时马上移除队列引用也可）
+        // 如果队列已空，清理并返回
+        if ( !seqItems || seqItems.length === 0 ) {
+          if (!currentAction) {
+            cleanupSequence();
+          } // TODO: 后续default动作是否能正常播放
+          return;
+        }
       };
 
       // 保存 handler 引用用于 later remove
