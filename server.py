@@ -213,7 +213,7 @@ def ws_disconnect():
 # 服务静态文件（index.html 等）
 @app.route('/')
 def serve_index():
-    return send_from_directory('.', 'test.html')
+    return send_from_directory('.', 'index.html')
 
 # 服务其他静态文件（js, css, images 等）
 @app.route('/<path:path>')
