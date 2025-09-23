@@ -751,6 +751,8 @@ class TalkingHead {
     this.animQueue = [];
     this.startAnim = 'standby0';
     this.TalkQueue = []; // 讲话所需的动作控制
+    this.seqItems = [];
+    this.currentAction = null;
     // 对临界资源animSpeechQueue（在外部）的锁，默认为解锁状态，捕获到非零的animiSpeechQueue.length时锁定，长度置零时解锁 | 解锁时（false）可以this.UEanimQueue.push
     this.UEanimQueueActive = false;
     this.LastTime = 0;
@@ -2601,7 +2603,10 @@ class TalkingHead {
         this.animInterval = this.SumUpQueueTime();
         this.GroupAnimationConstruct(animID);
         this.GroupAnimationPlayer(animID);
-        this.poseTrace.push(animID);
+        if ( !this.seqItems || this.seqItems.length === 0  && ! this.currentAction) {
+          this.cleanupSequence();
+        }
+        // this.poseTrace.push(animID);
         // if (Date.now - this.LastTime >= this.animInterval * 1000)
         // this.playAnimation(`./animations/${animID}`, null, this.MetaTimeList[animID], 0, 0.01, false); // call actor
         // this.LastTime = Date.now(); // 要不要控制时间？
@@ -2709,6 +2714,13 @@ class TalkingHead {
 
     }
 
+    if (this.TalkQueue.length === 0) {
+      this.TalkQueue.push(
+        'standby1'
+        // ['standby0', 'standby1', 'standby2'][Math.floor(Math.random() * 3)] 
+        //  test for the motion with the most time cost
+      )
+    }
     // Tasks
     for( let i=0, l=tasks.length; i<l; i++ ) {
       j = tasks[i].val;
@@ -2730,10 +2742,10 @@ class TalkingHead {
           this.poseName = j;
           // this.poseTransfer表中的设定，这里只有待机动作，可以直接做
           // if (this.TalkQueue == 0) {
-            this.setPoseFromTemplate(
-              this.poseTemplates[ this.poseName ], 
-              2000, this.GLBmotion, j
-            );
+            // this.setPoseFromTemplate(
+            //   this.poseTemplates[ this.poseName ], 
+            //   2000, this.GLBmotion, j
+            // );
           // } // TODO：这里是加入glb动作的切口
           // set this.poseTarget, act as [this.poseBase -> this.poseTarget]
           break;
@@ -4196,6 +4208,25 @@ class TalkingHead {
     this.isListening = false;
   }
 
+  async cleanupSequence() {
+    if (!this.mixer) return;
+    if (this._seqFinishedHandler) {
+      try { this.mixer.removeEventListener('finished', this._seqFinishedHandler); } catch(e) {}
+      this._seqFinishedHandler = null;
+    }
+    try { this.mixer.stopAllAction(); } catch(e) {}
+    try {
+      if (this.mixer._actions) {
+        this.mixer._actions.forEach(a => {
+          try { this.mixer.uncacheAction(a.getClip(), this.armature); } catch(e) {}
+        });
+      }
+    } catch(e) {}
+    this.mixer = null;
+    this.currentAction = null;
+    this.stopSequence = null;
+    await this.playAnimation(`./animations/U_Idle_01_Cycle.glb`, null, 200, 0, 0.01, false);
+  };
 
   async GroupAnimationConstruct(groupName, onprogress=null, dur=200, ndx=0, scale=0.01, tween=true) {
     const animList = this.AnimationFA_route[groupName];
@@ -4261,13 +4292,13 @@ class TalkingHead {
         });
 
         const newPose = { props: props};
-        if ( props['pelvis.position'] ) {
-          if ( props['pelvis.position'].y < 0.5 ) {
-            newPose.lying = true;
-          } else {
-            newPose.standing = true; // 有关? 搜".standing"
-          }
-        }
+        // if ( props['pelvis.position'] ) {
+        //   if ( props['pelvis.position'].y < 0.5 ) {
+        //     newPose.lying = true;
+        //   } else {
+        //     newPose.standing = true; // 有关? 搜".standing"
+        //   }
+        // }
         glb_anims.push({
           url: url+'-'-ndx,
           clip: anim,
@@ -4275,22 +4306,25 @@ class TalkingHead {
         })
       }
     });
-    this.animClips.push({
-      'name': groupName,
-      'pose': glb_anims
-    });
+    if ( !this.animClips.some( _item_ => _item_.name == groupName)) {
+      this.animClips.push({
+        'name': groupName,
+        'pose': glb_anims
+      });
+    }
+    
   }
 
   async GroupAnimationPlayer(groupName, onprogress=null, dur=200, ndx=0, scale=0.01, tween=true) {
     let item = this.animClips.find( x => x.name === groupName) || null;
-    let seqItems = [];
+    
 
     if ( !item ) {
       await this.GroupAnimationConstruct(groupName, onprogress, dur, ndx, scale, tween);
       item = this.animClips.find( x => x.name === groupName) || null;
       if (!item) item = this.animClips.find( x => x.url.includes('U_Idle_01_Cycle.glb'));
     }
-    item['pose'].forEach(x => {seqItems.push(x)});
+    item['pose'].forEach(x => {this.seqItems.push(x)});
     // const seqItems = item['pose']; // list
     const applyPoseFromItem = (item, tween = true, dur = 400) => {
       if (!item || !item.pose) return;
@@ -4317,50 +4351,26 @@ class TalkingHead {
       this._seqFinishedHandler = null;
     }
     // multi animations
-    if (seqItems.length >= 2 && item) {
+    if (this.seqItems.length >= 2 && item) {
       // 使用所有匹配到的 clip（按 seqItems 中的顺序）
       this.mixer = new THREE.AnimationMixer(this.armature);
 
       // let idx = 0;
-      let currentAction = null;
+      this.currentAction = null;
       const fadeTime = 0.5; // 可调整淡入/淡出时间（秒）
-
-      const cleanupSequence = () => {
-        if (!this.mixer) return;
-        if (this._seqFinishedHandler) {
-          try { this.mixer.removeEventListener('finished', this._seqFinishedHandler); } catch(e) {}
-          this._seqFinishedHandler = null;
-        }
-        try { this.mixer.stopAllAction(); } catch(e) {}
-        try {
-          // 可选：uncache 所有已缓存的 actions/clips
-          if (this.mixer._actions) {
-            this.mixer._actions.forEach(a => {
-              try { this.mixer.uncacheAction(a.getClip(), this.armature); } catch(e) {}
-            });
-          }
-        } catch(e) {}
-        this.mixer = null;
-        currentAction = null;
-        // 可选：移除外部 stopSequence 引用
-        this.stopSequence = null;
-      };
-
       const playNext = (evt) => { // 迭代器
         // 只有当前 action 自己的 finished 事件才触发下一步（避免竞态）
-        if (evt && evt.action && currentAction && evt.action !== currentAction) {
+        if (evt && evt.action && this.currentAction && evt.action !== this.currentAction) {
           return;
         }
-
-        
-
         // fade out 旧 action（若存在）
-        if (currentAction) {
-          try { currentAction.fadeOut(fadeTime); } catch(e) {}
+        if (this.currentAction) {
+          try { this.currentAction.fadeOut(fadeTime); } catch(e) {}
         }
 
         // 从队列头取下一个 item（只播放一次）
-        const itemNext = seqItems.shift(); // <- 这是关键：移除已播放的项
+        const itemNext = this.seqItems.shift(); // <- 这是关键：移除已播放的项
+        if ( this.seqItems.length === 0) return;
         // 在开始新动作前应用 pose（如果不想补间，把 tween 设为 false）
         applyPoseFromItem(itemNext, /*tween*/ true, /*dur*/ 400);
 
@@ -4381,20 +4391,15 @@ class TalkingHead {
         }
 
         // 保存当前 action 引用（finished 事件时用来比对）
-        currentAction = action;
-
+        this.currentAction = action;
         // 如果队列在此时已空，说明这是最后一个动作
         // 但不要在这里 cleanup：等待该 action 的 finished 事件触发后再 cleanup，
         // 这样可以保证动作完整播放结束后再销毁 mixer。
         // （如果你想在播放最后一个动作时马上移除队列引用也可）
         // 如果队列已空，清理并返回
-        if ( !seqItems || seqItems.length === 0 ) {
-          if (!currentAction) {
-            cleanupSequence();
-          } // TODO: 后续default动作是否能正常播放
-          return;
-        }
       };
+
+      
 
       // 保存 handler 引用用于 later remove
       this._seqFinishedHandler = (e) => playNext(e);
@@ -4403,23 +4408,12 @@ class TalkingHead {
       // 启动序列：先从 seqItems[0] 开始
       playNext();
 
-      // 暴露停止函数（方便外部停止序列并清理）
-      this.stopSequence = () => {
-        cleanupSequence();
-        // if (!this.mixer) return;
-        // if (this._seqFinishedHandler) {
-        //   try { this.mixer.removeEventListener('finished', this._seqFinishedHandler); } catch(e) {}
-        //   this._seqFinishedHandler = null;
-        // }
-        // try { this.mixer.stopAllAction(); } catch(e) {}
-        // this.mixer = null;
-        // currentAction = null;
-      };
+      this.playAnimation(`./animations/U_Idle_01_Cycle.glb`, null, 200, 0, 0.01, false);
 
     // ---------- 情况 2：找到了单个 item（保留你原来的逻辑） ----------
     } else {
       if (!item) item = this.animClips.find( x => x.url.includes('U_Idle_01_Cycle.glb'));
-      else item = seqItems[0]; // 取出元素
+      else item = this.seqItems[0]; // 取出元素
 
       // Set new pose && 补间动画
       Object.entries(item.pose.props).forEach( x => {
@@ -4443,7 +4437,7 @@ class TalkingHead {
     }
 
     // this.animClips = [];
-    this.stopSequence();
+    // this.stopSequence();
 
   }
 

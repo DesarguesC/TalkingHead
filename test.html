@@ -3014,19 +3014,18 @@ async function llamaSendMessage(node,msgs) {
             Planning.string = tts
           }
 
-          if ( tts.length > LengthThreshold + delta) { // 子串划分有问题
-            const indices = ['。', '！', '？']
+          if ( tts.length >= LengthThreshold + delta && delta <= 27 ) { // 子串划分有问题
+            const indices = ['；', '。', '！', '？'] // 对非正常断句标点结尾的对象添加delta上界
                     .map(p => tts.indexOf(p, LengthThreshold)) // start ths 45-th letter
                     .filter(index => index !== -1);
             const idx = indices.length > 0 ? Math.min(...indices) : -1;
             if (idx > 0) {
               tts_substring = tts.substring(0, idx+1); // 左闭右开
               tts = tts.substring(idx+1,); // till the end
-              
             } else {
               delta = delta + 3;
+              tts_substring = '';
             }
-            
           } else {
             tts_substring = tts;
             tts = '';
