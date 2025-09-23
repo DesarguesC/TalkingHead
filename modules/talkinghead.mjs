@@ -2091,18 +2091,6 @@ class TalkingHead {
       props: this.propsToThreeObjects( newPose )
     }
     for( const [p,val] of Object.entries(o.props) ) {
-      // Restrain movement when standing
-      // if ( this.opt.modelMovementFactor < 1 && template.standing &&
-      //   (p === 'pelvis.quaternion' || p === 'spine_01.quaternion' ||
-      //   p === 'spine_02.quaternion' || p === 'spine_03.quaternion' ||
-      //   p === 'neck_01.quaternion' || p === 'thigh_l.quaternion' ||
-      //   p === 'calf_l.quaternion' || p === 'thigh_r.quaternion' ||
-      //   p === 'calf_r.quaternion') ) {
-      //   const ref = this.poseStraight[p];
-      //   const angle = val.angleTo( ref );
-      //   val.rotateTowards( ref, (1 - this.opt.modelMovementFactor) * angle );
-      // }
-      // Custom properties
       val.t = this.animClock; // timestamp
       val.d = ms; // Transition duration
     }
@@ -2606,10 +2594,6 @@ class TalkingHead {
         if ( !this.seqItems || this.seqItems.length === 0  && ! this.currentAction) {
           this.cleanupSequence();
         }
-        // this.poseTrace.push(animID);
-        // if (Date.now - this.LastTime >= this.animInterval * 1000)
-        // this.playAnimation(`./animations/${animID}`, null, this.MetaTimeList[animID], 0, 0.01, false); // call actor
-        // this.LastTime = Date.now(); // 要不要控制时间？
         this.TalkQueue.splice(i--, 1);
         l--;
     }
@@ -2617,23 +2601,6 @@ class TalkingHead {
     for( i=0, l=this.animQueue.length; i<l; i++ ) {
       // 仅允许eyecontact与viseme
       const x = this.animQueue[i];
-      /*TODO3 -> TODO4
-        x.template对应this.animMoods中键值的anims列表字段内的元素，格式为 {name:..., dt:..., vs:...}
-          一般vs是设置好的数值，用于控制EyeContact或呼吸等等
-        若vs中为{pose: ['...']}形式，则会用于控制Avatar的动作，对应从this.poseTemplates中加载
-        链接的动作「主要是无交流情况下的默认动作」调用方式可以有两种：
-        『若确认仅一个待机动作就直接给case 'pose'下调用该动作即可』
-          一、
-            1.修改this.animMoods中有'pose'的vs字段，增加glb路径
-            2.case 'pose'时直接根据this.GLBmotion确认是否this.playAnimation (url, dur=200)
-          二、
-            1.向this.poseTemplates中添加每个字段下对应的一个或多个待机动作
-            2.在this.setPoseFromTemplate时添加this.GLBmotion的判断
-            3.this.playAnimation (url, dur=200)
-
-        对文字内容的对应动作驱动，在text.html中通过motion('<name_from_cfg>', '', '', '')来触发 => TODO5
-
-      */
       
       if ( this.animClock < x.ts[0] ) continue;
 
@@ -2737,17 +2704,13 @@ class TalkingHead {
           }
           break;
 
-        case 'pose': // 「TODO3: 这里Templates中仅保留一个动作default动作，为默认的正常的待机静态动作；其余全部删除」
-          // this.GLBmotion = true;
+        case 'pose': 
           this.poseName = j;
-          // this.poseTransfer表中的设定，这里只有待机动作，可以直接做
           // if (this.TalkQueue == 0) {
             // this.setPoseFromTemplate(
             //   this.poseTemplates[ this.poseName ], 
             //   2000, this.GLBmotion, j
             // );
-          // } // TODO：这里是加入glb动作的切口
-          // set this.poseTarget, act as [this.poseBase -> this.poseTarget]
           break;
 
         case 'gesture':
@@ -2810,36 +2773,14 @@ class TalkingHead {
       e.y = Math.max(-0.9,Math.min(0.9, -2.5 * e.y));
 
       if ( isEyeContact ) {
-        // 无eyesRotateX导致
-        // Object.assign( this.mtAvatar['eyesLookDown'], { system: e.x < 0 ? -e.x : 0, needsUpdate: true });
-        // Object.assign( this.mtAvatar['eyesLookUp'], { system: e.x < 0 ? 0 : e.x, needsUpdate: true });
         Object.assign( this.mtAvatar['EyeLookInLeft'], { system: e.y < 0 ? -e.y : 0, needsUpdate: true });
         Object.assign( this.mtAvatar['EyeLookOutLeft'], { system: e.y < 0 ? 0 : e.y, needsUpdate: true });
         Object.assign( this.mtAvatar['EyeLookInRight'], { system: e.y < 0 ? 0 : e.y, needsUpdate: true });
         Object.assign( this.mtAvatar['EyeLookOutRight'], { system: e.y < 0 ? -e.y : 0, needsUpdate: true });
 
-        // Head move
-        // if ( isHeadMove ) {
-        //   i = - this.mtAvatar['bodyRotateY'].value;
-        //   j = this.gaussianRandom(-0.2,0.2);
-        //   this.animQueue.push( this.animFactory({ name: "headmove",
-        //     dt: [[1000,2000],[1000,2000,1,2],[1000,2000],[1000,2000,1,2]], vs: {
-        //       headRotateY: [i,i,0], headRotateX: [j,j,0], headRotateZ: [-i/4,-i/4,0]
-        //     }
-        //   }));
-        // }
-
       } else {
         i = this.mtAvatar['EyeLookInLeft'].value - this.mtAvatar['EyeLookOutLeft'].value;
         j = this.gaussianRandom(-0.2,0.2);
-        // this.TalkQueue.
-        // this.animQueue.push( this.animFactory({ name: "headmove",
-        //   dt: [[1000,2000],[1000,2000,1,2],[1000,2000],[1000,2000,1,2]], vs: {
-        //     headRotateY: [null,i,i,0], headRotateX: [null,j,j,0], headRotateZ: [null,-i/4,-i/4,0],
-        //     EyeLookInLeft: [null,0], EyeLookOutLeft: [null,0], EyeLookInRight: [null,0], EyeLookOutRight: [null,0],
-        //     eyeContact: [0]
-        //   }
-        // }));
 
       }
 
@@ -2856,16 +2797,6 @@ class TalkingHead {
         Object.assign(j,{ base: (this.mood.baseline[i] || 0) + ( 1 + vol/255 ) * Math.random() / 5, needsUpdate: true });
       }
     }
-
-    // Animate
-    // this.updatePoseDelta();
-    // const mixerHasActive = this.mixer && this.mixer._actions && this.mixer._actions.some(a => a.getEffectiveWeight() > 1e-3);
-    // if (!mixerHasActive) {
-    //   this.updatePoseDelta();
-    // } else {
-    //   // 可选：仍更新内部 pose 状态，但不要把它写回骨骼
-    //   this.updatePoseDelta(true); // 需要你改函数以支持仅内部更新
-    // }
 
     this.updatePoseBase(this.animClock);
     if ( this.mixer ) {
@@ -2918,8 +2849,6 @@ class TalkingHead {
       // Update morph targets
       this.updateMorphTargets(dt);
     }
-    // this.setPoseFromTemplate('default', 2000, true, 'default'); // setPose only push name into this.TalkQueue
-
     
     // Camera
     if ( this.cameraClock !== null && this.cameraClock < 1000 ) {
@@ -4087,24 +4016,6 @@ class TalkingHead {
       });
       this.animQueue.push( anim );
 
-    // if (able_to_push) {
-    //   let add_flag = 0;
-    //   while( true ) {
-    //     let anim_string = `讲话-${this.animID_cnt%4+1}`;
-    //     let anim_time = this.DefaultAnimation[anim_string]
-    //                         .map(x => this.UEAnimationCandidate[`UE-${x}`].duration)
-    //                         .reduce((acc, curr) => acc + curr, 0);
-    //     this.animID_cnt++;
-    //     add_flag++;
-    //     if (anim_time < this.EvaluateTime) {
-    //       this.TalkQueue.push( `讲话-${this.animID_cnt%4+1}` );
-    //       break;
-    //     }
-    //     if (add_flag > 4) break;
-      
-    //   }
-    // }
-    
   }
 
   /**
@@ -4292,13 +4203,6 @@ class TalkingHead {
         });
 
         const newPose = { props: props};
-        // if ( props['pelvis.position'] ) {
-        //   if ( props['pelvis.position'].y < 0.5 ) {
-        //     newPose.lying = true;
-        //   } else {
-        //     newPose.standing = true; // 有关? 搜".standing"
-        //   }
-        // }
         glb_anims.push({
           url: url+'-'-ndx,
           clip: anim,
@@ -4325,14 +4229,8 @@ class TalkingHead {
       if (!item) item = this.animClips.find( x => x.url.includes('U_Idle_01_Cycle.glb'));
     }
     item['pose'].forEach(x => {this.seqItems.push(x)});
-    // const seqItems = item['pose']; // list
     const applyPoseFromItem = (item, tween = true, dur = 400) => {
       if (!item || !item.pose) return;
-      // Reset pose update
-      // let anim = this.animQueue.find( x => x.template && x.template.name === 'pose' );
-      // if ( anim ) {
-      //   anim.ts[0] = Infinity;
-      // }
 
       Object.entries(item.pose.props).forEach( x => {
         this.poseBase.props[x[0]] = x[1].clone();
@@ -4410,7 +4308,7 @@ class TalkingHead {
 
       this.playAnimation(`./animations/U_Idle_01_Cycle.glb`, null, 200, 0, 0.01, false);
 
-    // ---------- 情况 2：找到了单个 item（保留你原来的逻辑） ----------
+    // ---------- 情况 2：找到了单个 item ----------
     } else {
       if (!item) item = this.animClips.find( x => x.url.includes('U_Idle_01_Cycle.glb'));
       else item = this.seqItems[0]; // 取出元素
@@ -4455,37 +4353,7 @@ class TalkingHead {
     // while ( Date.now() - this.LastTime < this.animInterval * 1000 );
     // TODO: 默认相机位置
     if ( !this.armature ) return;
-    // if ( this.animClips.length > 0)
-    // for ( idx = 0; idx < this.animClips.length; ++idx) {
-    // this.animClips.forEach(item => {
-    //   // while ( Date.now() - this.LastTime < this.animInterval * 1000 );
-    //   // item = this.animClips[idx]
-    //   if ( item.url.endsWith('-'+ndx) ) {
-    //     Object.entries(item.pose.props).forEach( x => {
-    //       this.poseBase.props[x[0]] = x[1].clone();
-    //       this.poseTarget.props[x[0]] = x[1].clone();
-    //       this.poseTarget.props[x[0]].t = tween ? 0 : 1;
-    //       this.poseTarget.props[x[0]].d = tween ? Math.max(200, Math.min(dur, 1000)) : 0;
-    //     });
-
-    //     // Create a new mixer
-    //     this.mixer = new THREE.AnimationMixer(this.armature);
-    //     this.mixer.addEventListener( 'finished', this.stopAnimation.bind(this), { once: true });
-    //     // Play action
-    //     const repeat = 1;
-    //     // const repeat = Math.ceil(dur / item.clip.duration);
-    //     const action = this.mixer.clipAction(item.clip);
-    //     this.animInterval = item.clip.duration;
-    //     this.LastTime = Date.now();
-    //     action.setLoop( THREE.LoopRepeat, repeat );
-    //     action.clampWhenFinished = true;
-    //     action.fadeIn(0.5).play();
-
-    //   }
-    // })
-    // this.animClips = []
     let item = this.animClips.find( x => x.url === url+'-'+ndx );
-    // const seqItems = this.animClips.filter(x => typeof x.url === 'string' && x.url.startsWith(prefix));
     if ( item ) {
 
       // Reset pose update
@@ -4594,11 +4462,6 @@ class TalkingHead {
         console.log('glb read done.')
         // TODO: read .glb animation file
         if ( glb && glb.animations && glb.animations[ndx] ) {
-          // glb.scene.rotateY(Math.PI/2);
-          // 修正模型方向 [看看是否需要]
-          // const modelRotationFix = new THREE.Quaternion();
-          // modelRotationFix.setFromEuler(new THREE.Euler(Math.PI, 0, Math.PI)); // 旋转180度
-          // glb.quaternion.multiply(modelRotationFix);
 
           let anim = glb.animations[ndx];
 
