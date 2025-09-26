@@ -7,7 +7,7 @@ app = Flask(__name__)
 # 模拟数据存储
 log_storage = []
 
-@app.route('/api/log', methods=['POST'])
+@app.route('/database/api/write', methods=['POST'])
 def receive_log():
     """接收并存储日志数据"""
     try:
@@ -15,7 +15,7 @@ def receive_log():
         data = request.json
         
         # 验证必需字段
-        required_fields = ['ukey', 'user_ip', 'time']
+        required_fields = ['ukey', 'user_ip', 'time', 'type', 'content', 'status']
         for field in required_fields:
             if field not in data:
                 return jsonify({
@@ -43,7 +43,7 @@ def receive_log():
             "message": f"服务器错误: {str(e)}"
         }), 500
 
-@app.route('/api/logs')
+@app.route('/database/api/read')
 def get_logs():
     """获取所有日志记录（用于调试）"""
     return jsonify({

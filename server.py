@@ -173,6 +173,20 @@ Yuexiaoyin_SERVER = "https://api.dify.ai"
 # 需要用本机上的方法，整机测试时需将实验室服务器挂入子网中访问 (模拟后续使用内网API访问)
 WHISPER_SERVER = "http://127.0.0.1:7002"
 GTTS_SERVER = "http://127.0.0.1:7010"
+DATABASE_SERVER = "http://127.0.0.1:5000" # TODO: 替换为真实地址
+
+
+# 状态字典，可以根据具体需要直接更新
+TYPE_MAP = {
+    "login": "用户进入", # used
+    "query": "用户提问"  # used
+}
+STATUS_MAP = {
+    "success": "请求成功", # used
+    "failed": "请求失败",  # used
+    "denied": "拒绝访问"
+    "pending": "进行中",
+}
 
 
 # ===== WebSocket事件 =====
@@ -228,6 +242,7 @@ UE_Socket_Host = '0.0.0.0'  # 本地地址
 UE_Socket_Port = 4000         # 目标端口
 # TCP_Socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
+# 已弃用 | 原用于UE动作驱动的类
 class SocketService:
     def __init__(self, host='0.0.0.0', port=3000):
         self.host = host
@@ -272,6 +287,7 @@ class SocketService:
                     return jsonify({"error": "重传失败"}), 500
         return jsonify({"message": "✅ 数据已发送"}), 200
 
+# 已弃用 | 原用于UE动作驱动信号的传输
 @app.route('/socket:ue/animation', methods=['POST'])
 def animation():
     if UE_Animate:
@@ -314,6 +330,7 @@ def animation():
                 }
             }), 500  
 
+# 已弃用 | 原用于通过网络请求获取token
 # @app.route('/app/jwt/get', methods=['POST'])
 def get_jwt():
     try:
@@ -366,6 +383,7 @@ def get_jwt():
         print(f"⚠️ 处理 GET 请求时出错: {e}")
         logger.error(f"获取 JWT 失败: {str(e)}")
 
+# 读取本地token「大模型请求权限」
 def get_apikey(filePath='./key.csv'):
     try:
         filePath = request.json.get('filePath', None)
@@ -388,7 +406,7 @@ def get_apikey(filePath='./key.csv'):
         logger.error(f"获取 JWT 失败: {str(e)}")
         return ""
 
-
+# 获取用户ip
 def get_client_ip():
     """获取用户真实IP地址（考虑代理情况）"""
     if request.headers.get('X-Forwarded-For'):
@@ -399,6 +417,7 @@ def get_client_ip():
         ip = request.remote_addr
     return ip
 
+# 全局日志设定
 def setup_logging():
     # 创建本地日志格式
     formatter = logging.Formatter(
@@ -419,29 +438,42 @@ def setup_logging():
     app.logger.addHandler(file_handler)
     app.logger.setLevel(logging.INFO)
 
-def log_ukey_access(ukey, user_ip, operation_time, operation_kind, operation_content, operation_status):
+
+# 直接写入数据库
+def log_ukey_access(ukey, user_ip, operation_time, operation_type, operation_content, operation_status):
     """记录ukey访问日志到文件和数据库"""
     
     # 格式化日志信息 | TODO: 替换key为数据库中的字段
     log_data = {
-        "用户身份": ukey,                   # 用户身份 - ukey
-        "用户IP地址": user_ip,              # 用户IP
-        "操作时间": operation_time,         # 操作时间
-        '操作类型': operation_kind,         # 操作类型: {对话}
-        '操作内容': operation_content,      # 操作内容: {提问内容}
-        '操作结果': operation_status,       # 操作结果: {成功 / 失败}
+        "ukey": ukey,
+        "user_ip": user_ip,
+        "time": operation_time,
+        "type": operation_type,
+        "content": operation_content,
+        "status": operation_status
     }
+    # {
+    #     "用户身份": ukey,                   # 用户身份 - ukey
+    #     "用户IP地址": user_ip,              # 用户IP
+    #     "操作时间": operation_time,         # 操作时间
+    #     '操作类型': operation_kind,         # 操作类型: {对话}
+    #     '操作内容': operation_content,      # 操作内容: {提问内容}
+    #     '操作结果': operation_status,       # 操作结果: {成功 / 失败}
+    # }
     
     # 1. 写入本地日志文件
-    log_message = f"[ operation_time ] ukey_access | ukey: {ukey} | user_ip: {user_ip} | 操作类型: {operation_status} | 操作内容: {operation_content} | 操作结果: {operation_status}"  # DEBUG
+    log_message = f"[ operation_time ] ukey_access | ukey: {ukey} | user_ip: {user_ip} | 操作类型: {operation_type} | 操作内容: {operation_content} | 操作结果: {operation_status}"  # DEBUG
     app.logger.info(log_message)
     
     # 2. 发送到数据库服务器
     try:
         response = requests.post(
-            DATABASE_SERVER,
+            f'{DATABASE_SERVER}/database/api/write', # TODO: 路由未知，需要替换
             json=log_data,
-            headers={'Content-Type': 'application/json'},
+            headers={
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer ', # TODO: 可能还有一个token
+                },
             timeout=5  # 5秒超时
         )
         
@@ -452,8 +484,10 @@ def log_ukey_access(ukey, user_ip, operation_time, operation_kind, operation_con
             
     except requests.exceptions.RequestException as e:
         app.logger.error(f"数据库请求异常 - ukey:{ukey} - 错误:{str(e)}")
+    
 
-@app.route('/ukey-access')
+# 解析ukey参数
+@app.route('/ukey-access') # TODO: 替换为真实路由
 def ukey_access_handler():
     """处理带有ukey参数的访问请求"""
     # 获取ukey参数
@@ -472,18 +506,20 @@ def ukey_access_handler():
     current_time = datetime.now().strftime("%y-%m-%d %H-%M-%S")
     
     # 记录日志
-    log_ukey_access(ukey, user_ip, current_time)
+    # log_ukey_access(ukey, user_ip, current_time, )
+    log_ukey_access(ukey, user_ip, current_time, TYPE_MAP['log_in'], "", STATUS_MAP['success'])
+    send_from_directory('.', 'index.html')
     
     # 返回成功响应
-    return jsonify({
-        "status": "success",
-        "message": "访问记录已保存",
-        "data": {
-            "ukey": ukey,
-            "user_ip": user_ip,
-            "time": current_time
-        }
-    })
+    # return jsonify({
+    #     "status": "success",
+    #     "message": "访问记录已保存",
+    #     "data": {
+    #         "ukey": ukey,
+    #         "user_ip": user_ip,
+    #         "time": current_time
+    #     }
+    # })
 
 @app.route('/logs/recent')
 def show_recent_logs():
@@ -603,6 +639,7 @@ body [original]
 
 """
 
+# 内网语言模型请求
 @app.route('/yuexiaoyin/v1/chat/completions', methods=['POST'])
 # @app.route('/llama/v1/chat/completions', methods=['POST'])
 def yuexiaoyin_chat():
@@ -788,6 +825,7 @@ def whisper_chat():
             "exception": str(e)
         }), 500
     
+# 设置session id
 @app.after_request
 def set_sid_if_needed(response):
     """
@@ -807,12 +845,14 @@ def set_sid_if_needed(response):
     
     return response
 
+# 跨域
 # @app.after_request
 # def add_cors_headers(resp):
 #     resp.headers["Access-Control-Allow-Origin"] = "http://localhost:8000"  # 前端的域
 #     resp.headers["Access-Control-Allow-Credentials"] = "true"
 #     return resp
 
+# 打session-id
 def log_user_status_to_file():
     """
     将活跃用户和等待用户的状态信息格式化并写入到 user.txt 文件中。
@@ -847,9 +887,10 @@ def log_user_status_to_file():
         
         f.write("\n--- 日志结束 ---\n")
 
+# 每10s更新session信息
 def run_periodic_logging():
     """
-    每隔30秒调用一次日志记录函数。
+    每隔10秒调用一次日志记录函数。
     """
     while True:
         try:
@@ -858,6 +899,7 @@ def run_periodic_logging():
             logger.error(f"Failed to log user status: {e}")
         time.sleep(10)
 
+# 查看 session log
 @app.route('/monitor')
 def monitor_page():
     """
