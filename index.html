@@ -2881,7 +2881,8 @@ async function grokSendMessage(node,msgs) {
 // TODO: 加入动作option，仿照openaiSendMessage
 async function llamaSendMessage(node,msgs) {
 
-  const PROXY = llamaChatCompletionsProxy; // 部署时替换为Yue_Xiaoyin_ChatCompletionsProxy
+  const PROXY = Yue_Xiaoyin_ChatCompletionsProxy;
+  // const PROXY = llamaChatCompletionsProxy; // 部署时替换为Yue_Xiaoyin_ChatCompletionsProxy
 
   // Create a new AbortController instance
   aiController = new AbortController();
@@ -2927,7 +2928,8 @@ async function llamaSendMessage(node,msgs) {
         "Authorization": "Bearer " + await jwtGet() // TODO: apikey
       },
       body: JSON.stringify(body),
-      signal
+      credentials: "include",
+      signal, 
     });
 
 
@@ -2963,7 +2965,7 @@ async function llamaSendMessage(node,msgs) {
         // let line = "";
         if ( value ) {
           decoder.decode(value).split('\n').forEach( data => {
-            if (conv_id) {
+            if ( conv_id != '' ) {
               document.cookies = "conv_id=" + conv_id + "; path=" + PROXY;
             }
             if ( data.startsWith("data: ") ) { // TODO: 这个字段也要改
@@ -2993,17 +2995,12 @@ async function llamaSendMessage(node,msgs) {
 
                   // TODO***: 解码后的格式？设置cookies，并连接好用于做tts的文字
 
-                  // ?
-                  fn.id += obj?.choices?.[0]?.delta?.tool_calls?.[0]?.id || '';
-                  fn.name += obj?.choices?.[0]?.delta?.tool_calls?.[0]?.function?.name || '';
-                  fn.arguments += obj?.choices?.[0]?.delta?.tool_calls?.[0]?.function?.arguments || '';
-                  node.dataset.output += obj?.choices?.[0]?.delta?.content || '';
-                  // ?
-                  tts += o+= obj?.data?.answer || ''; // TODO: obj.data中有无list形式？
-                  conv_id += obj?.data?.conversation_id || '';
+                  tts += obj?.answer || '';
+                  if (conv_id === '') conv_id = obj?.conversation_id || '';
+                  // tts += obj.hasOwnProperty('data') ? obj?.data?.answer : obj.data?.anaswer || '';
+                  // conv_id += obj.hasOwnProperty('data') ? obj?.data?.conversation_id : obj.data?.conversation_id || '';
 
                 }
-
               }
             }
           });

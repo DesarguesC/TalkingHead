@@ -168,7 +168,8 @@ def status():
 
 # Llama 服务器地址
 LLAMA_SERVER = "http://127.0.0.1:7001" 
-Yuexiaoyin_SERVER = "https://api.yuexiaoyin.com"  # TODO: 替换为内网实际地址
+# Yuexiaoyin_SERVER = "https://api.yuexiaoyin.com"  # TODO: 替换为内网实际地址
+Yuexiaoyin_SERVER = "https://api.dify.ai"
 # 需要用本机上的方法，整机测试时需将实验室服务器挂入子网中访问 (模拟后续使用内网API访问)
 WHISPER_SERVER = "http://127.0.0.1:7002"
 GTTS_SERVER = "http://127.0.0.1:7010"
@@ -497,21 +498,25 @@ body [original]
 # @app.route('/llama/v1/chat/completions', methods=['POST'])
 def yuexiaoyin_chat():
     # 请求结构转换
-    query = request.json.get('messages', [{"content": ""}])[-1].get("content", "") # 只需要当前提问；单轮对话，无上下文
+    query = request.json.get('messages', [{"content": ""}])[-1].get("content", "你好") # 只需要当前提问；单轮对话，无上下文
     session_id = get_or_create_session_id() # 此时必有id，直接获取
-    conv_id = get_conversation_id() # 获取上下文ID，可能为空（""），如果已经返回过，js中会放在cookies里 | 无需读写csv？
+    conv_id = request.conv_id if hasattr(request, 'conv_id') else request.cookies.get("conv_id", "")
+    request.conv_id  = conv_id
+    # 获取上下文ID，可能为空（""），如果已经返回过，js中会放在cookies里
     logger.info(f"Extracted query: {query}") # DEBUG
     new_request = jsonify({
-        "inputs": "", 
+        "inputs": {}, 
         "query": query,
         "response_mode": "streaming",
         "conversation_id": conv_id, # 后续放在request中
-        "user": "", # 给什么填什么
+        "user": "111", # TODO: 给什么填什么
         "files":[]
     })
     # TODO: inputs里面的role, content, name等结构体字段可能需要修改
+
     logger.info(f"Extracted New Request: {new_request}") # DEBUG
     print(f"Extracted New Request: {new_request}")
+    print(f"Extracted conv_id: {conv_id}")
 
     try:
         logger.info(f"Forwarding request to {LLAMA_SERVER}")
@@ -522,8 +527,8 @@ def yuexiaoyin_chat():
         
         # 转发请求到 Llama 服务器
         response = requests.post(
-            f"{LLAMA_SERVER}/v1/chat/completions", # TODO: 替换为 Yuexiaoyin_SERVER，以及后面的路由需要替换
-            json=request.json,
+            f"{Yuexiaoyin_SERVER}/v1/chat-messages", # TODO: 替换为 Yuexiaoyin_SERVER，以及后面的路由需要替换
+            json=new_request.json,
             headers={
                 'Content-Type': 'application/json',
                 'Authorization': f"Bearer {get_apikey()}"
@@ -692,6 +697,12 @@ def set_sid_if_needed(response):
         logger.error(f"设置SID Cookie时出错: {e}")
     
     return response
+
+# @app.after_request
+# def add_cors_headers(resp):
+#     resp.headers["Access-Control-Allow-Origin"] = "http://localhost:8000"  # 前端的域
+#     resp.headers["Access-Control-Allow-Credentials"] = "true"
+#     return resp
 
 def log_user_status_to_file():
     """
