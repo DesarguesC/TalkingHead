@@ -25,24 +25,6 @@ waiting_queue = deque()
 # 用于存放刚刚被踢出的用户SID ---
 timed_out_sids = set()
 
-def write_csv(filePath: str = './configs/session_dict.csv', session_id: str = None, conversation_id: str = None):
-    if session_id is None:
-        return
-    if not os.path.exists(filePath):
-        return
-    written_dict = {
-        "session_id": session_id,
-        "conversation_id": conversation_id if conversation_id else ""
-    }
-    ori_dict = pd.read_csv(filePath).to_dict(orient='records')
-    ori_dict[session_id] = conversation_id # 直接覆盖，不存在时相当于就直接加入
-    with open(filePath, 'w', newline='') as f:
-        # 直接覆写
-        writer = csv.DictWriter(f, fieldnames=written_dict.keys())
-        writer.writeheader()
-        writer.writerows(ori_dict)
-    return
-
 
 def get_or_create_session_id():
     """
