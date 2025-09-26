@@ -388,6 +388,115 @@ def get_apikey(filePath='./key.csv'):
         logger.error(f"获取 JWT 失败: {str(e)}")
         return ""
 
+
+def get_client_ip():
+    """获取用户真实IP地址（考虑代理情况）"""
+    if request.headers.get('X-Forwarded-For'):
+        ip = request.headers['X-Forwarded-For'].split(',')[0]
+    elif request.headers.get('X-Real-IP'):
+        ip = request.headers['X-Real-IP']
+    else:
+        ip = request.remote_addr
+    return ip
+
+def setup_logging():
+    # 创建本地日志格式
+    formatter = logging.Formatter(
+        '%(asctime)s - %(levelname)s - %(message)s'
+    )
+    
+    # 创建文件处理器，设置日志文件最大为10MB，保留5个备份
+    file_handler = RotatingFileHandler(
+        'ukey_access.log', 
+        maxBytes=10*1024*1024, 
+        backupCount=5,
+        encoding='utf-8'
+    )
+    file_handler.setFormatter(formatter)
+    file_handler.setLevel(logging.INFO)
+    
+    # 添加到app的logger
+    app.logger.addHandler(file_handler)
+    app.logger.setLevel(logging.INFO)
+
+def log_ukey_access(ukey, user_ip, operation_time, operation_kind, operation_content, operation_status):
+    """记录ukey访问日志到文件和数据库"""
+    
+    # 格式化日志信息 | TODO: 替换key为数据库中的字段
+    log_data = {
+        "用户身份": ukey,                   # 用户身份 - ukey
+        "用户IP地址": user_ip,              # 用户IP
+        "操作时间": operation_time,         # 操作时间
+        '操作类型': operation_kind,         # 操作类型: {对话}
+        '操作内容': operation_content,      # 操作内容: {提问内容}
+        '操作结果': operation_status,       # 操作结果: {成功 / 失败}
+    }
+    
+    # 1. 写入本地日志文件
+    log_message = f"[ operation_time ] ukey_access | ukey: {ukey} | user_ip: {user_ip} | 操作类型: {operation_status} | 操作内容: {operation_content} | 操作结果: {operation_status}"  # DEBUG
+    app.logger.info(log_message)
+    
+    # 2. 发送到数据库服务器
+    try:
+        response = requests.post(
+            DATABASE_SERVER,
+            json=log_data,
+            headers={'Content-Type': 'application/json'},
+            timeout=5  # 5秒超时
+        )
+        
+        if response.status_code == 200:
+            app.logger.info(f"数据库写入成功 - ukey:{ukey}")
+        else:
+            app.logger.error(f"数据库写入失败 - 状态码:{response.status_code} | ukey:{ukey}")
+            
+    except requests.exceptions.RequestException as e:
+        app.logger.error(f"数据库请求异常 - ukey:{ukey} - 错误:{str(e)}")
+
+@app.route('/ukey-access')
+def ukey_access_handler():
+    """处理带有ukey参数的访问请求"""
+    # 获取ukey参数
+    ukey = request.args.get('ukey')
+    
+    if not ukey:
+        return jsonify({
+            "status": "error",
+            "message": "缺少ukey参数"
+        }), 400
+    
+    # 获取用户IP
+    user_ip = get_client_ip()
+    
+    # 获取当前时间（格式：yy-mm-dd hh-mm-ss）
+    current_time = datetime.now().strftime("%y-%m-%d %H-%M-%S")
+    
+    # 记录日志
+    log_ukey_access(ukey, user_ip, current_time)
+    
+    # 返回成功响应
+    return jsonify({
+        "status": "success",
+        "message": "访问记录已保存",
+        "data": {
+            "ukey": ukey,
+            "user_ip": user_ip,
+            "time": current_time
+        }
+    })
+
+@app.route('/logs/recent')
+def show_recent_logs():
+    """显示最近的日志记录（仅用于调试）"""
+    try:
+        with open('ukey_access.log', 'r', encoding='utf-8') as f:
+            lines = f.readlines()[-100:]  # 显示最后100行
+        return "<pre>" + "".join(lines) + "</pre>"
+    except FileNotFoundError:
+        return "日志文件不存在"
+
+
+
 # 转发 llama 请求到指定服务器
 @app.route('/llama/v1/chat/completions', methods=['POST'])
 def llama_chat():
@@ -790,6 +899,7 @@ if __name__ == '__main__':
     if is_main_process:
         # 在主线程中启动后台日志记录线程 ---
         # 使用 daemon=True 确保主程序退出时，该线程也会随之退出
+        setup_logging()
         log_thread = threading.Thread(target=run_periodic_logging, daemon=True)
         log_thread.start()
         logger.info("后台用户状态日志记录线程已启动...")
