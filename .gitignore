@@ -1,7 +1,7 @@
 .cursor/
 .vscode/
 node_modules
-nohup.out
+*.out
 package-lock.json
 package.json
 __pycache__
