@@ -2,6 +2,7 @@
 from flask import Flask, send_from_directory, request, jsonify, make_response
 from flask_cors import CORS
 from flask_socketio import SocketIO
+from logging.handlers import RotatingFileHandler
 import requests
 import logging
 import socket
@@ -166,7 +167,7 @@ TYPE_MAP = {
 STATUS_MAP = {
     "success": "请求成功", # used
     "failed": "请求失败",  # used
-    "denied": "拒绝访问"
+    "denied": "拒绝访问",
     "pending": "进行中",
 }
 
@@ -445,6 +446,7 @@ def log_ukey_access(ukey, user_ip, operation_time, operation_type, operation_con
     
     # 1. 写入本地日志文件
     log_message = f"[ operation_time ] ukey_access | ukey: {ukey} | user_ip: {user_ip} | 操作类型: {operation_type} | 操作内容: {operation_content} | 操作结果: {operation_status}"  # DEBUG
+    print(f'LOG: {log_message}')
     app.logger.info(log_message)
     
     # 2. 发送到数据库服务器
@@ -469,7 +471,7 @@ def log_ukey_access(ukey, user_ip, operation_time, operation_type, operation_con
     
 
 # 解析ukey参数
-@app.route('/ukey-access') # TODO: 替换为真实路由
+@app.route('/ukey_access') # TODO: 替换为真实路由
 def ukey_access_handler():
     """处理带有ukey参数的访问请求"""
     # 获取ukey参数
@@ -488,11 +490,10 @@ def ukey_access_handler():
     current_time = datetime.now().strftime("%y-%m-%d %H-%M-%S")
     
     # 记录日志
-    # log_ukey_access(ukey, user_ip, current_time, )
-    log_ukey_access(ukey, user_ip, current_time, TYPE_MAP['log_in'], "", STATUS_MAP['success'])
-    send_from_directory('.', 'index.html')
+    log_ukey_access(ukey, user_ip, current_time, TYPE_MAP['login'], "", STATUS_MAP['success'])
+    return send_from_directory('.', 'index.html')
     
-    # 返回成功响应
+    # # 返回成功响应
     # return jsonify({
     #     "status": "success",
     #     "message": "访问记录已保存",
@@ -666,6 +667,8 @@ def yuexiaoyin_chat():
         
         # 记录响应信息
         logger.info(f"Response status code: {response.status_code}")
+        log_ukey_access(ukey, user_ip, current_time, TYPE_MAP['query'], query, STATUS_MAP['success'])
+
         
         # 如果是流式请求，直接流式返回响应
         if is_stream:
@@ -685,6 +688,7 @@ def yuexiaoyin_chat():
         error_msg = f"Connection error: Could not connect to {LLAMA_SERVER}"
         logger.error(error_msg)
         logger.error(str(e))
+        log_ukey_access(ukey, user_ip, current_time, TYPE_MAP['query'], query, STATUS_MAP['failed'] + f' | 错误信息 [{error_msg}]')
         return jsonify({
             "error": "Connection Error",
             "detail": error_msg,
@@ -694,6 +698,7 @@ def yuexiaoyin_chat():
     except requests.exceptions.RequestException as e:
         error_msg = f"Request failed: {str(e)}"
         logger.error(error_msg)
+        log_ukey_access(ukey, user_ip, current_time, TYPE_MAP['query'], query, STATUS_MAP['failed'] + f' | 错误信息 [{error_msg}]')
         return jsonify({
             "error": "Request Failed",
             "detail": error_msg,
@@ -701,6 +706,7 @@ def yuexiaoyin_chat():
         }), 500
         
     except Exception as e:
+        log_ukey_access(ukey, user_ip, current_time, TYPE_MAP['query'], query, STATUS_MAP['failed'] + f' | 错误信息 [{error_msg}]')
         error_msg = f"Unexpected error: {str(e)}"
         logger.error(error_msg)
         return jsonify({
