@@ -11,5 +11,5 @@ user.txt
 avatars/
 .DS_Store
 configs/
-
+*.log
 
