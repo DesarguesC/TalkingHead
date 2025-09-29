@@ -52,6 +52,17 @@ def get_logs():
         "logs": log_storage
     })
 
+@app.route('/database/api/clear')
+def clear_logs():
+    """清楚当前所有在内存中的日志记录（用于调试）"""
+    global log_storage
+    log_storage = []
+    return jsonify({
+        "status": "success",
+        "count": len(log_storage),
+        "logs": "cleared"
+    })
+
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)
 

@@ -208,19 +208,6 @@ def ws_disconnect():
                 logger.info(f"等待用户 {next_sid} 进入网站")
 
 
-# 服务静态文件（index.html 等）
-@app.route('/')
-def serve_index():
-    return send_from_directory('.', 'index.html')
-
-# 服务其他静态文件（js, css, images 等）
-@app.route('/<path:path>')
-def serve_static(path):
-    if path == 'monitor':
-        return monitor_page()
-    return send_from_directory('.', path)
-
-
 UE_Socket_Host = '0.0.0.0'  # 本地地址
 UE_Socket_Port = 4000         # 目标端口
 # TCP_Socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -400,6 +387,16 @@ def get_client_ip():
         ip = request.remote_addr
     return ip
 
+
+def get_log_string():
+    ukey = request.args.get('ukey')
+    if not ukey:
+        print("WARNING: no ukey valid") # TODO: only for test
+        ukey = "test"
+    user_ip = get_client_ip()
+    current_time = datetime.now().strftime("%y-%m-%d %H-%M-%S")
+    return ukey, user_ip, current_time
+
 # 全局日志设定
 def setup_logging():
     # 创建本地日志格式
@@ -469,6 +466,20 @@ def log_ukey_access(ukey, user_ip, operation_time, operation_type, operation_con
     except requests.exceptions.RequestException as e:
         app.logger.error(f"数据库请求异常 - ukey:{ukey} - 错误:{str(e)}")
     
+
+# 服务静态文件（index.html 等）
+@app.route('/')
+def serve_index():
+    ukey, user_ip, current_time = get_log_string()
+    log_ukey_access(ukey, user_ip, current_time, TYPE_MAP['login'], "", STATUS_MAP['success'])
+    return send_from_directory('.', 'index.html')
+
+# 服务其他静态文件（js, css, images 等）
+@app.route('/<path:path>')
+def serve_static(path):
+    if path == 'monitor':
+        return monitor_page()
+    return send_from_directory('.', path)
 
 # 解析ukey参数
 @app.route('/ukey_access') # TODO: 替换为真实路由
@@ -627,6 +638,8 @@ body [original]
 # @app.route('/llama/v1/chat/completions', methods=['POST'])
 def yuexiaoyin_chat():
     # 请求结构转换
+    ukey, user_ip, current_time = get_log_string()
+    
     query = request.json.get('messages', [{"content": ""}])[-1].get("content", "你好") # 只需要当前提问；单轮对话，无上下文
     session_id = get_or_create_session_id() # 此时必有id，直接获取
     conv_id = request.conv_id if hasattr(request, 'conv_id') else request.cookies.get("conv_id", "")
