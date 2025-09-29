@@ -750,13 +750,14 @@ class TalkingHead {
     // Anim queues
     this.animQueue = [];
     this.startAnim = 'standby0';
+    this.TalkLocked = false; // this.TalkQueue同步锁，一轮对话只能用一次 | false -> 可以操作，true -> 禁止操作
     this.TalkQueue = []; // 讲话所需的动作控制
     this.seqItems = [];
     this.currentAction = null;
     // 对临界资源animSpeechQueue（在外部）的锁，默认为解锁状态，捕获到非零的animiSpeechQueue.length时锁定，长度置零时解锁 | 解锁时（false）可以this.UEanimQueue.push
     this.UEanimQueueActive = false;
     this.LastTime = 0;
-    this.animInterval = 1; // s
+    this.animInterval = 0; // s
 
     this.duration_factor = 0.2;
 
@@ -2584,19 +2585,30 @@ class TalkingHead {
     let isEyeContact = null;
     let isHeadMove = null;
     const tasks = [];
-
-    if ( Date.now() - this.LastTime >= this.animInterval * 1000 )
-    for( i=0, l=this.TalkQueue.length; i<l; i++) {
-        const animID = this.TalkQueue[i];
-        this.animInterval = this.SumUpQueueTime();
-        this.GroupAnimationConstruct(animID);
-        this.GroupAnimationPlayer(animID);
-        if ( !this.seqItems || this.seqItems.length === 0  && ! this.currentAction) {
-          this.cleanupSequence();
-        }
-        this.TalkQueue.splice(i--, 1);
-        l--;
+    
+    
+    if ( Date.now() - this.LastTime >= this.animInterval * 1000 ) {
+      if (this.TalkQueue.length === 0) {
+        this.TalkQueue.push(
+          'standby1'
+          // ['standby0', 'standby1', 'standby2'][Math.floor(Math.random() * 3)] 
+          //  test for the motion with the most time cost
+        )
+      }
+      for( i=0, l=this.TalkQueue.length; i<l; i++) {
+          const animID = this.TalkQueue[i];
+          this.animInterval += this.SumUpQueueTime();
+          // this.GroupAnimationConstruct(animID);
+          this.GroupAnimationPlayer(animID);
+          if ( !this.seqItems || this.seqItems.length === 0  && ! this.currentAction) {
+            this.cleanupSequence();
+          }
+          this.TalkQueue.splice(i--, 1);
+          l--;
+      }
     }
+    
+    
 
     for( i=0, l=this.animQueue.length; i<l; i++ ) {
       // 仅允许eyecontact与viseme
@@ -2681,13 +2693,7 @@ class TalkingHead {
 
     }
 
-    if (this.TalkQueue.length === 0) {
-      this.TalkQueue.push(
-        'standby1'
-        // ['standby0', 'standby1', 'standby2'][Math.floor(Math.random() * 3)] 
-        //  test for the motion with the most time cost
-      )
-    }
+    
     // Tasks
     for( let i=0, l=tasks.length; i<l; i++ ) {
       j = tasks[i].val;
@@ -4143,30 +4149,9 @@ class TalkingHead {
     const animList = this.AnimationFA_route[groupName];
     const loader = new GLTFLoader();
     let glb_list = []
-    // animList.forEach( x => {
-    //   const url = `./animations/${x}`;
-    //   glb_list.push({'url': url, 'glb': loader.loadAsync( url, onprogress )});
-    // })
-    if (animList.length < 3) {
-      const url = `./animations/${animList[0]}`;
-      glb_list.push({'url': url, 'glb': await loader.loadAsync( url, onprogress )});
-    } else if (animList.length == 3) {
-      const url_1 = `./animations/${animList[0]}`;
-      glb_list.push({'url': url_1, 'glb': await loader.loadAsync( url_1, onprogress )})
-      const url_2 = `./animations/${animList[1]}`;
-      glb_list.push({'url': url_2, 'glb': await loader.loadAsync( url_2, onprogress )})
-      const url_3 = `./animations/${animList[2]}`;
-      glb_list.push({'url': url_3, 'glb': await loader.loadAsync( url_3, onprogress )})
-    } else if (animList.length == 4) {
-      const url_1 = `./animations/${animList[0]}`;
-      glb_list.push({'url': url_1, 'glb': await loader.loadAsync( url_1, onprogress )});
-      const url_2 = `./animations/${animList[1]}`;
-      glb_list.push({'url': url_2, 'glb': await loader.loadAsync( url_2, onprogress )});
-      const url_3 = `./animations/${animList[2]}`;
-      glb_list.push({'url': url_3, 'glb': await loader.loadAsync( url_3, onprogress )});
-      const url_4 = `./animations/${animList[3]}`;
-      glb_list.push({'url': url_4, 'glb': await loader.loadAsync( url_4, onprogress )});
-    }
+    const promises = animList.map(file => loader.loadAsync(`./animations/${file}`, onprogress));
+    const glbs = await Promise.all(promises);
+    glb_list = animList.map((file, i) => ({ url: `./animations/${file}`, glb: glbs[i] }));
     let glb_anims = [];
     const scale_ = new THREE.Vector3(scale, scale, scale);
     glb_list.forEach( item => {
@@ -4220,18 +4205,16 @@ class TalkingHead {
   }
 
   async GroupAnimationPlayer(groupName, onprogress=null, dur=200, ndx=0, scale=0.01, tween=true) {
+    await this.GroupAnimationConstruct(groupName, onprogress, dur, ndx, scale, tween);
     let item = this.animClips.find( x => x.name === groupName) || null;
-    
-
-    if ( !item ) {
-      await this.GroupAnimationConstruct(groupName, onprogress, dur, ndx, scale, tween);
-      item = this.animClips.find( x => x.name === groupName) || null;
-      if (!item) item = this.animClips.find( x => x.url.includes('U_Idle_01_Cycle.glb'));
-    }
+    // if ( !item ) {
+    //   await this.GroupAnimationConstruct(groupName, onprogress, dur, ndx, scale, tween);
+    //   item = this.animClips.find( x => x.name === groupName) || null;
+    //   if (!item) item = this.animClips.find( x => x.url.includes('U_Idle_01_Cycle.glb'));
+    // }
     item['pose'].forEach(x => {this.seqItems.push(x)});
     const applyPoseFromItem = (item, tween = true, dur = 400) => {
       if (!item || !item.pose) return;
-
       Object.entries(item.pose.props).forEach( x => {
         this.poseBase.props[x[0]] = x[1].clone();
         this.poseTarget.props[x[0]] = x[1].clone();
@@ -4442,11 +4425,14 @@ class TalkingHead {
               newPose.standing = true; // 有关? 搜".standing"
             }
           }
-          this.animClips.push({
-            url: url+'-'+ndx,
-            clip: anim,
-            pose: newPose
-          });
+          if ( !this.animClips.some( _item_ => _item_.url == url+'-'+ndx)) {
+            this.animClips.push({
+              url: url+'-'+ndx,
+              clip: anim,
+              pose: newPose
+            });
+          }
+          
 
           // Play
           this.playAnimation(url, onprogress, dur, ndx, scale, tween);
