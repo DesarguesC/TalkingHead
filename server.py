@@ -7,7 +7,7 @@ import requests
 import logging
 import socket
 import threading
-import time, pdb, os
+import time, pdb, os, ssl
 import json
 from uuid import uuid4
 from collections import deque
@@ -958,4 +958,19 @@ if __name__ == '__main__':
             # 只会在 Flask 的 "重载子进程" 中运行 —— 真正运行你的应用
             TCP_Socket = SocketService(UE_Socket_Host, UE_Socket_Port) 
     
-    app.run(host='0.0.0.0', port=8000, debug=True)
+    # app.run(host='0.0.0.0', port=8000, debug=True)
+
+    # 确保当前目录下有"server.pem"证书文件，若没有或提示已过期，可使用指令
+    # openssl req -new -x509 -keyout server.pem -out server.pem -days 365 -nodes # 后按照提示输入即可
+    if os.path.exists("./server.pem"):
+        certfile = "server.pem"
+        context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
+        context.load_cert_chain(certfile)   # 如果cert + key已分离，则传 (certfile, keyfile)
+    else:
+        context = None
+
+    # 可选：禁用 werkzeug 自动 reloader（避免复杂的子进程逻辑）
+    # app.run(host='0.0.0.0', port=8000, debug=True, use_reloader=False, ssl_context=context)
+
+    # 保持你当前的 debug 设定（你已经用 WERKZEUG_RUN_MAIN 管理线程），直接传 context
+    app.run(host='0.0.0.0', port=8000, debug=True, ssl_context=context)
