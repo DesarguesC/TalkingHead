@@ -12,4 +12,4 @@ avatars/
 .DS_Store
 configs/
 *.log
-
+*.pem
