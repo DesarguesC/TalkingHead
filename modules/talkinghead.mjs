@@ -2586,7 +2586,6 @@ class TalkingHead {
     let isHeadMove = null;
     const tasks = [];
     
-    
     if ( Date.now() - this.LastTime >= this.animInterval * 1000 ) {
       if (this.TalkQueue.length === 0) {
         this.TalkQueue.push(
@@ -2595,20 +2594,26 @@ class TalkingHead {
           //  test for the motion with the most time cost
         )
       }
+      this.LastTime = Date.now();
+      this.animInterval = this.SumUpQueueTime();
+
+      // const promises = this.TalkQueue.map( animID => {
+      //   this.GroupAnimationPlayer(animID)
+      // })
+      // this.TalkQueue = [];
+  
       for( i=0, l=this.TalkQueue.length; i<l; i++) {
-          const animID = this.TalkQueue[i];
-          this.animInterval += this.SumUpQueueTime();
-          // this.GroupAnimationConstruct(animID);
-          this.GroupAnimationPlayer(animID);
-          if ( !this.seqItems || this.seqItems.length === 0  && ! this.currentAction) {
-            this.cleanupSequence();
-          }
-          this.TalkQueue.splice(i--, 1);
-          l--;
+        const animID = this.TalkQueue[i];
+        
+        // this.GroupAnimationConstruct(animID);
+        this.GroupAnimationPlayer(animID);
+        if ( !this.seqItems || this.seqItems.length === 0  && ! this.currentAction) {  // ! this.isSpeaking
+          // this.cleanupSequence();
+        }
+        this.TalkQueue.splice(i--, 1);
+        l--;
       }
     }
-    
-    
 
     for( i=0, l=this.animQueue.length; i<l; i++ ) {
       // 仅允许eyecontact与viseme
@@ -2838,23 +2843,26 @@ class TalkingHead {
       this.objectNeck.quaternion.multiply(q);
     }
 
-    
-    if (this.startAnim) {
-      // Hip-feet balance
-      box.setFromObject( this.armature );
-      // this.objectLeftToeBase.getWorldPosition(v);
-      // this.objectRightToeBase.getWorldPosition(w);
-      // this.objectHips.position.y -= box.min.y / 2;
-      // this.objectHips.position.x -= (v.x+w.x)/4;
-      // this.objectHips.position.z -= (v.z+w.z)/2;
-      this.playAnimation(`./animations/${this.AnimationFA_route[this.startAnim][0]}`, null, 200, 0, 0.01, false);
-      this.startAnim = null;
-    } else {
-      // Update Dynamic Bones
-      this.dynamicbones.update(dt);
-      // Update morph targets
-      this.updateMorphTargets(dt);
-    }
+    // if ( Date.now() - this.LastTime >= this.animInterval * 1000 ) {
+      if (this.startAnim) {
+        // Hip-feet balance
+        box.setFromObject( this.armature );
+        // this.objectLeftToeBase.getWorldPosition(v);
+        // this.objectRightToeBase.getWorldPosition(w);
+        // this.objectHips.position.y -= box.min.y / 2;
+        // this.objectHips.position.x -= (v.x+w.x)/4;
+        // this.objectHips.position.z -= (v.z+w.z)/2;
+        this.LastTime = Date.now();
+        this.animInterval = 7.10;
+        this.playAnimation(`./animations/${this.AnimationFA_route[this.startAnim][0]}`, null, 200, 0, 0.01, false);
+        this.startAnim = null;
+      } else {
+        // Update Dynamic Bones
+        this.dynamicbones.update(dt);
+        // Update morph targets
+        this.updateMorphTargets(dt);
+      }
+    // }
     
     // Camera
     if ( this.cameraClock !== null && this.cameraClock < 1000 ) {
