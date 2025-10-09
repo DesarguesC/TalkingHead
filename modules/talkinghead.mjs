@@ -738,6 +738,7 @@ class TalkingHead {
       'NoseSneerLeft', 'NoseSneerRight', 'MouthRollLower', 'MouthRollUpper', 'BrowDownLeft', 'BrowDownRight',
       'BrowOuterUpLeft', 'BrowOuterUpRight', 'CheekPuff', 'CheekSquintLeft', 'CheekSquintRight'
     ];
+    // mouth相关: 'MouthPressRight', 'MouthStretchLeft', 'MouthStretchRight', 'MouthRollLower', 'MouthRollUpper'
     this.mtExtras = [ // RPM Extras from ARKit, if missing
       { key: "mouthOpen", mix: { jawOpen: 0.5 } },
       { key: "mouthSmile", mix: { mouthSmileLeft: 0.8, mouthSmileRight: 0.8 } },
