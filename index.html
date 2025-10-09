@@ -2881,8 +2881,8 @@ async function grokSendMessage(node,msgs) {
 // TODO: 加入动作option，仿照openaiSendMessage
 async function llamaSendMessage(node,msgs) {
 
-  const PROXY = Yue_Xiaoyin_ChatCompletionsProxy;
-  // const PROXY = llamaChatCompletionsProxy; // 部署时替换为Yue_Xiaoyin_ChatCompletionsProxy
+  // const PROXY = Yue_Xiaoyin_ChatCompletionsProxy;
+  const PROXY = llamaChatCompletionsProxy; // 部署时替换为Yue_Xiaoyin_ChatCompletionsProxy
 
   // Create a new AbortController instance
   aiController = new AbortController();

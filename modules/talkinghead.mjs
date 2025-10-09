@@ -550,7 +550,7 @@ class TalkingHead {
         ]
       },
       'angry' : {
-        baseline: { eyesLookDown: 0.1, BrowDownLeft: 0.6, BrowDownRight: 0.6, jawForward: 0.3, mouthFrownLeft: 0.7, mouthFrownRight: 0.7, mouthRollLower: 0.2, mouthShrugLower: 0.3, handFistLeft: 1, handFistRight: 1 },
+        baseline: { eyesLookDown: 0.1, BrowDownLeft: 0.6, BrowDownRight: 0.6, jawForward: 0.3, mouthFrownLeft: 0.7, mouthFrownRight: 0.7, MouthRollLower: 0.2, mouthShrugLower: 0.3, handFistLeft: 1, handFistRight: 1 },
         speech: { deltaRate: -0.2, deltaPitch: 0.2, deltaVolume: 0 },
         anims: [
           { name: 'breathing', delay: 500, dt: [ 1000,500,1000 ], vs: { chestInhale: [0.7 * this.breath_factor,0.7 * this.breath_factor,0] } },
@@ -559,7 +559,7 @@ class TalkingHead {
         ]
       },
       'sad' : {
-        baseline: { eyesLookDown: 0.2, BrowDownRight: 0.1, browInnerUp: 0.6, browOuterUpRight: 0.2, eyeSquintLeft: 0.7, eyeSquintRight: 0.7, mouthFrownLeft: 0.8, mouthFrownRight: 0.8, mouthLeft: 0.2, mouthPucker: 0.5, mouthRollLower: 0.2, mouthRollUpper: 0.2, mouthShrugLower: 0.2, mouthShrugUpper: 0.2, mouthStretchLeft: 0.4 },
+        baseline: { eyesLookDown: 0.2, BrowDownRight: 0.1, browInnerUp: 0.6, BrowOuterUpRight: 0.2, eyeSquintLeft: 0.7, eyeSquintRight: 0.7, mouthFrownLeft: 0.8, mouthFrownRight: 0.8, MouthLeft: 0.2, mouthPucker: 0.5, MouthRollLower: 0.2, MouthRollUpper: 0.2, mouthShrugLower: 0.2, mouthShrugUpper: 0.2, MouthStretchLeft: 0.4 },
         speech: { deltaRate: -0.2, deltaPitch: -0.2, deltaVolume: 0 },
         anims: [
           { name: 'breathing', delay: 1500, dt: [ 1000,500,1000 ], vs: { chestInhale: [0.3 * this.breath_factor,0.3 * this.breath_factor,0] } },
@@ -577,7 +577,7 @@ class TalkingHead {
         ]
       },
       'disgust' : {
-        baseline: { BrowDownLeft: 0.7, BrowDownRight: 0.1, browInnerUp: 0.3, eyeSquintLeft: 1, eyeSquintRight: 1, eyeWideLeft: 0.5, eyeWideRight: 0.5, eyesRotateX: 0.05, mouthLeft: 0.4, mouthPressLeft: 0.3, mouthRollLower: 0.3, mouthShrugLower: 0.3, mouthShrugUpper: 0.8, mouthUpperUpLeft: 0.3, noseSneerLeft: 1, noseSneerRight: 0.7 },
+        baseline: { BrowDownLeft: 0.7, BrowDownRight: 0.1, browInnerUp: 0.3, eyeSquintLeft: 1, eyeSquintRight: 1, eyeWideLeft: 0.5, eyeWideRight: 0.5, eyesRotateX: 0.05, MouthLeft: 0.4, MouthPressLeft: 0.3, MouthRollLower: 0.3, mouthShrugLower: 0.3, mouthShrugUpper: 0.8, mouthUpperUpLeft: 0.3, NoseSneerLeft: 1, NoseSneerRight: 0.7 },
         speech: { deltaRate: -0.2, deltaPitch: 0, deltaVolume: 0 },
         anims: [
           { name: 'breathing', delay: 1500, dt: [ 1000,500,1000 ], vs: { chestInhale: [0.5 * this.breath_factor,0.5 * this.breath_factor,0] } },
@@ -586,7 +586,7 @@ class TalkingHead {
         ]
       },
       'love' : {
-        baseline: { browInnerUp: 0.4, browOuterUpLeft: 0.2, browOuterUpRight: 0.2, mouthSmile: 0.2, EyeBlinkLeft: 0.6, EyeBlinkRight: 0.6, eyeWideLeft: 0.7, eyeWideRight: 0.7, bodyRotateX: 0.1, mouthDimpleLeft: 0.1, mouthDimpleRight: 0.1, mouthPressLeft: 0.2, mouthShrugUpper: 0.2, mouthUpperUpLeft: 0.1, mouthUpperUpRight: 0.1 },
+        baseline: { browInnerUp: 0.4, BrowOuterUpLeft: 0.2, BrowOuterUpRight: 0.2, mouthSmile: 0.2, EyeBlinkLeft: 0.6, EyeBlinkRight: 0.6, eyeWideLeft: 0.7, eyeWideRight: 0.7, bodyRotateX: 0.1, MouthDimpleLeft: 0.1, MouthDimpleRight: 0.1, MouthPressLeft: 0.2, mouthShrugUpper: 0.2, mouthUpperUpLeft: 0.1, mouthUpperUpRight: 0.1 },
         speech: { deltaRate: -0.1, deltaPitch: -0.7, deltaVolume: 0 },
         anims: [
           { name: 'breathing', delay: 1500, dt: [ 1500,500,1500 ], vs: { chestInhale: [0.8 * this.breath_factor,0.8 * this.breath_factor,0] } },
@@ -615,50 +615,50 @@ class TalkingHead {
     // Animation templates for emojis
     this.animEmojis = {
 
-      '😐': { dt: [300,2000], rescale: [0,1], vs: { browInnerUp: [0.4], eyeWideLeft: [0.7], eyeWideRight: [0.7], mouthPressLeft: [0.6], mouthPressRight: [0.6], mouthRollLower: [0.3], mouthStretchLeft: [1], mouthStretchRight: [1] } },
+      '😐': { dt: [300,2000], rescale: [0,1], vs: { browInnerUp: [0.4], eyeWideLeft: [0.7], eyeWideRight: [0.7], MouthPressLeft: [0.6], MouthPressRight: [0.6], MouthRollLower: [0.3], MouthStretchLeft: [1], MouthStretchRight: [1] } },
       '😶': { link:  '😐' },
-      '😏': { dt: [300,2000], rescale: [0,1], vs: { eyeContact: [0], BrowDownRight: [0.1], browInnerUp: [0.7], browOuterUpRight: [0.2], EyeLookInRight: [0.7], EyeLookOutLeft: [0.7], eyeSquintLeft: [1], eyeSquintRight: [0.8], eyesRotateY: [0.7], mouthLeft: [0.4], mouthPucker: [0.4], mouthShrugLower: [0.3], mouthShrugUpper: [0.2], mouthSmile: [0.2], mouthSmileLeft: [0.4], mouthSmileRight: [0.2], mouthStretchLeft: [0.5], mouthUpperUpLeft: [0.6], noseSneerLeft: [0.7] } },
+      '😏': { dt: [300,2000], rescale: [0,1], vs: { eyeContact: [0], BrowDownRight: [0.1], browInnerUp: [0.7], BrowOuterUpRight: [0.2], EyeLookInRight: [0.7], EyeLookOutLeft: [0.7], eyeSquintLeft: [1], eyeSquintRight: [0.8], eyesRotateY: [0.7], MouthLeft: [0.4], mouthPucker: [0.4], mouthShrugLower: [0.3], mouthShrugUpper: [0.2], mouthSmile: [0.2], mouthSmileLeft: [0.4], mouthSmileRight: [0.2], MouthStretchLeft: [0.5], mouthUpperUpLeft: [0.6], NoseSneerLeft: [0.7] } },
       '🙂': { dt: [300,2000], rescale: [0,1], vs: { mouthSmile: [0.5] } },
       '🙃': { link:  '🙂' },
-      '😊': { dt: [300,2000], rescale: [0,1], vs: { browInnerUp: [0.6], eyeSquintLeft: [1], eyeSquintRight: [1], mouthSmile: [0.7], noseSneerLeft: [0.7], noseSneerRight: [0.7]} },
+      '😊': { dt: [300,2000], rescale: [0,1], vs: { browInnerUp: [0.6], eyeSquintLeft: [1], eyeSquintRight: [1], mouthSmile: [0.7], NoseSneerLeft: [0.7], NoseSneerRight: [0.7]} },
       '😇': { link:  '😊' },
-      '😀': { dt: [300,2000], rescale: [0,1], vs: { browInnerUp: [0.6], jawOpen: [0.1], mouthDimpleLeft: [0.2], mouthDimpleRight: [0.2], mouthOpen: [0.3], mouthPressLeft: [0.3], mouthPressRight: [0.3], mouthRollLower: [0.4], mouthShrugUpper: [0.4], mouthSmile: [0.7], mouthUpperUpLeft: [0.3], mouthUpperUpRight: [0.3], noseSneerLeft: [0.4], noseSneerRight: [0.4] }},
-      '😃': { dt: [300,2000], rescale: [0,1], vs: { browInnerUp: [0.6], eyeWideLeft: [0.7], eyeWideRight: [0.7], jawOpen: [0.1], mouthDimpleLeft: [0.2], mouthDimpleRight: [0.2], mouthOpen: [0.3], mouthPressLeft: [0.3], mouthPressRight: [0.3], mouthRollLower: [0.4], mouthShrugUpper: [0.4], mouthSmile: [0.7], mouthUpperUpLeft: [0.3], mouthUpperUpRight: [0.3], noseSneerLeft: [0.4], noseSneerRight: [0.4] } },
-      '😄': { dt: [300,2000], rescale: [0,1], vs: { browInnerUp: [0.3], eyeSquintLeft: [1], eyeSquintRight: [1], jawOpen: [0.2], mouthDimpleLeft: [0.2], mouthDimpleRight: [0.2], mouthOpen: [0.3], mouthPressLeft: [0.3], mouthPressRight: [0.3], mouthRollLower: [0.4], mouthShrugUpper: [0.4], mouthSmile: [0.7], mouthUpperUpLeft: [0.3], mouthUpperUpRight: [0.3], noseSneerLeft: [0.4], noseSneerRight: [0.4] } },
-      '😁': { dt: [300,2000], rescale: [0,1], vs: { browInnerUp: [0.3], eyeSquintLeft: [1], eyeSquintRight: [1], jawOpen: [0.3], mouthDimpleLeft: [0.2], mouthDimpleRight: [0.2], mouthPressLeft: [0.5], mouthPressRight: [0.5], mouthShrugUpper: [0.4], mouthSmile: [0.7], mouthUpperUpLeft: [0.3], mouthUpperUpRight: [0.3], noseSneerLeft: [0.4], noseSneerRight: [0.4] } },
-      '😆': { dt: [300,2000], rescale: [0,1], vs: { browInnerUp: [0.3], eyeSquintLeft: [1], eyeSquintRight: [1], eyesClosed: [0.6], jawOpen: [0.3], mouthDimpleLeft: [0.2], mouthDimpleRight: [0.2], mouthPressLeft: [0.5], mouthPressRight: [0.5], mouthShrugUpper: [0.4], mouthSmile: [0.7], mouthUpperUpLeft: [0.3], mouthUpperUpRight: [0.3], noseSneerLeft: [0.4], noseSneerRight: [0.4] } },
+      '😀': { dt: [300,2000], rescale: [0,1], vs: { browInnerUp: [0.6], jawOpen: [0.1], MouthDimpleLeft: [0.2], MouthDimpleRight: [0.2], mouthOpen: [0.3], MouthPressLeft: [0.3], MouthPressRight: [0.3], MouthRollLower: [0.4], mouthShrugUpper: [0.4], mouthSmile: [0.7], mouthUpperUpLeft: [0.3], mouthUpperUpRight: [0.3], NoseSneerLeft: [0.4], NoseSneerRight: [0.4] }},
+      '😃': { dt: [300,2000], rescale: [0,1], vs: { browInnerUp: [0.6], eyeWideLeft: [0.7], eyeWideRight: [0.7], jawOpen: [0.1], MouthDimpleLeft: [0.2], MouthDimpleRight: [0.2], mouthOpen: [0.3], MouthPressLeft: [0.3], MouthPressRight: [0.3], MouthRollLower: [0.4], mouthShrugUpper: [0.4], mouthSmile: [0.7], mouthUpperUpLeft: [0.3], mouthUpperUpRight: [0.3], NoseSneerLeft: [0.4], NoseSneerRight: [0.4] } },
+      '😄': { dt: [300,2000], rescale: [0,1], vs: { browInnerUp: [0.3], eyeSquintLeft: [1], eyeSquintRight: [1], jawOpen: [0.2], MouthDimpleLeft: [0.2], MouthDimpleRight: [0.2], mouthOpen: [0.3], MouthPressLeft: [0.3], MouthPressRight: [0.3], MouthRollLower: [0.4], mouthShrugUpper: [0.4], mouthSmile: [0.7], mouthUpperUpLeft: [0.3], mouthUpperUpRight: [0.3], NoseSneerLeft: [0.4], NoseSneerRight: [0.4] } },
+      '😁': { dt: [300,2000], rescale: [0,1], vs: { browInnerUp: [0.3], eyeSquintLeft: [1], eyeSquintRight: [1], jawOpen: [0.3], MouthDimpleLeft: [0.2], MouthDimpleRight: [0.2], MouthPressLeft: [0.5], MouthPressRight: [0.5], mouthShrugUpper: [0.4], mouthSmile: [0.7], mouthUpperUpLeft: [0.3], mouthUpperUpRight: [0.3], NoseSneerLeft: [0.4], NoseSneerRight: [0.4] } },
+      '😆': { dt: [300,2000], rescale: [0,1], vs: { browInnerUp: [0.3], eyeSquintLeft: [1], eyeSquintRight: [1], eyesClosed: [0.6], jawOpen: [0.3], MouthDimpleLeft: [0.2], MouthDimpleRight: [0.2], MouthPressLeft: [0.5], MouthPressRight: [0.5], mouthShrugUpper: [0.4], mouthSmile: [0.7], mouthUpperUpLeft: [0.3], mouthUpperUpRight: [0.3], NoseSneerLeft: [0.4], NoseSneerRight: [0.4] } },
       '😝': { dt: [300,100,1500,500,500], rescale: [0,0,1,0,0], vs: { browInnerUp: [0.8], eyesClosed: [1], jawOpen: [0.7], mouthFunnel: [0.5], mouthSmile: [1], tongueOut: [0,1,1,0] } },
       '😋': { link:  '😝' }, '😛': { link:  '😝' }, '😛': { link:  '😝' }, '😜': { link:  '😝' }, '🤪': { link:  '😝' },
-      '😂': { dt: [300,2000], rescale: [0,1], vs: { browInnerUp: [0.3], eyeSquintLeft: [1], eyeSquintRight: [1], eyesClosed: [0.6], jawOpen: [0.3], mouthDimpleLeft: [0.2], mouthDimpleRight: [0.2], mouthPressLeft: [0.5], mouthPressRight: [0.5], mouthShrugUpper: [0.4], mouthSmile: [0.7], mouthUpperUpLeft: [0.3], mouthUpperUpRight: [0.3], noseSneerLeft: [0.4], noseSneerRight: [0.4] } },
+      '😂': { dt: [300,2000], rescale: [0,1], vs: { browInnerUp: [0.3], eyeSquintLeft: [1], eyeSquintRight: [1], eyesClosed: [0.6], jawOpen: [0.3], MouthDimpleLeft: [0.2], MouthDimpleRight: [0.2], MouthPressLeft: [0.5], MouthPressRight: [0.5], mouthShrugUpper: [0.4], mouthSmile: [0.7], mouthUpperUpLeft: [0.3], mouthUpperUpRight: [0.3], NoseSneerLeft: [0.4], NoseSneerRight: [0.4] } },
       '🤣': { link:  '😂' }, '😅': { link:  '😂' },
-      '😉': { dt: [500,200,500,500], rescale: [0,0,0,1], vs: { mouthSmile: [0.5], mouthOpen: [0.2], mouthSmileLeft: [0,0.5,0], EyeBlinkLeft: [0,0.7,0], EyeBlinkRight: [0,0,0], bodyRotateX: [0.05,0.05,0.05,0], bodyRotateZ: [-0.05,-0.05,-0.05,0], BrowDownLeft: [0,0.7,0], cheekSquintLeft: [0,0.7,0], eyeSquintLeft: [0,1,0], eyesClosed: [0] } },
+      '😉': { dt: [500,200,500,500], rescale: [0,0,0,1], vs: { mouthSmile: [0.5], mouthOpen: [0.2], mouthSmileLeft: [0,0.5,0], EyeBlinkLeft: [0,0.7,0], EyeBlinkRight: [0,0,0], bodyRotateX: [0.05,0.05,0.05,0], bodyRotateZ: [-0.05,-0.05,-0.05,0], BrowDownLeft: [0,0.7,0], CheekSquintLeft: [0,0.7,0], eyeSquintLeft: [0,1,0], eyesClosed: [0] } },
 
       '😭': { dt: [1000,1000], rescale: [0,1], vs: { browInnerUp: [1], eyeSquintLeft: [1], eyeSquintRight: [1], eyesClosed: [0.1], jawOpen: [0], mouthFrownLeft: [1], mouthFrownRight: [1], mouthOpen: [0.5], mouthPucker: [0.5], mouthUpperUpLeft: [0.6], mouthUpperUpRight: [0.6] } },
-      '🥺': { dt: [1000,1000], rescale: [0,1], vs: { BrowDownLeft: [0.2], BrowDownRight: [0.2], browInnerUp: [1], eyeWideLeft: [0.9], eyeWideRight: [0.9], eyesClosed: [0.1], mouthClose: [0.2], mouthFrownLeft: [1], mouthFrownRight: [1], mouthPressLeft: [0.4], mouthPressRight: [0.4], mouthPucker: [1], mouthRollLower: [0.6], mouthRollUpper: [0.2], mouthUpperUpLeft: [0.8], mouthUpperUpRight: [0.8] } },
-      '😞': { dt: [1000,1000], rescale: [0,1], vs: { browInnerUp: [0.7], eyeSquintLeft: [1], eyeSquintRight: [1], eyesClosed: [0.5], bodyRotateX: [0.3], mouthClose: [0.2], mouthFrownLeft: [1], mouthFrownRight: [1], mouthPucker: [1], mouthRollLower: [1], mouthShrugLower: [0.2], mouthUpperUpLeft: [0.8], mouthUpperUpRight: [0.8] } },
-      '😔': { dt: [1000,1000], rescale: [0,1], vs: { browInnerUp: [1], eyeSquintLeft: [1], eyeSquintRight: [1], eyesClosed: [0.5], bodyRotateX: [0.3], mouthClose: [0.2], mouthFrownLeft: [1], mouthFrownRight: [1], mouthPressLeft: [0.4], mouthPressRight: [0.4], mouthPucker: [1], mouthRollLower: [0.6], mouthRollUpper: [0.2], mouthUpperUpLeft: [0.8], mouthUpperUpRight: [0.8] } },
-      '😳': { dt: [1000,1000], rescale: [0,1], vs: { browInnerUp: [1], eyeWideLeft: [0.5], eyeWideRight: [0.5], eyesRotateY: [0.05], eyesRotateX: [0.05], mouthClose: [0.2], mouthFunnel: [0.5], mouthPucker: [0.4], mouthRollLower: [0.4], mouthRollUpper: [0.4] } },
-      '☹️': { dt: [500,1500], rescale: [0,1], vs: { mouthFrownLeft: [1], mouthFrownRight: [1], mouthPucker: [0.1], mouthRollLower: [0.8] } },
+      '🥺': { dt: [1000,1000], rescale: [0,1], vs: { BrowDownLeft: [0.2], BrowDownRight: [0.2], browInnerUp: [1], eyeWideLeft: [0.9], eyeWideRight: [0.9], eyesClosed: [0.1], mouthClose: [0.2], mouthFrownLeft: [1], mouthFrownRight: [1], MouthPressLeft: [0.4], MouthPressRight: [0.4], mouthPucker: [1], MouthRollLower: [0.6], MouthRollUpper: [0.2], mouthUpperUpLeft: [0.8], mouthUpperUpRight: [0.8] } },
+      '😞': { dt: [1000,1000], rescale: [0,1], vs: { browInnerUp: [0.7], eyeSquintLeft: [1], eyeSquintRight: [1], eyesClosed: [0.5], bodyRotateX: [0.3], mouthClose: [0.2], mouthFrownLeft: [1], mouthFrownRight: [1], mouthPucker: [1], MouthRollLower: [1], mouthShrugLower: [0.2], mouthUpperUpLeft: [0.8], mouthUpperUpRight: [0.8] } },
+      '😔': { dt: [1000,1000], rescale: [0,1], vs: { browInnerUp: [1], eyeSquintLeft: [1], eyeSquintRight: [1], eyesClosed: [0.5], bodyRotateX: [0.3], mouthClose: [0.2], mouthFrownLeft: [1], mouthFrownRight: [1], MouthPressLeft: [0.4], MouthPressRight: [0.4], mouthPucker: [1], MouthRollLower: [0.6], MouthRollUpper: [0.2], mouthUpperUpLeft: [0.8], mouthUpperUpRight: [0.8] } },
+      '😳': { dt: [1000,1000], rescale: [0,1], vs: { browInnerUp: [1], eyeWideLeft: [0.5], eyeWideRight: [0.5], eyesRotateY: [0.05], eyesRotateX: [0.05], mouthClose: [0.2], mouthFunnel: [0.5], mouthPucker: [0.4], MouthRollLower: [0.4], MouthRollUpper: [0.4] } },
+      '☹️': { dt: [500,1500], rescale: [0,1], vs: { mouthFrownLeft: [1], mouthFrownRight: [1], mouthPucker: [0.1], MouthRollLower: [0.8] } },
 
-      '😚': { dt: [500,1000,1000], rescale: [0,1,0], vs: { browInnerUp: [0.6], EyeBlinkLeft: [1], EyeBlinkRight: [1], eyeSquintLeft: [1], eyeSquintRight: [1], mouthPucker: [0,0.5], noseSneerLeft: [0,0.7], noseSneerRight: [0,0.7], viseme_U: [0,1] } },
-      '😘': { dt: [500,500,200,500], rescale: [0,0,0,1], vs: { browInnerUp: [0.6], EyeBlinkLeft: [0,0,1,0], EyeBlinkRight: [0], eyesRotateY: [0], bodyRotateY: [0], bodyRotateX: [0,0.05,0.05,0], bodyRotateZ: [0,-0.05,-0.05,0], eyeSquintLeft: [1], eyeSquintRight: [1], mouthPucker: [0,0.5,0], noseSneerLeft: [0,0.7], noseSneerRight: [0.7], viseme_U: [0,1] } },
-      '🥰': { dt: [1000,1000], rescale: [0,1], vs: { browInnerUp: [0.6], eyeSquintLeft: [1], eyeSquintRight: [1], mouthSmile: [0.7], noseSneerLeft: [0.7], noseSneerRight: [0.7] } },
-      '😍': { dt: [1000,1000], rescale: [0,1], vs: { browInnerUp: [0.6], jawOpen: [0.1], mouthDimpleLeft: [0.2], mouthDimpleRight: [0.2], mouthOpen: [0.3], mouthPressLeft: [0.3], mouthPressRight: [0.3], mouthRollLower: [0.4], mouthShrugUpper: [0.4], mouthSmile: [0.7], mouthUpperUpLeft: [0.3], mouthUpperUpRight: [0.3], noseSneerLeft: [0.4], noseSneerRight: [0.4] } },
+      '😚': { dt: [500,1000,1000], rescale: [0,1,0], vs: { browInnerUp: [0.6], EyeBlinkLeft: [1], EyeBlinkRight: [1], eyeSquintLeft: [1], eyeSquintRight: [1], mouthPucker: [0,0.5], NoseSneerLeft: [0,0.7], NoseSneerRight: [0,0.7], viseme_U: [0,1] } },
+      '😘': { dt: [500,500,200,500], rescale: [0,0,0,1], vs: { browInnerUp: [0.6], EyeBlinkLeft: [0,0,1,0], EyeBlinkRight: [0], eyesRotateY: [0], bodyRotateY: [0], bodyRotateX: [0,0.05,0.05,0], bodyRotateZ: [0,-0.05,-0.05,0], eyeSquintLeft: [1], eyeSquintRight: [1], mouthPucker: [0,0.5,0], NoseSneerLeft: [0,0.7], NoseSneerRight: [0.7], viseme_U: [0,1] } },
+      '🥰': { dt: [1000,1000], rescale: [0,1], vs: { browInnerUp: [0.6], eyeSquintLeft: [1], eyeSquintRight: [1], mouthSmile: [0.7], NoseSneerLeft: [0.7], NoseSneerRight: [0.7] } },
+      '😍': { dt: [1000,1000], rescale: [0,1], vs: { browInnerUp: [0.6], jawOpen: [0.1], MouthDimpleLeft: [0.2], MouthDimpleRight: [0.2], mouthOpen: [0.3], MouthPressLeft: [0.3], MouthPressRight: [0.3], MouthRollLower: [0.4], mouthShrugUpper: [0.4], mouthSmile: [0.7], mouthUpperUpLeft: [0.3], mouthUpperUpRight: [0.3], NoseSneerLeft: [0.4], NoseSneerRight: [0.4] } },
       '🤩': { link:  '😍' },
 
       '😡': { dt: [1000,1500], rescale: [0,1], vs: { BrowDownLeft: [1], BrowDownRight: [1], eyesLookUp: [0.2], jawForward: [0.3], mouthFrownLeft: [1], mouthFrownRight: [1], bodyRotateX: [0.15] } },
       '😠': { dt: [1000,1500], rescale: [0,1], vs: { BrowDownLeft: [1], BrowDownRight: [1], eyesLookUp: [0.2], jawForward: [0.3], mouthFrownLeft: [1], mouthFrownRight: [1], bodyRotateX: [0.15] } },
       '🤬': { link:  '😠' },
-      '😒': { dt: [1000,1000], rescale: [0,1], vs: { eyeContact: [0], BrowDownRight: [0.1], browInnerUp: [0.7], browOuterUpRight: [0.2], EyeLookInRight: [0.7], EyeLookOutLeft: [0.7], eyeSquintLeft: [1], eyeSquintRight: [0.8], eyesRotateY: [0.7], mouthFrownLeft: [1], mouthFrownRight: [1], mouthLeft: [0.2], mouthPucker: [0.5], mouthRollLower: [0.2], mouthRollUpper: [0.2], mouthShrugLower: [0.2], mouthShrugUpper: [0.2], mouthStretchLeft: [0.5] } },
+      '😒': { dt: [1000,1000], rescale: [0,1], vs: { eyeContact: [0], BrowDownRight: [0.1], browInnerUp: [0.7], BrowOuterUpRight: [0.2], EyeLookInRight: [0.7], EyeLookOutLeft: [0.7], eyeSquintLeft: [1], eyeSquintRight: [0.8], eyesRotateY: [0.7], mouthFrownLeft: [1], mouthFrownRight: [1], MouthLeft: [0.2], mouthPucker: [0.5], MouthRollLower: [0.2], MouthRollUpper: [0.2], mouthShrugLower: [0.2], mouthShrugUpper: [0.2], MouthStretchLeft: [0.5] } },
 
       '😱': { dt: [500,1500], rescale: [0,1], vs: { browInnerUp: [0.8], eyeWideLeft: [0.5], eyeWideRight: [0.5], jawOpen: [0.7], mouthFunnel: [0.5] } },
-      '😬': { dt: [500,1500], rescale: [0,1], vs: { BrowDownLeft: [1], BrowDownRight: [1], browInnerUp: [1], mouthDimpleLeft: [0.5], mouthDimpleRight: [0.5], mouthLowerDownLeft: [1], mouthLowerDownRight: [1], mouthPressLeft: [0.4], mouthPressRight: [0.4], mouthPucker: [0.5], mouthSmile: [0.1], mouthSmileLeft: [0.2], mouthSmileRight: [0.2], mouthStretchLeft: [1], mouthStretchRight: [1], mouthUpperUpLeft: [1], mouthUpperUpRight: [1] } },
-      '🙄': { dt: [500,1500], rescale: [0,1], vs: { browInnerUp: [0.8], eyeWideLeft: [1], eyeWideRight: [1], eyesRotateX: [-0.8], bodyRotateX: [0.15], mouthPucker: [0.5], mouthRollLower: [0.6], mouthRollUpper: [0.5], mouthShrugLower: [0], mouthSmile: [0] } },
+      '😬': { dt: [500,1500], rescale: [0,1], vs: { BrowDownLeft: [1], BrowDownRight: [1], browInnerUp: [1], MouthDimpleLeft: [0.5], MouthDimpleRight: [0.5], mouthLowerDownLeft: [1], mouthLowerDownRight: [1], MouthPressLeft: [0.4], MouthPressRight: [0.4], mouthPucker: [0.5], mouthSmile: [0.1], mouthSmileLeft: [0.2], mouthSmileRight: [0.2], MouthStretchLeft: [1], MouthStretchRight: [1], mouthUpperUpLeft: [1], mouthUpperUpRight: [1] } },
+      '🙄': { dt: [500,1500], rescale: [0,1], vs: { browInnerUp: [0.8], eyeWideLeft: [1], eyeWideRight: [1], eyesRotateX: [-0.8], bodyRotateX: [0.15], mouthPucker: [0.5], MouthRollLower: [0.6], MouthRollUpper: [0.5], mouthShrugLower: [0], mouthSmile: [0] } },
       '🤔': { dt: [500,1500], rescale: [0,1], vs: {
-        BrowDownLeft: [1], browOuterUpRight: [1], eyeSquintLeft: [0.6],
+        BrowDownLeft: [1], BrowOuterUpRight: [1], eyeSquintLeft: [0.6],
         mouthFrownLeft: [0.7], mouthFrownRight: [0.7], mouthLowerDownLeft: [0.3],
-        mouthPressRight: [0.4], mouthPucker: [0.1], mouthRight: [0.5], mouthRollLower: [0.5],
-        mouthRollUpper: [0.2], handRight: [{ x: 0.1, y: 0.1, z:0.1, d:1000 }, { d:1000 }],
+        MouthPressRight: [0.4], mouthPucker: [0.1], mouthRight: [0.5], MouthRollLower: [0.5],
+        MouthRollUpper: [0.2], handRight: [{ x: 0.1, y: 0.1, z:0.1, d:1000 }, { d:1000 }],
         handFistRight: [0.1]
       } },
       '👀': { dt: [500,1500], rescale: [0,1], vs: { eyesRotateY: [-0.8] } },
@@ -732,12 +732,11 @@ class TalkingHead {
     //   'CheekSquintRight'
     // ];
     this.mtRandomized = [
-      'mouthDimpleLeft','mouthDimpleRight', 'mouthLeft', 'mouthPressLeft',
-      'mouthPressRight', 'mouthStretchLeft', 'mouthStretchRight',
-      'mouthShrugLower', 'mouthShrugUpper', 'noseSneerLeft', 'noseSneerRight',
-      'mouthRollLower', 'mouthRollUpper', 'BrowDownLeft', 'BrowDownRight',
-      'browOuterUpLeft', 'browOuterUpRight', 'cheekPuff', 'cheekSquintLeft',
-      'cheekSquintRight'
+      'MouthDimpleLeft','MouthDimpleRight', 'MouthLeft', 'MouthPressLeft',
+      'MouthPressRight', 'MouthStretchLeft', 'MouthStretchRight',
+      'mouthShrugLower', 'mouthShrugUpper', // undefined
+      'NoseSneerLeft', 'NoseSneerRight', 'MouthRollLower', 'MouthRollUpper', 'BrowDownLeft', 'BrowDownRight',
+      'BrowOuterUpLeft', 'BrowOuterUpRight', 'CheekPuff', 'CheekSquintLeft', 'CheekSquintRight'
     ];
     this.mtExtras = [ // RPM Extras from ARKit, if missing
       { key: "mouthOpen", mix: { jawOpen: 0.5 } },
@@ -887,6 +886,7 @@ class TalkingHead {
     this.renderer.setSize(this.nodeAvatar.clientWidth, this.nodeAvatar.clientHeight);
     this.renderer.outputColorSpace = THREE.SRGBColorSpace;
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    this.renderer.toneMappingExposure = 0.7; // 减小曝光：1.0(default)->0.9 或更低到0.7尝试
     this.renderer.shadowMap.enabled = false;
     this.nodeAvatar.appendChild( this.renderer.domElement );
     this.camera = new THREE.PerspectiveCamera( 10, this.nodeAvatar.clientWidth / this.nodeAvatar.clientHeight, 0.1, 2000 );
@@ -1263,7 +1263,40 @@ class TalkingHead {
     // TODO: 需要将所有this.morphs的注释打开
     gltf.scene.traverse(obj => {
       if (obj.isMesh) {
-        console.log(obj.name, obj.morphTargetDictionary, obj.morphTargetInfluences);
+        console.log(obj.name, obj.morphTargetDictionary, obj.morphTargetInfluences, obj.material);
+        // 保证可以投影、接收阴影（如需要）
+        obj.castShadow = true;
+        obj.receiveShadow = true;
+
+        const mats = Array.isArray(obj.material) ? obj.material : [obj.material];
+        mats.forEach(mat => {
+          if (!mat) return;
+          // 支持骨骼 / morph
+          if (obj.isSkinnedMesh) mat.skinning = true;
+          if (obj.morphTargetInfluences) {
+            mat.morphTargets = true;
+            mat.morphNormals = true;
+          }
+
+          // 贴图的色彩空间修正
+          ['map','emissiveMap','aoMap'].forEach(k => {
+            if (mat[k]) {
+              mat[k].encoding = THREE.sRGBEncoding;
+              mat[k].needsUpdate = true;
+            }
+          });
+          ['metalnessMap','roughnessMap','normalMap','displacementMap'].forEach(k => {
+            if (mat[k]) {
+              mat[k].encoding = THREE.LinearEncoding;
+              mat[k].needsUpdate = true;
+            }
+          });
+
+          // 根据需要调整双面 / 透明
+          // mat.side = THREE.DoubleSide;
+
+          mat.needsUpdate = true;
+        });
       }
     });
 
@@ -1366,6 +1399,51 @@ class TalkingHead {
 
     // Add avatar to scene
     this.scene.add(gltf.scene);
+
+    // 晴天日光风格 //
+    const hemi = new THREE.HemisphereLight(0xbcdfff, 0x444444, 0.7);
+    const dir = new THREE.DirectionalLight(0xffffff, 1.0);
+
+    // 黄昏暖光风格 //
+    // const hemi = new THREE.HemisphereLight(0xffcc88, 0x332211, 0.5);
+    // const dir = new THREE.DirectionalLight(0xffaa55, 0.8);
+    // 加深暖色（更偏橙红）
+    // const hemi = new THREE.HemisphereLight(0xffbb77, 0x442200, 0.6);
+    // const dir = new THREE.DirectionalLight(0xff8844, 0.9);
+    // 更柔和、暖白（室内灯光感）
+    // const hemi = new THREE.HemisphereLight(0xffeedd, 0x554433, 0.5);
+    // const dir = new THREE.DirectionalLight(0xffddaa, 0.7);
+    // 强烈日落橙红（戏剧感）
+    // const hemi = new THREE.HemisphereLight(0xff9966, 0x331100, 0.6);
+    // const dir = new THREE.DirectionalLight(0xff6600, 1.0);
+
+    // 夜间冷色风格 //
+    // const hemi = new THREE.HemisphereLight(0x3355aa, 0x000000, 0.3);
+    // const dir = new THREE.DirectionalLight(0x99ccff, 0.4);
+    // 默认光      //
+    // const hemi = new THREE.HemisphereLight(0xffffff, 0x444444, 0.6);
+    // const dir = new THREE.DirectionalLight(0xffffff, 0.6);
+    dir.position.set(5, 10, 2);
+    dir.castShadow = true;
+    dir.shadow.bias = -0.0003;
+    dir.shadow.radius = 2;
+    this.scene.add(hemi);
+    this.scene.add(dir);
+
+    // 添加一个“对侧填充光”与“背光”
+    const fill = new THREE.DirectionalLight(0x77aaff, 0.25); // 偏冷的弱光用来中和暖色
+    fill.position.set(-3, 4, -2);
+    fill.target.position.set(0,1.2,0);
+    fill.castShadow = false;
+    this.scene.add(fill);
+    this.scene.add(fill.target);
+
+    const rim = new THREE.DirectionalLight(0xffeedd, 0.25); // 轻微暖色背光，强调轮廓
+    rim.position.set(0, 4, -6);
+    rim.target.position.set(0, 1.5, 0);
+    this.scene.add(rim);
+    this.scene.add(rim.target);
+
 
     // 展示坐标轴
         function makeLabel(text, color) {
@@ -1531,6 +1609,19 @@ class TalkingHead {
   */
   setLighting(opt) {
     opt = opt || {};
+    // console.log('--------------');
+    // console.log(opt.lightAmbientColor);
+    // console.log(opt.lightAmbientIntensity);
+    // console.log(opt.lightDirectColor);
+    // console.log(opt.lightDirectIntensity);
+    // console.log(opt.lightDirectPhi);
+    // console.log(opt.lightDirectTheta);
+    // console.log(opt.lightSpotColor);
+    // console.log(opt.lightSpotIntensity);
+    // console.log(opt.lightSpotPhi);
+    // console.log(opt.lightSpotTheta);
+    // console.log(opt.lightSpotDispersion);
+
 
     // Ambient light
     if ( opt.hasOwnProperty("lightAmbientColor") ) {
@@ -1568,7 +1659,64 @@ class TalkingHead {
     if ( opt.hasOwnProperty("lightSpotDispersion") ) {
       this.lightSpot.angle = opt.lightSpotDispersion;
     }
+
+    // this.setA();
+
   }
+
+  setA() {
+    this.lightAmbient.color.set( new THREE.Color( 0xffecd6 ) );
+    this.lightAmbient.intensity = 0.28;
+    this.lightAmbient.visible = true;
+
+    this.lightDirect.color.set( new THREE.Color( 0xffb276 ) );
+
+    this.lightDirect.intensity = 0.85;
+    this.lightDirect.visible = true;
+    this.lightDirect.position.setFromSphericalCoords(2, THREE.MathUtils.degToRad(45), THREE.MathUtils.degToRad(20));
+    this.lightSpot.color.set( new THREE.Color( 0xffeedd ) );
+    this.lightSpot.intensity = 0.22;
+    this.lightSpot.visible = true;
+    this.lightSpot.position.setFromSphericalCoords( 2, THREE.MathUtils.degToRad(55), THREE.MathUtils.degToRad(-160) );
+    this.lightSpot.position.add( new THREE.Vector3(0,1.5,0) );
+    this.lightSpot.angle = 0.7;
+  }
+  setB() {
+    this.lightAmbient.color.set( new THREE.Color( 0xffffff ) );
+    this.lightAmbient.intensity = 0.35;
+    this.lightAmbient.visible = true;
+    
+    this.lightDirect.color.set( new THREE.Color( 0xfff6e6 ) );
+    this.lightDirect.intensity = 0.75;
+    this.lightDirect.visible = true;
+    this.lightDirect.position.setFromSphericalCoords(2, THREE.MathUtils.degToRad(50), THREE.MathUtils.degToRad(10));
+    this.lightSpot.color.set( new THREE.Color( 0x99bfe6 ) );
+    this.lightSpot.intensity = 0.25;
+    this.lightSpot.visible = true;
+    this.lightSpot.position.setFromSphericalCoords( 2, THREE.MathUtils.degToRad(40), THREE.MathUtils.degToRad(-140) );
+    this.lightSpot.position.add( new THREE.Vector3(0,1.5,0) );
+    this.lightSpot.angle = 0.9;
+  }
+  setC() {
+    this.lightAmbient.color.set( new THREE.Color( 0xffeedd ) );
+    this.lightAmbient.intensity = 0.2;
+    this.lightAmbient.visible = true;
+
+    this.lightDirect.color.set( new THREE.Color( 0xff9966 ) );
+    this.lightDirect.intensity = 0.65;
+    this.lightDirect.visible = true;
+    this.lightDirect.position.setFromSphericalCoords(2, THREE.MathUtils.degToRad(35), THREE.MathUtils.degToRad(25));
+    this.lightSpot.color.set( new THREE.Color( 0xffeedd ) );
+    this.lightSpot.intensity = 0.32;
+    this.lightSpot.visible = true;
+    this.lightSpot.position.setFromSphericalCoords( 2, THREE.MathUtils.degToRad(20), THREE.MathUtils.degToRad(-120) );
+    this.lightSpot.position.add( new THREE.Vector3(0,1.5,0) );
+    this.lightSpot.angle = 0.5;
+  }
+
+
+
+
 
   /**
   * Render scene.
@@ -2161,7 +2309,7 @@ class TalkingHead {
     this.moodName = s;
     this.mood = this.animMoods[this.moodName];
 
-    // Reset morph target baseline
+    // Reset morph target baseline // TODO: eyes
     for( let mt of Object.keys(this.mtAvatar) ) {
       let val = this.mtBaselineExceptions.hasOwnProperty(mt) ? this.mtBaselineExceptions[mt] : this.mtBaselineDefault;
       if ( this.mood.baseline.hasOwnProperty(mt) ) {
@@ -3766,7 +3914,7 @@ class TalkingHead {
   * @param {number} t Time in milliseconds
   */
   lookAhead(t) {
-    return;
+    // return;
 
 
     if ( t ) {
@@ -3790,7 +3938,7 @@ class TalkingHead {
           eyesRotateX: [ - 3 * drotx + 0.1 ],
           eyesRotateY: [ - 5 * droty ],
           browInnerUp: [[0,0.7]],
-          mouthLeft: [[0,0.7]],
+          MouthLeft: [[0,0.7]],
           mouthRight: [[0,0.7]],
           eyeContact: [0],
           headMove: [0]
@@ -3828,7 +3976,7 @@ class TalkingHead {
   * @param {number} t Time in milliseconds
   */
   lookAt(x,y,t) {
-    return;
+    // return;
     // Eyes position
     const rect = this.nodeAvatar.getBoundingClientRect();
     this.objectLeftEye.updateMatrixWorld(true);
@@ -3892,7 +4040,7 @@ class TalkingHead {
           eyesRotateX: [ - 3 * drotx + 0.1 ],
           eyesRotateY: [ - 5 * droty ],
           browInnerUp: [[0,0.7]],
-          mouthLeft: [[0,0.7]],
+          MouthLeft: [[0,0.7]],
           mouthRight: [[0,0.7]],
           eyeContact: [0],
           headMove: [0]
@@ -4261,7 +4409,7 @@ class TalkingHead {
         const itemNext = this.seqItems.shift(); // <- 这是关键：移除已播放的项
         if ( this.seqItems.length === 0) return;
         // 在开始新动作前应用 pose（如果不想补间，把 tween 设为 false）
-        applyPoseFromItem(itemNext, /*tween*/ true, /*dur*/ 400);
+        applyPoseFromItem(itemNext, /*tween*/ tween, /*dur*/ dur);
 
         // 创建 action 并配置（播放一次）
         const action = this.mixer.clipAction(itemNext.clip);
