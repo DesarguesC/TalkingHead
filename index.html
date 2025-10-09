@@ -3749,6 +3749,7 @@ function addMessage(user = false) {
   // 或者继续保持把 session 容器滚到底
   nodeSessions.scrollTop = nodeSessions.scrollHeight;
 
+  // return sessionNode; // 不能正常添加，没有字了
   return message.node();
 }
 
