@@ -3558,68 +3558,68 @@ function addMessage(user = false) {
   //   })
   //   .html(svgSelect);
   // // toolbar-right / toolbar-left => 左右侧的小按钮
-  // if ( user ) {
-  //   // 「添加用户输入的消息」
-  //   const toolbarRight = message.append("div");
-  //   toolbarRight.classed("toolbar-right", true);
-  //   toolbarRight.append("div")
-  //     .classed("command", true)
-  //     .on('click', function(ev) {
-  //       let n = this.parentNode.parentNode;
-  //       const text = d3.select(n).attr('data-input');
-  //       while(n) {
-  //         // 用了重新处理消息的按钮以后会调用这里
-  //         let e = d3.select(n);
-  //         e.classed("grayed",true);
-  //         e.select(".select").classed("selected", true );
-  //         n = n.nextSibling;
-  //       }
-  //       let node = d3.select("#input").property("value",text).dispatch("change").node();
-  //       node.scrollTop = node.scrollHeight;
-  //       node.focus();
-  //     })
-  //     .html(svgRepost);
+  if ( user ) {
+    // 「添加用户输入的消息」
+    const toolbarRight = message.append("div");
+    toolbarRight.classed("toolbar-right", true);
+    toolbarRight.append("div")
+      .classed("command", true)
+      .on('click', function(ev) {
+        let n = this.parentNode.parentNode;
+        const text = d3.select(n).attr('data-input');
+        while(n) {
+          // 用了重新处理消息的按钮以后会调用这里
+          let e = d3.select(n);
+          e.classed("grayed",true);
+          e.select(".select").classed("selected", true );
+          n = n.nextSibling;
+        }
+        let node = d3.select("#input").property("value",text).dispatch("change").node();
+        node.scrollTop = node.scrollHeight;
+        node.focus();
+      })
+      .html(svgRepost);
 
-  // } else {
-  //   // system message
-  //   const toolbarRight = message.append("div");
-  //   toolbarRight.classed("toolbar-right", true);
-  //   toolbarRight.append("div")
-  //     .classed("command", true)
-  //     .on('click', function(ev) {
-  //       const e = d3.select(this.parentNode.parentNode);
-  //       let text = e.attr("data-output");
-  //       if ( text && text.length ) {
-  //         if ( cfg('voice-type') === 'eleven' ) {
-  //           elevenSpeak( text + " " );
-  //           elevenSpeak( "" );
-  //         } else if ( cfg('voice-type') === 'microsoft' ) {
-  //           microsoftSpeak( text );
-  //           microsoftSpeak( null );
-  //         } else {
-  //           head.speakText( text, {
-  //             lipsyncLang: cfg('voice-lipsync-lang'),
-  //             ttsVoice: cfg('voice-google-id'),
-  //             ttsRate: cfg('voice-google-rate'),
-  //             ttsPitch: cfg('voice-google-pitch')
-  //           } );
-  //         }
-  //       }
-  //     })
-  //     .html(svgSpeak);
+  } else {
+    // system message
+    const toolbarRight = message.append("div");
+    toolbarRight.classed("toolbar-right", true);
+    toolbarRight.append("div")
+      .classed("command", true)
+      .on('click', function(ev) {
+        const e = d3.select(this.parentNode.parentNode);
+        let text = e.attr("data-output");
+        if ( text && text.length ) {
+          if ( cfg('voice-type') === 'eleven' ) {
+            elevenSpeak( text + " " );
+            elevenSpeak( "" );
+          } else if ( cfg('voice-type') === 'microsoft' ) {
+            microsoftSpeak( text );
+            microsoftSpeak( null );
+          } else {
+            head.speakText( text, {
+              lipsyncLang: cfg('voice-lipsync-lang'),
+              ttsVoice: cfg('voice-google-id'),
+              ttsRate: cfg('voice-google-rate'),
+              ttsPitch: cfg('voice-google-pitch')
+            } );
+          }
+        }
+      })
+      .html(svgSpeak);
 
-  //   toolbarRight.append("div")
-  //     .classed("command", true)
-  //     .on('click', function(ev) {
-  //       head.stopSpeaking();
-  //       // Abort the fetch request by calling abort() on the AbortController instance
-  //       if (aiController) {
-  //         aiController.abort();
-  //         aiController = null;
-  //       }
-  //     })
-  //     .html(svgStop);
-  // }
+    toolbarRight.append("div")
+      .classed("command", true)
+      .on('click', function(ev) {
+        head.stopSpeaking();
+        // Abort the fetch request by calling abort() on the AbortController instance
+        if (aiController) {
+          aiController.abort();
+          aiController = null;
+        }
+      })
+      .html(svgStop);
+  }
 
   message.append('p');
 

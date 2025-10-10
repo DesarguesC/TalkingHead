@@ -3977,7 +3977,7 @@ class TalkingHead {
   * @param {number} t Time in milliseconds
   */
   lookAt(x,y,t) {
-    // return;
+    return;
     // Eyes position
     const rect = this.nodeAvatar.getBoundingClientRect();
     this.objectLeftEye.updateMatrixWorld(true);
