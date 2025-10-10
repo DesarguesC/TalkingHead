@@ -501,6 +501,106 @@
     position: absolute; right: 0; bottom:0; padding: 0;
     display: flex; row-gap: 0; column-gap: 4px;
   } 
+
+  .message-body {
+    display: flex;
+    justify-content: space-between; /* 左文字右图标 */
+    align-items: flex-start;
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  .message-text {
+    flex: 1 1 auto;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+    margin-right: 0.5em;
+  }
+
+  .toolbar-right {
+    flex-shrink: 0;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .toolbar-right .command {
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* 让 p 成为一个 flex 行：文本占满剩余空间，toolbar 固定在右侧 */
+  .message-paragraph {            /* 我们把 p 加上这个类，见后面 JS */
+    display: flex;
+    flex-direction: row;
+    align-items: flex-start;      /* 或 center，根据你想要垂直对齐调整 */
+    justify-content: space-between;
+    width: 100%;
+    box-sizing: border-box;
+    gap: 8px;
+  }
+  /* 文字区域作为 flex 子项且能换行 —— 要允许缩小，避免溢出 */
+  .message-content {
+    flex: 1 1 auto;      /* grow + shrink */
+    min-width: 0;        /* 允许内容在 flex 容器中收缩（防止长词撑破布局）*/
+    white-space: pre-wrap;
+    word-break: break-word;
+    overflow-wrap: anywhere;
+  }
+  /* 伪元素光标：显示在 .message-content 的内容末尾 */
+  .message-content.caret::after {
+    content: "";
+    display: inline-block;
+    width: 1px;
+    height: 1em;                 /* 跟随行高，可按需调整 */
+    vertical-align: text-bottom;
+    margin-left: 2px;
+    background-color: currentColor;
+    animation: caret-blink 1s steps(1, start) infinite;
+    /* 若需更细/更粗可调整 width */
+  }
+
+  @keyframes caret-blink {
+    50% { opacity: 0; }
+  }
+
+  /* 可选：当内容是空时，让光标高度更贴合占位高度 */
+  .message-content.caret:empty::after {
+    height: 1em;
+    display: inline-block;
+  }
+
+  /* 工具栏固定大小，不参与换行 */
+  .toolbar-inline {
+    flex: 0 0 auto;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin-left: 6px;
+    vertical-align: middle;
+  }
+
+  /* 如果你希望图标不被换行挤到下一行，可以用 white-space:no-wrap，谨慎使用 */
+  .toolbar-inline.no-wrap {
+    white-space: nowrap;
+  }
+
+  /* 光标样式（可改颜色/粗细/高度） */
+  .inline-caret {
+    display: inline-block;
+    width: 1px;
+    height: 1em;                     /* 高度跟随文本行高 */
+    vertical-align: text-bottom;
+    background-color: currentColor;  /* 与文字颜色一致 */
+    margin-left: 2px;
+    animation: caret-blink 1s steps(1, start) infinite;
+  }
+
+  @keyframes caret-blink {
+    50% { opacity: 0; }
+  }
   
   #canvas-container {
       display: flex;
@@ -3530,129 +3630,190 @@ async function geminiSendMessage(node,msgs) {
   }
 }
 
+// 把现有 p.innerHTML 内容迁移到 .message-content，并确保 .toolbar-inline 存在
+function ensureParagraphStructure(pEl, isUserMessage) {
+  if (!pEl) return null;
+
+  // --- 新增：把 p 标记为 message-paragraph（flex 行） ---
+  if (!pEl.classList.contains('message-paragraph')) {
+    pEl.classList.add('message-paragraph');
+    // 如果你更喜欢直接内联样式也可以启用下面两行（但建议用 class）
+    // pEl.style.display = 'flex';
+    // pEl.style.justifyContent = 'space-between';
+  }
+
+  // 已有 message-content 的情况
+  let content = pEl.querySelector('.message-content');
+  if (!content) {
+    // 把现有 innerHTML 迁移到 content 内
+    const existing = pEl.innerHTML || '';
+    pEl.innerHTML = ''; // 清空后重建
+    content = document.createElement('span');
+    content.className = 'message-content';
+    content.innerHTML = existing;
+    pEl.appendChild(content);
+  }
+
+  // caret：确保存在（但不要把它放在 p 外面）
+  if (!content.querySelector('.inline-caret')) {
+    const caret = document.createElement('span');
+    caret.className = 'inline-caret';
+    // 初始放到 content 末尾
+    content.appendChild(caret);
+  }
+
+  // 创建 toolbar（如果不存在）
+  let toolbar = pEl.querySelector('.toolbar-inline');
+  if (!toolbar) {
+    toolbar = document.createElement('span');
+    toolbar.className = 'toolbar-inline';
+    // 填充按钮（按 user / system）
+    if (isUserMessage) {
+      const repost = document.createElement('span');
+      repost.className = 'command';
+      repost.innerHTML = svgRepost;
+      repost.addEventListener('click', function(ev) {
+        const text = pEl.getAttribute('data-input') || '';
+        // 保持旧的“选中并把文本放回输入”的行为
+        let n = pEl;
+        while (n) {
+          d3.select(n).classed('grayed', true);
+          d3.select(n).select('.select').classed('selected', true);
+          n = n.nextSibling;
+        }
+        let node = d3.select("#input").property("value", text).dispatch("change").node();
+        node.scrollTop = node.scrollHeight;
+        node.focus();
+      });
+      toolbar.appendChild(repost);
+    } else {
+      const speak = document.createElement('span');
+      speak.className = 'command';
+      speak.innerHTML = svgSpeak;
+      speak.addEventListener('click', function(ev) {
+        const e = d3.select(pEl);
+        let text = e.attr('data-output');
+        if (text && text.length) {
+          if (cfg('voice-type') === 'eleven') {
+            elevenSpeak(text + " ");
+            elevenSpeak("");
+          } else if (cfg('voice-type') === 'microsoft') {
+            microsoftSpeak(text);
+            microsoftSpeak(null);
+          } else {
+            head.speakText(text, {
+              lipsyncLang: cfg('voice-lipsync-lang'),
+              ttsVoice: cfg('voice-google-id'),
+              ttsRate: cfg('voice-google-rate'),
+              ttsPitch: cfg('voice-google-pitch')
+            });
+          }
+        }
+      });
+      toolbar.appendChild(speak);
+
+      const stop = document.createElement('span');
+      stop.className = 'command';
+      stop.innerHTML = svgStop;
+      stop.addEventListener('click', function(ev) {
+        head.stopSpeaking();
+        if (aiController) {
+          aiController.abort();
+          aiController = null;
+        }
+      });
+      toolbar.appendChild(stop);
+    }
+
+    pEl.appendChild(toolbar);
+  }
+  return { contentEl: content, toolbarEl: toolbar };
+}
 
 // Add new message to UI
 function addMessage(user = false) {
   const session = user ? d3.select(".message.user-message") : d3.select(".message.system-message");
   const message = session.append("div");
-  // const container = user ? d3.select("#user-messages") : d3.select("#system-messages");
-  // const message = container.append("div")
-  //   classed("message", true)
-  //   .classed(user ? "user-message" : "system-message", true);
 
   message.classed("message", true)
-    .classed("user",user)
-    .classed("blink",!user);
+    .classed("user", user)
+    .classed("blink", !user);
 
-  // Add selection 「选中消息框」
-  // const toolbarLeft = message.append("div");
-  // toolbarLeft.classed("toolbar-left", true);
-  // toolbarLeft.append("div")
-  //   .classed("command",true)
-  //   .classed("select", true )
-  //   .on('click', function(ev) {
-  //     let e = d3.select(this);
-  //     let mode = !e.classed("selected");
-  //     e.classed("selected", mode );
-  //     d3.select(this.parentNode.parentNode).classed("grayed", mode );
-  //   })
-  //   .html(svgSelect);
-  // // toolbar-right / toolbar-left => 左右侧的小按钮
-  if ( user ) {
-    // 「添加用户输入的消息」
-    const toolbarRight = message.append("div");
-    toolbarRight.classed("toolbar-right", true);
-    toolbarRight.append("div")
-      .classed("command", true)
-      .on('click', function(ev) {
-        let n = this.parentNode.parentNode;
-        const text = d3.select(n).attr('data-input');
-        while(n) {
-          // 用了重新处理消息的按钮以后会调用这里
-          let e = d3.select(n);
-          e.classed("grayed",true);
-          e.select(".select").classed("selected", true );
-          n = n.nextSibling;
-        }
-        let node = d3.select("#input").property("value",text).dispatch("change").node();
-        node.scrollTop = node.scrollHeight;
-        node.focus();
-      })
-      .html(svgRepost);
+  // 创建一个 <p> 段落作为消息第一行（后续 addText 会往这个 <p> 的 .message-content 写入）
+  const p = message.node().appendChild(document.createElement('p'));
+  // 初始化 data-markdown 为空（和你后面 addText 的使用保持一致）
+  p.dataset.markdown = '';
 
-  } else {
-    // system message
-    const toolbarRight = message.append("div");
-    toolbarRight.classed("toolbar-right", true);
-    toolbarRight.append("div")
-      .classed("command", true)
-      .on('click', function(ev) {
-        const e = d3.select(this.parentNode.parentNode);
-        let text = e.attr("data-output");
-        if ( text && text.length ) {
-          if ( cfg('voice-type') === 'eleven' ) {
-            elevenSpeak( text + " " );
-            elevenSpeak( "" );
-          } else if ( cfg('voice-type') === 'microsoft' ) {
-            microsoftSpeak( text );
-            microsoftSpeak( null );
-          } else {
-            head.speakText( text, {
-              lipsyncLang: cfg('voice-lipsync-lang'),
-              ttsVoice: cfg('voice-google-id'),
-              ttsRate: cfg('voice-google-rate'),
-              ttsPitch: cfg('voice-google-pitch')
-            } );
-          }
-        }
-      })
-      .html(svgSpeak);
+  // 把段落的结构建立好（会迁移任何已有 innerHTML 到 .message-content，并创建 toolbar）
+  ensureParagraphStructure(p, user);
 
-    toolbarRight.append("div")
-      .classed("command", true)
-      .on('click', function(ev) {
-        head.stopSpeaking();
-        // Abort the fetch request by calling abort() on the AbortController instance
-        if (aiController) {
-          aiController.abort();
-          aiController = null;
-        }
-      })
-      .html(svgStop);
-  }
-
-  message.append('p');
-
+  // scroll 保持不变
   const nodeSessions = user ? d3.select("#user-messages").node() : d3.select("#system-messages").node();
   nodeSessions.scrollTop = nodeSessions.scrollHeight;
 
+  // 返回 message.node() 保持不变（外部代码可以继续使用）
   return message.node();
 }
 
 // Add text to session
-function addText(node,s) { // s是新的词（prepocess已经分词过的）
-  const nodeSessions = node.className === "user-messages" ? d3.select("#system-messages").node() : d3.select("#user-messsages").node;
-  const onbottom = Math.abs( nodeSessions.scrollHeight - nodeSessions.scrollTop - nodeSessions.clientHeight) < 20;
+function addText(node, s) { // s 是新的词（preprocess 已分词过）
+  // 修正可能的拼写，确保获取正确的 scroll 容器
+  const nodeSessions = node.className === "user-messages" ? d3.select("#user-messages").node() : d3.select("#system-messages").node();
+  const onbottom = Math.abs(nodeSessions.scrollHeight - nodeSessions.scrollTop - nodeSessions.clientHeight) < 20;
+
   let last = node.lastElementChild;
+  if (!last) {
+    // 如果没有 p，就创建一个（防御）
+    last = node.appendChild(document.createElement('p'));
+    last.dataset.markdown = '';
+    ensureParagraphStructure(last, /* isUserMessage? */ true); // 这里传参你可依据上下文决定 true/false
+  } else {
+    // 确保结构存在（防御）
+    ensureParagraphStructure(last, /* isUserMessage? */ true);
+  }
+
+  // 继续保持原有的 markdown 拼接逻辑
   let markdown = (last.dataset.markdown || '') + s;
   let ndx = markdown.lastIndexOf('\n\n');
-  if ( ndx === -1 ) {
-    // Add to the existing paragraph
-    last.innerHTML = dompurify.sanitize(marked.parseInline( markdown, markedOptions ));
+
+  // 只更新 .message-content，不 touch p.innerHTML
+  const contentEl = last.querySelector('.message-content');
+  // helper: 把 caret 类只保留在当前 content 上（且移除同一容器内其他 .message-content 的 caret）
+  function activateCaretOn(contentEl) {
+    if (!contentEl) return;
+    // 在同一消息容器 node 内移除其它 caret（防止多个段落都显示光标）
+    const other = node.querySelectorAll('.message-content.caret');
+    other.forEach(function(el) {
+      if (el !== contentEl) el.classList.remove('caret');
+    });
+    contentEl.classList.add('caret');
+  }
+
+  if (ndx === -1) {
+    contentEl.innerHTML = dompurify.sanitize(marked.parseInline(markdown, markedOptions));
+    activateCaretOn(contentEl);
     last.dataset.markdown = markdown;
   } else {
     // First part into the existing paragraph
     let md = markdown.substring(0, ndx);
-    last.innerHTML = dompurify.sanitize(marked.parseInline( md, markedOptions ));
+    contentEl.innerHTML = dompurify.sanitize(marked.parseInline(md, markedOptions));
+    activateCaretOn(contentEl);
     last.dataset.markdown = md;
 
     // Last part into a new paragraph
     md = markdown.substring(ndx + 2);
-    last = node.appendChild( document.createElement('p') );
-    last.innerHTML = dompurify.sanitize(marked.parseInline( md, markedOptions ));
+    last = node.appendChild(document.createElement('p'));
     last.dataset.markdown = md;
+    // ensureParagraphStructure(last, /* isUserMessage? */ true);
+    ensureParagraphStructure(last);
+    const newContent = last.querySelector('.message-content');
+    newContent.innerHTML = dompurify.sanitize(marked.parseInline(md, markedOptions));
+    // 把 caret 放在新创建的段落上
+    activateCaretOn(newContent);
+    // last.querySelector('.message-content').innerHTML = dompurify.sanitize(marked.parseInline(md, markedOptions));
   }
-  if ( onbottom ) nodeSessions.scrollTop = nodeSessions.scrollHeight;
+
+  if (onbottom) nodeSessions.scrollTop = nodeSessions.scrollHeight;
 }
 
 // External speak
