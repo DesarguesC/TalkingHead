@@ -423,6 +423,7 @@
     margin-right: auto;
     border-bottom-left-radius: 0; /* 尾巴连接处的圆角变直角 */
   }
+  
   .system-message::after {
     content: '';
     position: absolute;
@@ -433,6 +434,7 @@
     border-bottom: 15px solid var(--system-bubble-bg);
     border-left: 15px solid transparent;
   }
+  
 
    /* 用户消息气泡 (右侧) */
   .user-message {
@@ -3148,6 +3150,8 @@ async function llamaSendMessage(node,msgs) {
                 ttsPitch: cfg('voice-google-pitch')
               }, addText.bind(null,node), exclude.excludes, Planning.string, Planning.flag );
               Planning.flag = false;
+              // 隐藏所有光标（例如消息完成后）
+              // document.querySelectorAll('.message-content.caret').forEach(el => el.classList.remove('caret'));
             }
           }
           // 在原来的WebGL逻辑中加入UE的动作控制，保持并发 | fn中无内容，以下代码不被执行
@@ -3750,7 +3754,7 @@ function addMessage(user = false) {
   // scroll 保持不变
   const nodeSessions = user ? d3.select("#user-messages").node() : d3.select("#system-messages").node();
   nodeSessions.scrollTop = nodeSessions.scrollHeight;
-
+  // document.querySelectorAll('.message-content.caret').forEach(el => el.classList.remove('caret'));
   // 返回 message.node() 保持不变（外部代码可以继续使用）
   return message.node();
 }
@@ -3812,6 +3816,7 @@ function addText(node, s) { // s 是新的词（preprocess 已分词过）
     activateCaretOn(newContent);
     // last.querySelector('.message-content').innerHTML = dompurify.sanitize(marked.parseInline(md, markedOptions));
   }
+  document.querySelectorAll('.message-content.caret').forEach(el => el.classList.remove('caret'));
 
   if (onbottom) nodeSessions.scrollTop = nodeSessions.scrollHeight;
 }
@@ -4944,6 +4949,8 @@ document.addEventListener('DOMContentLoaded', async function(e) {
 
             const nodeOutput = addMessage(false);
             llamaSendMessage(nodeOutput,m);
+            // 隐藏所有光标（例如消息完成后）
+            // document.querySelectorAll('.message-content.caret').forEach(el => el.classList.remove('caret'));
           } else if ( cfg('ai-model').startsWith("grok") ) {
             const m = openaiBuildMessage(ext_pp);
 
