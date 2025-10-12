@@ -1503,7 +1503,9 @@ class TalkingHead {
     this.objectLeftToeBase = this.armature.getObjectByName('ball_l');
     this.objectRightToeBase = this.armature.getObjectByName('ball_r');
     this.objectLeftEye = this.armature.getObjectByName('eye_l');
-    this.objectRightEye = this.armature.getObjectByName('eye_r'); 
+    // this.objectLeftEye = this.armature.getObjectByName('eye_left_geo');
+    this.objectRightEye = this.armature.getObjectByName('eye_r');
+    // this.objectRightEye = this.armature.getObjectByName('eye_right_geo'); 
     this.objectupperarm_l = this.armature.getObjectByName('upperarm_l');
     this.objectupperarm_r = this.armature.getObjectByName('upperarm_r');
     this.objectHips = this.armature.getObjectByName('pelvis');

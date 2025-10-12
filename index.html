@@ -553,11 +553,12 @@
   }
   /* 伪元素光标：显示在 .message-content 的内容末尾 */
   .message-content.caret::after {
-    content: "";
+    content: ""; /* origin: "" */
     display: inline-block;
-    width: 1px;
+    width: 6px;
     height: 1em;                 /* 跟随行高，可按需调整 */
-    vertical-align: text-bottom;
+    /* vertical-align: text-bottom; */
+    vertical-align: middle;
     margin-left: 2px;
     background-color: currentColor;
     animation: caret-blink 1s steps(1, start) infinite;
@@ -570,7 +571,9 @@
 
   /* 可选：当内容是空时，让光标高度更贴合占位高度 */
   .message-content.caret:empty::after {
+    width: 6px;
     height: 1em;
+    vertical-align: middle;
     display: inline-block;
   }
 
@@ -592,9 +595,10 @@
   /* 光标样式（可改颜色/粗细/高度） */
   .inline-caret {
     display: inline-block;
-    width: 1px;
+    width: 6px;
     height: 1em;                     /* 高度跟随文本行高 */
-    vertical-align: text-bottom;
+    /* vertical-align: text-bottom; */
+    vertical-align: middle;
     background-color: currentColor;  /* 与文字颜色一致 */
     margin-left: 2px;
     animation: caret-blink 1s steps(1, start) infinite;
@@ -744,6 +748,7 @@
     position: absolute; margin: 0 0 0 .25rem; padding:0; vertical-align: baseline;
     white-space: nowrap; width: 0; overflow: visible;
   }
+  /* 现在使用message-content.caret重写了 */
 
 
   /* Fonts */
@@ -3150,8 +3155,6 @@ async function llamaSendMessage(node,msgs) {
                 ttsPitch: cfg('voice-google-pitch')
               }, addText.bind(null,node), exclude.excludes, Planning.string, Planning.flag );
               Planning.flag = false;
-              // 隐藏所有光标（例如消息完成后）
-              // document.querySelectorAll('.message-content.caret').forEach(el => el.classList.remove('caret'));
             }
           }
           // 在原来的WebGL逻辑中加入UE的动作控制，保持并发 | fn中无内容，以下代码不被执行
@@ -3289,7 +3292,7 @@ async function llamaSendMessage(node,msgs) {
 
     // When this marker has been reached, stop blinking
     head.speakMarker( () => {
-      d3.selectAll('.blink').classed("blink",false);
+      document.querySelectorAll('.message-content.caret').forEach(el => el.classList.remove('caret'));
     });
   }
 }
@@ -3659,6 +3662,7 @@ function ensureParagraphStructure(pEl, isUserMessage) {
   }
 
   // caret：确保存在（但不要把它放在 p 外面）
+
   if (!content.querySelector('.inline-caret')) {
     const caret = document.createElement('span');
     caret.className = 'inline-caret';
@@ -3688,6 +3692,7 @@ function ensureParagraphStructure(pEl, isUserMessage) {
         let node = d3.select("#input").property("value", text).dispatch("change").node();
         node.scrollTop = node.scrollHeight;
         node.focus();
+        document.querySelectorAll('.message-content.caret').forEach(el => el.classList.remove('caret'));
       });
       toolbar.appendChild(repost);
     } else {
@@ -3725,6 +3730,9 @@ function ensureParagraphStructure(pEl, isUserMessage) {
           aiController.abort();
           aiController = null;
         }
+        // .inline-caret
+        document.querySelectorAll('.inline-caret').forEach(el => el.classList.remove('inline-caret'));
+        document.querySelectorAll('.message-content.caret').forEach(el => el.classList.remove('caret'));
       });
       toolbar.appendChild(stop);
     }
@@ -3740,8 +3748,8 @@ function addMessage(user = false) {
   const message = session.append("div");
 
   message.classed("message", true)
-    .classed("user", user)
-    .classed("blink", !user);
+    .classed("user", user);
+    // .classed("blink", !user);
 
   // 创建一个 <p> 段落作为消息第一行（后续 addText 会往这个 <p> 的 .message-content 写入）
   const p = message.node().appendChild(document.createElement('p'));
@@ -3754,7 +3762,7 @@ function addMessage(user = false) {
   // scroll 保持不变
   const nodeSessions = user ? d3.select("#user-messages").node() : d3.select("#system-messages").node();
   nodeSessions.scrollTop = nodeSessions.scrollHeight;
-  // document.querySelectorAll('.message-content.caret').forEach(el => el.classList.remove('caret'));
+  document.querySelectorAll('.message-content.caret').forEach(el => el.classList.remove('caret')); // user端取消闪烁
   // 返回 message.node() 保持不变（外部代码可以继续使用）
   return message.node();
 }
@@ -3816,7 +3824,6 @@ function addText(node, s) { // s 是新的词（preprocess 已分词过）
     activateCaretOn(newContent);
     // last.querySelector('.message-content').innerHTML = dompurify.sanitize(marked.parseInline(md, markedOptions));
   }
-  document.querySelectorAll('.message-content.caret').forEach(el => el.classList.remove('caret'));
 
   if (onbottom) nodeSessions.scrollTop = nodeSessions.scrollHeight;
 }
@@ -4708,7 +4715,6 @@ async function scriptRun() {
 
     }
   }
-
   // Close connection
   if ( node ) {
     if ( elevenSocket ) {
@@ -4945,12 +4951,12 @@ document.addEventListener('DOMContentLoaded', async function(e) {
             const nodeInput = addMessage(true);
             nodeInput.dataset.input = text;
             addText(nodeInput,text);
+            document.querySelectorAll('.message.user').forEach(el => el.classList.remove('caret'));
+            // TODO: 改成选中user session栏的对象
             e.property("value","");
 
             const nodeOutput = addMessage(false);
             llamaSendMessage(nodeOutput,m);
-            // 隐藏所有光标（例如消息完成后）
-            // document.querySelectorAll('.message-content.caret').forEach(el => el.classList.remove('caret'));
           } else if ( cfg('ai-model').startsWith("grok") ) {
             const m = openaiBuildMessage(ext_pp);
 
@@ -4961,8 +4967,8 @@ document.addEventListener('DOMContentLoaded', async function(e) {
 
             const nodeOutput = addMessage(false);
             grokSendMessage(nodeOutput,m);
-          }}
-
+          }
+        }
       }
     }
   });
