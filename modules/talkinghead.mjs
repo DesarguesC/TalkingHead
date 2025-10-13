@@ -1447,48 +1447,43 @@ class TalkingHead {
 
 
     // 展示坐标轴
-        function makeLabel(text, color) {
-          const canvas = document.createElement('canvas');
-          const context = canvas.getContext('2d');
-          context.font = '50px Arial';
-          context.fillStyle = color;
-          context.fillText(text, 10, 50);
-          
-          const texture = new THREE.CanvasTexture(canvas);
-          const material = new THREE.SpriteMaterial({ map: texture, transparent: true });
-          const sprite = new THREE.Sprite(material);
-          sprite.scale.set(0.5, 0.25, 1); // 控制大小
-          return sprite;
-        }
-
-        const axesHelper = new THREE.AxesHelper(5);
-        this.scene.add(axesHelper);
-
-        // X 轴标签
-        const xLabel = makeLabel('X', 'red');
-        xLabel.position.set(5.5, 0, 0);
-        this.scene.add(xLabel);
-
-        // Y 轴标签
-        const yLabel = makeLabel('Y', 'green');
-        yLabel.position.set(0, 5.5, 0);
-        this.scene.add(yLabel);
-
-        // Z 轴标签
-        const zLabel = makeLabel('Z', 'blue');
-        zLabel.position.set(0, 0, 5.5);
-        this.scene.add(zLabel);
-
-        const gridHelper = new THREE.GridHelper(10, 10); // 网格大小 10，分 10 格
-        this.scene.add(gridHelper);
+    function makeLabel(text, color) {
+      const canvas = document.createElement('canvas');
+      const context = canvas.getContext('2d');
+      context.font = '50px Arial';
+      context.fillStyle = color;
+      context.fillText(text, 10, 50);
+      
+      const texture = new THREE.CanvasTexture(canvas);
+      const material = new THREE.SpriteMaterial({ map: texture, transparent: true });
+      const sprite = new THREE.Sprite(material);
+      sprite.scale.set(0.5, 0.25, 1); // 控制大小
+      return sprite;
+    }
+    const axesHelper = new THREE.AxesHelper(5);
+    this.scene.add(axesHelper);
+    // X 轴标签
+    const xLabel = makeLabel('X', 'red');
+    xLabel.position.set(5.5, 0, 0);
+    this.scene.add(xLabel);
+    // Y 轴标签
+    const yLabel = makeLabel('Y', 'green');
+    yLabel.position.set(0, 5.5, 0);
+    this.scene.add(yLabel);
+    // Z 轴标签
+    const zLabel = makeLabel('Z', 'blue');
+    zLabel.position.set(0, 0, 5.5);
+    this.scene.add(zLabel);
+    const gridHelper = new THREE.GridHelper(10, 10); // 网格大小 10，分 10 格
+    this.scene.add(gridHelper);
     // 展示坐标轴
+
 
     // Add lights
     this.scene.add( this.lightAmbient );
     this.scene.add( this.lightDirect );
     this.scene.add( this.lightSpot );
     this.lightSpot.target = this.armature.getObjectByName('Head');
-
     // Setup Dynamic Bones
     if ( avatar.hasOwnProperty("modelDynamicBones") ) {
       try {
@@ -1519,6 +1514,11 @@ class TalkingHead {
 
     // Set pose, view and start animation
     if ( !this.viewName ) this.setView( this.opt.cameraView );
+    // this.installNonlinearAngleLimit(this.controls, this.camera, {
+    //   azimuth: { thresholdDeg: 30, limitDeg: 45, softnessDeg: 5 },
+    //   polar:   { thresholdDeg: 15, limitDeg: 75, softnessDeg: 5 },
+    //   smoothing: 0.15
+    // });
     this.setMood( this.avatar.avatarMood || this.moodName || this.opt.avatarMood );
     this.start();
 
@@ -1546,6 +1546,7 @@ class TalkingHead {
   * @param {Object} [opt=null] Options
   */
   setView(view, opt = null) {
+
     if ( view !== 'full' && view !== 'upper' && view !== 'head' && view !== 'mid' ) return;
     if ( !this.armature ) {
       this.opt.cameraView = view;
@@ -1554,6 +1555,15 @@ class TalkingHead {
 
     this.viewName = view || this.viewName;
     opt = opt || {};
+
+    if (opt.hasOwnProperty("cameraY") && opt.hasOwnProperty("cameraX")) {
+      opt.cameraZ -= 2.0;
+      // opt.cameraX += 0.3;
+      // opt.cameraX -= 100;
+    }
+    if (opt.hasOwnProperty("cameraDistance")) {
+      opt.cameraDistance += 6.;
+    }
 
     const fov = this.camera.fov * ( Math.PI / 180 );
     let x = - (opt.cameraX || this.opt.cameraX) * Math.tan( fov / 2 );
@@ -1582,18 +1592,15 @@ class TalkingHead {
 
     x = x * z;
 
+    
     this.controlsEnd = new THREE.Vector3(x, y, 0);
+    
     if (opt.hasOwnProperty("cameraRotateX") && opt.hasOwnProperty("cameraRotateY")) {
-      // opt.cameraRotateY += 1.8 // valid
+      opt.cameraRotateX -= Math.PI / 8;
+      opt.cameraRotateY -= Math.PI / 8; // valid
       // opt.cameraRotateY -= Math.PI / 2;
     }
-    // if (opt.hasOwnProperty("cameraDistance")) {
-    //   opt.cameraDistance += 100;
-    // }
-    // if (opt.hasOwnProperty("cameraY") && opt.hasOwnProperty("cameraX")) {
-    //   opt.cameraY -= 150;
-    //   // opt.cameraX -= 100;
-    // }
+    
     this.cameraEnd = new THREE.Vector3(x, y, z).applyEuler( new THREE.Euler( (opt.cameraRotateX || opt.cameraRotateX), (opt.cameraRotateY || this.opt.cameraRotateY), 0 ) );
 
     if ( this.cameraClock === null ) {
@@ -1604,6 +1611,71 @@ class TalkingHead {
     this.cameraStart = this.camera.position.clone();
     this.cameraClock = 0;
 
+  }
+
+
+  installNonlinearAngleLimit(controls, camera, options = {}) {
+
+    const params = Object.assign({
+      azimuth: { thresholdDeg: 30, limitDeg: 45, softnessDeg: 6 },
+      polar:   { thresholdDeg: 10, limitDeg: 80, softnessDeg: 6 },
+      smoothing: 0.18
+    }, options);
+
+    function degToRad(d){ return d * Math.PI / 180; }
+    function sign(x){ return x < 0 ? -1 : 1; }
+
+    function compressTowardLimit(value, threshold, limit, softness){
+      const a = Math.abs(value);
+      if (a <= threshold) return value;
+      const excess = a - threshold;
+      const mappedExcess = (limit - threshold) * (1 - Math.exp(-excess / (softness || 0.001)));
+      return sign(value) * (threshold + mappedExcess);
+    }
+
+    const spherical = new THREE.Spherical();
+    const tmpVec = new THREE.Vector3();
+    let applyingProgrammatic = false;
+
+    controls.addEventListener('change', () => {
+      if (applyingProgrammatic) return;
+
+      tmpVec.copy(camera.position).sub(controls.target);
+      spherical.setFromVector3(tmpVec);
+
+      let theta = spherical.theta;
+      let phi = spherical.phi;
+
+      const az = params.azimuth;
+      const pol = params.polar;
+
+      const thresholdTheta = degToRad(az.thresholdDeg);
+      const limitTheta     = degToRad(az.limitDeg);
+      const softnessTheta  = degToRad(az.softnessDeg);
+
+      const thresholdPhi = degToRad(pol.thresholdDeg);
+      const limitPhi     = degToRad(pol.limitDeg);
+      const softnessPhi  = degToRad(pol.softnessDeg);
+
+      const centeredPhi = phi - Math.PI / 2;
+
+      const mappedTheta = compressTowardLimit(theta, thresholdTheta, limitTheta, softnessTheta);
+      const mappedCenteredPhi = compressTowardLimit(centeredPhi, thresholdPhi, limitPhi, softnessPhi);
+      const mappedPhi = mappedCenteredPhi + Math.PI / 2;
+
+      const s = params.smoothing;
+      const newTheta = THREE.MathUtils.lerp(theta, mappedTheta, s);
+      const newPhi   = THREE.MathUtils.lerp(phi,   mappedPhi,   s);
+
+      const newSpherical = new THREE.Spherical(spherical.radius, newPhi, newTheta);
+      const newPos = new THREE.Vector3().setFromSpherical(newSpherical).add(controls.target);
+
+      applyingProgrammatic = true;
+      camera.position.copy(newPos);
+      camera.lookAt(controls.target);
+      controls.update();
+      applyingProgrammatic = false;
+    });
   }
 
   /**
