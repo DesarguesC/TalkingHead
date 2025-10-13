@@ -15,7 +15,7 @@ def receive_log():
         data = request.json
         
         # 验证必需字段
-        required_fields = ['ukey', 'user_ip', 'time', 'type', 'content', 'status']
+        required_fields = ['ukey', 'user_ip', 'time', 'type', 'content', 'status', 'conv_id']
         for field in required_fields:
             if field not in data:
                 return jsonify({

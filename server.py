@@ -44,7 +44,7 @@ def get_or_create_session_id():
 
 def get_conversation_id(session_id: str = None):
     if not hasattr(request, 'conv_id'):
-        request.conv_id = request.cookies.get("conv_id", "")
+        request.conv_id = request.cookies.get("conv_id", "?")
     return request.conv_id
     # return request.get('conv_id', request.get("conv_id", request.cookies.get("conv_id", "")))
 
@@ -420,9 +420,9 @@ def setup_logging():
 
 
 # 直接写入数据库
-def log_ukey_access(ukey, user_ip, operation_time, operation_type, operation_content, operation_status):
+def log_ukey_access(ukey, user_ip, operation_time, operation_type, operation_content, operation_status, conv_id):
     """记录ukey访问日志到文件和数据库"""
-    
+    # conv_id = get_conversation_id()
     # 格式化日志信息 | TODO: 替换key为数据库中的字段
     log_data = {
         "ukey": ukey,
@@ -430,7 +430,8 @@ def log_ukey_access(ukey, user_ip, operation_time, operation_type, operation_con
         "time": operation_time,
         "type": operation_type,
         "content": operation_content,
-        "status": operation_status
+        "status": operation_status,
+        "conv_id": conv_id
     }
     # {
     #     "用户身份": ukey,                   # 用户身份 - ukey
@@ -439,10 +440,11 @@ def log_ukey_access(ukey, user_ip, operation_time, operation_type, operation_con
     #     '操作类型': operation_kind,         # 操作类型: {对话}
     #     '操作内容': operation_content,      # 操作内容: {提问内容}
     #     '操作结果': operation_status,       # 操作结果: {成功 / 失败}
+    #     '对话编号': conv_id,                # 对话编号: {conv_id}
     # }
     
     # 1. 写入本地日志文件
-    log_message = f"[ operation_time ] ukey_access | ukey: {ukey} | user_ip: {user_ip} | 操作类型: {operation_type} | 操作内容: {operation_content} | 操作结果: {operation_status}"  # DEBUG
+    log_message = f"[ operation_time ] ukey_access | ukey: {ukey} | user_ip: {user_ip} | 操作类型: {operation_type} | 操作内容: {operation_content} | 操作结果: {operation_status} | 对话编号: {conv_id}"  # DEBUG
     print(f'LOG: {log_message}')
     app.logger.info(log_message)
     
@@ -461,7 +463,7 @@ def log_ukey_access(ukey, user_ip, operation_time, operation_type, operation_con
         if response.status_code == 200:
             app.logger.info(f"数据库写入成功 - ukey:{ukey}")
         else:
-            app.logger.error(f"数据库写入失败 - 状态码:{response.status_code} | ukey:{ukey}")
+            app.logger.error(f"数据库写入失败 - 状态码:{response.status_code} | log_data: {log_data}")
             
     except requests.exceptions.RequestException as e:
         app.logger.error(f"数据库请求异常 - ukey:{ukey} - 错误:{str(e)}")
@@ -471,7 +473,7 @@ def log_ukey_access(ukey, user_ip, operation_time, operation_type, operation_con
 @app.route('/')
 def serve_index():
     ukey, user_ip, current_time = get_log_string()
-    log_ukey_access(ukey, user_ip, current_time, TYPE_MAP['login'], "", STATUS_MAP['success'])
+    log_ukey_access(ukey, user_ip, current_time, TYPE_MAP['login'], "", STATUS_MAP['success'], request.cookies.get("conv_id", "?"))
     return send_from_directory('.', 'index.html')
 
 # 服务其他静态文件（js, css, images 等）
@@ -501,7 +503,7 @@ def ukey_access_handler():
     current_time = datetime.now().strftime("%y-%m-%d %H-%M-%S")
     
     # 记录日志
-    log_ukey_access(ukey, user_ip, current_time, TYPE_MAP['login'], "", STATUS_MAP['success'])
+    log_ukey_access(ukey, user_ip, current_time, TYPE_MAP['login'], "", STATUS_MAP['success'], request.cookies.get("conv_id", "?"))
     return send_from_directory('.', 'index.html')
     
     # # 返回成功响应
@@ -639,12 +641,12 @@ body [original]
 def yuexiaoyin_chat():
     # 请求结构转换
     ukey, user_ip, current_time = get_log_string()
-    
     query = request.json.get('messages', [{"content": ""}])[-1].get("content", "你好") # 只需要当前提问；单轮对话，无上下文
     session_id = get_or_create_session_id() # 此时必有id，直接获取
     conv_id = request.conv_id if hasattr(request, 'conv_id') else request.cookies.get("conv_id", "")
     request.conv_id  = conv_id
     # 获取上下文ID，可能为空（""），如果已经返回过，js中会放在cookies里
+    logger.info(f"所有cookies: {request.cookies}") # DEBUG
     logger.info(f"Extracted query: {query}") # DEBUG
     new_request = jsonify({
         "inputs": {}, 
@@ -680,7 +682,7 @@ def yuexiaoyin_chat():
         
         # 记录响应信息
         logger.info(f"Response status code: {response.status_code}")
-        log_ukey_access(ukey, user_ip, current_time, TYPE_MAP['query'], query, STATUS_MAP['success'])
+        log_ukey_access(ukey, user_ip, current_time, TYPE_MAP['query'], query, STATUS_MAP['success'], request.cookies.get("conv_id", "?"))
 
         
         # 如果是流式请求，直接流式返回响应
@@ -701,7 +703,7 @@ def yuexiaoyin_chat():
         error_msg = f"Connection error: Could not connect to {LLAMA_SERVER}"
         logger.error(error_msg)
         logger.error(str(e))
-        log_ukey_access(ukey, user_ip, current_time, TYPE_MAP['query'], query, STATUS_MAP['failed'] + f' | 错误信息 [{error_msg}]')
+        log_ukey_access(ukey, user_ip, current_time, TYPE_MAP['query'], query, STATUS_MAP['failed'] + f' | 错误信息 [{error_msg}]', request.cookies.get("conv_id", "?"))
         return jsonify({
             "error": "Connection Error",
             "detail": error_msg,
@@ -711,7 +713,7 @@ def yuexiaoyin_chat():
     except requests.exceptions.RequestException as e:
         error_msg = f"Request failed: {str(e)}"
         logger.error(error_msg)
-        log_ukey_access(ukey, user_ip, current_time, TYPE_MAP['query'], query, STATUS_MAP['failed'] + f' | 错误信息 [{error_msg}]')
+        log_ukey_access(ukey, user_ip, current_time, TYPE_MAP['query'], query, STATUS_MAP['failed'] + f' | 错误信息 [{error_msg}]', request.cookies.get("conv_id", "?"))
         return jsonify({
             "error": "Request Failed",
             "detail": error_msg,
@@ -719,7 +721,7 @@ def yuexiaoyin_chat():
         }), 500
         
     except Exception as e:
-        log_ukey_access(ukey, user_ip, current_time, TYPE_MAP['query'], query, STATUS_MAP['failed'] + f' | 错误信息 [{error_msg}]')
+        log_ukey_access(ukey, user_ip, current_time, TYPE_MAP['query'], query, STATUS_MAP['failed'] + f' | 错误信息 [{error_msg}]', request.cookies.get("conv_id", "?"))
         error_msg = f"Unexpected error: {str(e)}"
         logger.error(error_msg)
         return jsonify({

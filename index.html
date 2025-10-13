@@ -3035,7 +3035,7 @@ async function llamaSendMessage(node,msgs) {
         "Authorization": "Bearer " + await jwtGet() // TODO: apikey
       },
       body: JSON.stringify(body),
-      credentials: "include",
+      credentials: 'same-origin',
       signal, 
     });
 
@@ -3073,7 +3073,7 @@ async function llamaSendMessage(node,msgs) {
         if ( value ) {
           decoder.decode(value).split('\n').forEach( data => {
             if ( conv_id != '' ) {
-              d3.cookies = "conv_id=" + conv_id + "; path=" + PROXY;
+              document.cookie = "conv_id=" + conv_id + "; path=/";
             }
             if ( data.startsWith("data: ") ) { // TODO: 这个字段也要改
               let line = data.substring(6).trim(); // buffer
