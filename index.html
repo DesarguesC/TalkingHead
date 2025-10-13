@@ -2988,8 +2988,8 @@ async function grokSendMessage(node,msgs) {
 // TODO: 加入动作option，仿照openaiSendMessage
 async function llamaSendMessage(node,msgs) {
 
-  // const PROXY = Yue_Xiaoyin_ChatCompletionsProxy;
-  const PROXY = llamaChatCompletionsProxy; // 部署时替换为Yue_Xiaoyin_ChatCompletionsProxy
+  const PROXY = Yue_Xiaoyin_ChatCompletionsProxy;
+  // const PROXY = llamaChatCompletionsProxy; // 部署时替换为Yue_Xiaoyin_ChatCompletionsProxy
 
   // Create a new AbortController instance
   aiController = new AbortController();
@@ -3073,7 +3073,7 @@ async function llamaSendMessage(node,msgs) {
         if ( value ) {
           decoder.decode(value).split('\n').forEach( data => {
             if ( conv_id != '' ) {
-              document.cookies = "conv_id=" + conv_id + "; path=" + PROXY;
+              d3.cookies = "conv_id=" + conv_id + "; path=" + PROXY;
             }
             if ( data.startsWith("data: ") ) { // TODO: 这个字段也要改
               let line = data.substring(6).trim(); // buffer
