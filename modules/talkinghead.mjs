@@ -3740,7 +3740,8 @@ class TalkingHead {
               .replaceAll('>','&gt;')
               .replaceAll('"','&quot;')
               .replaceAll('\'','&apos;')
-              .replace(/^\p{Dash_Punctuation}$/ug,'<break time="400ms"/>');
+              .replace(/^\p{Dash_Punctuation}$/ug,'<break time="400ms"/>')
+              .replace(/\p{P}/gu, '').replace(/\s+/g, ''); // 合成子串的语音时，去除空格和标点符号
               // 750ms -> 400ms
 
           });
