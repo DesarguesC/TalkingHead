@@ -1519,6 +1519,10 @@ class TalkingHead {
     //   polar:   { thresholdDeg: 15, limitDeg: 75, softnessDeg: 5 },
     //   smoothing: 0.15
     // });
+    /*
+      希望在用户交互时做额外限制和约束，当用户拉动webgl展示的三维人物形象超过一定范围后，
+      希望做限制（例如对拉动角度超过临界值30度后，鼠标拉动的幅度的真实值会被压缩并趋近于45度，当然也只是一个例子）
+    */
     this.setMood( this.avatar.avatarMood || this.moodName || this.opt.avatarMood );
     this.start();
 
