@@ -446,7 +446,7 @@ class TalkingHead {
     });
     this.posePropNames = [...names];
 
-    this.useEyeContace = true; // wheather to use eye contact or not 「应该直接可以了」
+    // this.useEyeContact = true; // wheather to use eye contact or not 「应该直接可以了」
     this.GLBmotion = true;
     this.GLBdefaultPose = './animations/U_Idle_01_Short04_Cycle_test.glb';
     this.GLBmotionList = []; // store GLB default animations as this.GLBmotion set to TRUE;
@@ -627,7 +627,7 @@ class TalkingHead {
       '😄': { dt: [300,2000], rescale: [0,1], vs: { browInnerUp: [0.3], eyeSquintLeft: [1], eyeSquintRight: [1], jawOpen: [0.2], MouthDimpleLeft: [0.2], MouthDimpleRight: [0.2], mouthOpen: [0.3], MouthPressLeft: [0.3], MouthPressRight: [0.3], MouthRollLower: [0.4], mouthShrugUpper: [0.4], mouthSmile: [0.7], mouthUpperUpLeft: [0.3], mouthUpperUpRight: [0.3], NoseSneerLeft: [0.4], NoseSneerRight: [0.4] } },
       '😁': { dt: [300,2000], rescale: [0,1], vs: { browInnerUp: [0.3], eyeSquintLeft: [1], eyeSquintRight: [1], jawOpen: [0.3], MouthDimpleLeft: [0.2], MouthDimpleRight: [0.2], MouthPressLeft: [0.5], MouthPressRight: [0.5], mouthShrugUpper: [0.4], mouthSmile: [0.7], mouthUpperUpLeft: [0.3], mouthUpperUpRight: [0.3], NoseSneerLeft: [0.4], NoseSneerRight: [0.4] } },
       '😆': { dt: [300,2000], rescale: [0,1], vs: { browInnerUp: [0.3], eyeSquintLeft: [1], eyeSquintRight: [1], eyesClosed: [0.6], jawOpen: [0.3], MouthDimpleLeft: [0.2], MouthDimpleRight: [0.2], MouthPressLeft: [0.5], MouthPressRight: [0.5], mouthShrugUpper: [0.4], mouthSmile: [0.7], mouthUpperUpLeft: [0.3], mouthUpperUpRight: [0.3], NoseSneerLeft: [0.4], NoseSneerRight: [0.4] } },
-      '😝': { dt: [300,100,1500,500,500], rescale: [0,0,1,0,0], vs: { browInnerUp: [0.8], eyesClosed: [1], jawOpen: [0.7], mouthFunnel: [0.5], mouthSmile: [1], tongueOut: [0,1,1,0] } },
+      '😝': { dt: [300,100,1500,500,500], rescale: [0,0,1,0,0], vs: { browInnerUp: [0.8], eyesClosed: [1], jawOpen: [0.7], mouthFunnel: [0.5], mouthSmile: [1] } },
       '😋': { link:  '😝' }, '😛': { link:  '😝' }, '😛': { link:  '😝' }, '😜': { link:  '😝' }, '🤪': { link:  '😝' },
       '😂': { dt: [300,2000], rescale: [0,1], vs: { browInnerUp: [0.3], eyeSquintLeft: [1], eyeSquintRight: [1], eyesClosed: [0.6], jawOpen: [0.3], MouthDimpleLeft: [0.2], MouthDimpleRight: [0.2], MouthPressLeft: [0.5], MouthPressRight: [0.5], mouthShrugUpper: [0.4], mouthSmile: [0.7], mouthUpperUpLeft: [0.3], mouthUpperUpRight: [0.3], NoseSneerLeft: [0.4], NoseSneerRight: [0.4] } },
       '🤣': { link:  '😂' }, '😅': { link:  '😂' },
@@ -1317,7 +1317,7 @@ class TalkingHead {
     // Morph target keys and values
     const keys = new Set(this.mtCustoms);
     this.morphs.forEach( x => {
-      Object.keys(x.morphTargetDictionary).forEach( y => keys.add(y) );
+      Object.keys(x.morphTargetDictionary).forEach( y => { if (y!="TongueOut") keys.add(y)} );
     });
 
     // Add RPM extra blend shapes, if missing
@@ -1367,6 +1367,9 @@ class TalkingHead {
 
     });
     this.mtAvatar = mtTemp;
+    // if (this.mtAvatar.hasOwnProperty('TongueOut')) {
+    //   delete this.mtAvatar.TongueOut;
+    // }
 
     // Objects for needed properties
     this.poseAvatar = { props: {} };
@@ -1523,7 +1526,7 @@ class TalkingHead {
       希望在用户交互时做额外限制和约束，当用户拉动webgl展示的三维人物形象超过一定范围后，
       希望做限制（例如对拉动角度超过临界值30度后，鼠标拉动的幅度的真实值会被压缩并趋近于45度，当然也只是一个例子）
     */
-    this.setMood( this.avatar.avatarMood || this.moodName || this.opt.avatarMood );
+    // this.setMood( this.avatar.avatarMood || this.moodName || this.opt.avatarMood );
     this.start();
 
   }
@@ -2892,7 +2895,7 @@ class TalkingHead {
             m.needsUpdate = true;
           // TODO ***: candidate value of `mt` ?
           } else if ( mt === 'eyeContact' && vs[j] !== null && isEyeContact !== false ) {
-            isEyeContact = Boolean(vs[j]) && this.useEyeContace;
+            isEyeContact = Boolean(vs[j]) ;
           } else if ( mt === 'headMove' && vs[j] !== null && isHeadMove !== false ) {
             if ( vs[j] === 0 ) {
               isHeadMove = false;
@@ -3994,7 +3997,7 @@ class TalkingHead {
   * @param {number} t Time in milliseconds
   */
   lookAhead(t) {
-    // return;
+    return;
 
 
     if ( t ) {
@@ -4035,6 +4038,7 @@ class TalkingHead {
   * @param {number} t Time in milliseconds
   */
   lookAtCamera(t) {
+    return;
     if ( this.avatar.hasOwnProperty('avatarIgnoreCamera') ) {
       if ( this.avatar.avatarIgnoreCamera ) {
         this.lookAhead(t);
