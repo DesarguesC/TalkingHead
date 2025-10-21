@@ -1121,30 +1121,22 @@ class TalkingHead {
 
     // Dynamic Bones
     this.dynamicbones = new DynamicBones();
+
+    this.angleLimiterEnabled = false;
+    this.initialCameraPos = new THREE.Vector3();
+    this.initialLookAt = new THREE.Vector3();
+    this.initialCameraQuaternion = new THREE.Quaternion();
     
-    this.angleLimiterEnabled = true;
-    this.angleLimiterConfig = {
-      azimuth: { thresholdDeg: 30, limitDeg: 45, softnessDeg: 5 },
-      polar: { thresholdDeg: 15, limitDeg: 75, softnessDeg: 5 },
-      smoothing: 0.15
+    this.currentEuler = new THREE.Euler(0, 0, 0, 'YXZ'); // YXZ顺序避免万向锁
+    this.targetEuler = new THREE.Euler(0, 0, 0, 'YXZ');
+    this.baseEuler = new THREE.Euler(0, 0, 0, 'YXZ');
+    
+    this.eulerLimit = {
+      x: 60 * Math.PI / 180,  // ±60度
+      y: 60 * Math.PI / 180,  // ±60度
+      z: 60 * Math.PI / 180   // ±60度
     };
-    this.prevAzimuth = 0;
-    this.prevPolar = 0;
-    this.targetAzimuth = 0;
-    this.targetPolar = 0;
-    // this.angleLimiter = new NonlinearAngleLimiter(this.controls, this.camera, {
-    //   azimuth: { 
-    //     thresholdDeg: 30,    // Allow free rotation up to 30°
-    //     limitDeg: 45,        // Hard limit at 45°
-    //     softnessDeg: 5       // Compression zone between 30° and 45°
-    //   },
-    //   polar: { 
-    //     thresholdDeg: 15,
-    //     limitDeg: 75,
-    //     softnessDeg: 5
-    //   },
-    //   smoothing: 0.15        // Smoothing factor (0-1)
-    // });
+    this.eulerSmoothing = 0.15;
 
   }
 
@@ -1727,7 +1719,7 @@ class TalkingHead {
     */
     
     await this.preProcessAnimations();
-    this.enableAngleLimiter(true);
+    this.enableAngleLimiter(true, 60); // 启用角度限制器，限制为 ±60度
     // this.setMood( this.avatar.avatarMood || this.moodName || this.opt.avatarMood );
     this.start();
 
@@ -1748,6 +1740,121 @@ class TalkingHead {
   getView() {
     return this.viewName;
   }
+
+
+  // 3. 从相机位置计算欧拉角
+  calculateEulerFromCamera() {
+    // 获取相机到目标的方向
+    const direction = new THREE.Vector3()
+      .subVectors(this.controls.target, this.camera.position)
+      .normalize();
+
+    // 创建旋转矩阵并转换为欧拉角
+    const quaternion = new THREE.Quaternion();
+    const matrix = new THREE.Matrix4();
+    matrix.lookAt(this.camera.position, this.controls.target, new THREE.Vector3(0, 1, 0));
+    
+    quaternion.setFromRotationMatrix(matrix);
+    const euler = new THREE.Euler(0, 0, 0, 'YXZ');
+    euler.setFromQuaternion(quaternion);
+    
+    return euler;
+  }
+
+  // 4. 限制欧拉角在指定范围内
+  clampEulerAngles(euler) {
+    // 限制每个轴在 ±limit 范围内
+    euler.x = Math.max(-this.eulerLimit.x, Math.min(this.eulerLimit.x, euler.x));
+    euler.y = Math.max(-this.eulerLimit.y, Math.min(this.eulerLimit.y, euler.y));
+    euler.z = Math.max(-this.eulerLimit.z, Math.min(this.eulerLimit.z, euler.z));
+    
+    return euler;
+  }
+
+  // 5. 应用欧拉角限制的主函数
+  applyEulerAngleLimits() {
+    // 计算当前欧拉角
+    this.targetEuler = this.calculateEulerFromCamera();
+    
+    // 计算相对于基础欧拉角的偏移
+    const deltaX = this.targetEuler.x - this.baseEuler.x;
+    const deltaY = this.targetEuler.y - this.baseEuler.y;
+    const deltaZ = this.targetEuler.z - this.baseEuler.z;
+    
+    // 限制偏移量
+    const clampedDeltaX = Math.max(-this.eulerLimit.x, Math.min(this.eulerLimit.x, deltaX));
+    const clampedDeltaY = Math.max(-this.eulerLimit.y, Math.min(this.eulerLimit.y, deltaY));
+    const clampedDeltaZ = Math.max(-this.eulerLimit.z, Math.min(this.eulerLimit.z, deltaZ));
+    
+    // 应用平滑
+    const s = this.eulerSmoothing;
+    this.currentEuler.x += (clampedDeltaX - this.currentEuler.x) * s;
+    this.currentEuler.y += (clampedDeltaY - this.currentEuler.y) * s;
+    this.currentEuler.z += (clampedDeltaZ - this.currentEuler.z) * s;
+    
+    // 将限制后的欧拉角转换回相机位置
+    const constrainedEuler = new THREE.Euler(
+      this.baseEuler.x + this.currentEuler.x,
+      this.baseEuler.y + this.currentEuler.y,
+      this.baseEuler.z + this.currentEuler.z,
+      'YXZ'
+    );
+    
+    const quaternion = new THREE.Quaternion().setFromEuler(constrainedEuler);
+    const distance = this.camera.position.distanceTo(this.controls.target);
+    
+    // 从目标点沿着受限的方向放置相机
+    const direction = new THREE.Vector3(0, 0, distance).applyQuaternion(quaternion);
+    this.camera.position.copy(this.controls.target).add(direction);
+    this.camera.lookAt(this.controls.target);
+  }
+
+  // 6. 启用/禁用角度限制，记录初始状态
+  enableAngleLimiter(enable = true, limitDegrees = 60) {
+    this.angleLimiterEnabled = enable;
+    
+    if (enable) {
+      // 记录初始相机状态
+      this.initialCameraPos.copy(this.camera.position);
+      this.initialLookAt.copy(this.controls.target);
+      
+      // 计算并记录初始欧拉角作为基准
+      this.baseEuler = this.calculateEulerFromCamera();
+      this.currentEuler.set(0, 0, 0);
+      this.targetEuler.copy(this.baseEuler);
+      
+      // 设置限制范围
+      const limitRad = limitDegrees * Math.PI / 180;
+      this.eulerLimit.x = limitRad;
+      this.eulerLimit.y = limitRad;
+      this.eulerLimit.z = limitRad;
+      
+      console.log(`角度限制已启用: ±${limitDegrees}°`);
+    }
+  }
+
+  // 7. 更新限制配置
+  updateAngleLimiterConfig(config) {
+    if (config.limitDegrees !== undefined) {
+      const limitRad = config.limitDegrees * Math.PI / 180;
+      this.eulerLimit.x = limitRad;
+      this.eulerLimit.y = limitRad;
+      this.eulerLimit.z = limitRad;
+    }
+    if (config.smoothing !== undefined) {
+      this.eulerSmoothing = config.smoothing;
+    }
+    if (config.limitX !== undefined) {
+      this.eulerLimit.x = config.limitX * Math.PI / 180;
+    }
+    if (config.limitY !== undefined) {
+      this.eulerLimit.y = config.limitY * Math.PI / 180;
+    }
+    if (config.limitZ !== undefined) {
+      this.eulerLimit.z = config.limitZ * Math.PI / 180;
+    }
+  }
+
 
   /**
   * Fit 3D object to the view.
@@ -1812,28 +1919,23 @@ class TalkingHead {
     
     this.cameraEnd = new THREE.Vector3(x, y, z).applyEuler( new THREE.Euler( (opt.cameraRotateX || opt.cameraRotateX), (opt.cameraRotateY || this.opt.cameraRotateY), 0 ) );
 
-    if (this.angleLimiter) {
-      // 根据不同视图设置不同的约束
-      const configs = {
-        'head': { 
-          azimuth: { thresholdDeg: 20, limitDeg: 35, softnessDeg: 5 },
-          polar: { thresholdDeg: 10, limitDeg: 60, softnessDeg: 5 }
-        },
-        'upper': { 
-          azimuth: { thresholdDeg: 30, limitDeg: 45, softnessDeg: 5 },
-          polar: { thresholdDeg: 15, limitDeg: 70, softnessDeg: 5 }
-        },
-        'mid': { 
-          azimuth: { thresholdDeg: 35, limitDeg: 50, softnessDeg: 5 },
-          polar: { thresholdDeg: 15, limitDeg: 75, softnessDeg: 5 }
-        },
-        'full': { 
-          azimuth: { thresholdDeg: 40, limitDeg: 55, softnessDeg: 5 },
-          polar: { thresholdDeg: 20, limitDeg: 80, softnessDeg: 5 }
-        }
-      };
-      
-      this.angleLimiter.updateConfig(configs[view]);
+    if (this.angleLimiterEnabled) {
+      // 重新记录新视图的基准角度
+      setTimeout(() => {
+        this.baseEuler = this.calculateEulerFromCamera();
+        this.currentEuler.set(0, 0, 0);
+        
+        // 可选：根据视图设置不同的限制
+        const viewLimits = {
+          'head': 30,   // 头部视图限制较小
+          'upper': 45,  // 上身视图标准限制
+          'mid': 45,    // 中间视图标准限制
+          'full': 45    // 全身视图标准限制
+        };
+        
+        const limit = viewLimits[this.viewName] || 60;
+        this.updateAngleLimiterConfig({ limitDegrees: limit });
+      }, 100);
     }
 
     if ( this.cameraClock === null ) {
@@ -1871,177 +1973,7 @@ class TalkingHead {
   }
 
 
-  compressAngle(angle, threshold, limit, softness) {
-    const absAngle = Math.abs(angle);
-    const sign = angle < 0 ? -1 : 1;
-
-    // 在阈值内 - 无压缩
-    if (absAngle <= threshold) {
-      return angle;
-    }
-
-    // 超过极限 - 夹制
-    if (absAngle >= limit) {
-      return sign * limit;
-    }
-
-    // 在软过渡区 - 应用非线性压缩
-    const excessAngle = absAngle - threshold;
-    const softZone = limit - threshold;
-    const t = excessAngle / softZone; // 0 to 1 in softness zone
-
-    // 使用ease-out cubic实现平滑减速
-    const eased = 1 - Math.pow(1 - t, 3);
-    const compressedExcess = eased * softZone;
-    
-    return sign * (threshold + compressedExcess);
-  }
-
-  applyAngleLimits() {
-    // 从controls的target和camera position计算球面坐标
-    const target = this.controls.target;
-    const position = this.camera.position;
-    const delta = new THREE.Vector3().subVectors(position, target);
-
-    // 转换为球面坐标
-    const spherical = new THREE.Spherical().setFromVector3(delta);
-    
-    // 转换为度数
-    let azimuth = THREE.MathUtils.radToDeg(spherical.theta);
-    let polar = THREE.MathUtils.radToDeg(spherical.phi);
-
-    // 归一化方位角到 -180 到 180
-    azimuth = ((azimuth + 180) % 360) - 180;
-
-    // 应用非线性压缩
-    const cfg = this.angleLimiterConfig;
-    const compressedAzimuth = this.compressAngle(
-      azimuth,
-      cfg.azimuth.thresholdDeg,
-      cfg.azimuth.limitDeg,
-      cfg.azimuth.softnessDeg
-    );
-    const compressedPolar = this.compressAngle(
-      polar,
-      cfg.polar.thresholdDeg,
-      cfg.polar.limitDeg,
-      cfg.polar.softnessDeg
-    );
-
-    // 应用平滑
-    const s = cfg.smoothing;
-    this.targetAzimuth = compressedAzimuth;
-    this.targetPolar = compressedPolar;
-    
-    this.prevAzimuth += (this.targetAzimuth - this.prevAzimuth) * s;
-    this.prevPolar += (this.targetPolar - this.prevPolar) * s;
-
-    // 转换回弧度并应用到相机
-    const newTheta = THREE.MathUtils.degToRad(this.prevAzimuth);
-    const newPhi = THREE.MathUtils.degToRad(this.prevPolar);
-    const radius = spherical.radius;
-
-    // 根据新的球面坐标设置相机位置
-    const x = target.x + radius * Math.sin(newPhi) * Math.cos(newTheta);
-    const y = target.y + radius * Math.cos(newPhi);
-    const z = target.z + radius * Math.sin(newPhi) * Math.sin(newTheta);
-
-    this.camera.position.set(x, y, z);
-    this.camera.lookAt(target);
-  }
-
-  // 5. 启用/禁用角度限制
-  enableAngleLimiter(enable = true) {
-    this.angleLimiterEnabled = enable;
-    if (enable) {
-      // 初始化当前角度
-      const target = this.controls.target;
-      const position = this.camera.position;
-      const delta = new THREE.Vector3().subVectors(position, target);
-      const spherical = new THREE.Spherical().setFromVector3(delta);
-      
-      this.prevAzimuth = THREE.MathUtils.radToDeg(spherical.theta);
-      this.prevPolar = THREE.MathUtils.radToDeg(spherical.phi);
-      this.prevAzimuth = ((this.prevAzimuth + 180) % 360) - 180;
-    }
-  }
-
-  // 6. 更新限制器配置（可选）
-  updateAngleLimiterConfig(newConfig) {
-    if (newConfig.azimuth) {
-      this.angleLimiterConfig.azimuth = { ...this.angleLimiterConfig.azimuth, ...newConfig.azimuth };
-    }
-    if (newConfig.polar) {
-      this.angleLimiterConfig.polar = { ...this.angleLimiterConfig.polar, ...newConfig.polar };
-    }
-    if (newConfig.smoothing !== undefined) {
-      this.angleLimiterConfig.smoothing = newConfig.smoothing;
-    }
-  }
-
-  // installNonlinearAngleLimit(controls, camera, options = {}) {
-
-  //   const params = Object.assign({
-  //     azimuth: { thresholdDeg: 30, limitDeg: 45, softnessDeg: 6 },
-  //     polar:   { thresholdDeg: 10, limitDeg: 80, softnessDeg: 6 },
-  //     smoothing: 0.18
-  //   }, options);
-
-  //   function degToRad(d){ return d * Math.PI / 180; }
-  //   function sign(x){ return x < 0 ? -1 : 1; }
-
-  //   function compressTowardLimit(value, threshold, limit, softness){
-  //     const a = Math.abs(value);
-  //     if (a <= threshold) return value;
-  //     const excess = a - threshold;
-  //     const mappedExcess = (limit - threshold) * (1 - Math.exp(-excess / (softness || 0.001)));
-  //     return sign(value) * (threshold + mappedExcess);
-  //   }
-
-  //   const spherical = new THREE.Spherical();
-  //   const tmpVec = new THREE.Vector3();
-  //   let applyingProgrammatic = false;
-
-  //   controls.addEventListener('change', () => {
-  //     if (applyingProgrammatic) return;
-
-  //     tmpVec.copy(camera.position).sub(controls.target);
-  //     spherical.setFromVector3(tmpVec);
-
-  //     let theta = spherical.theta;
-  //     let phi = spherical.phi;
-
-  //     const az = params.azimuth;
-  //     const pol = params.polar;
-
-  //     const thresholdTheta = degToRad(az.thresholdDeg);
-  //     const limitTheta     = degToRad(az.limitDeg);
-  //     const softnessTheta  = degToRad(az.softnessDeg);
-
-  //     const thresholdPhi = degToRad(pol.thresholdDeg);
-  //     const limitPhi     = degToRad(pol.limitDeg);
-  //     const softnessPhi  = degToRad(pol.softnessDeg);
-
-  //     const centeredPhi = phi - Math.PI / 2;
-
-  //     const mappedTheta = compressTowardLimit(theta, thresholdTheta, limitTheta, softnessTheta);
-  //     const mappedCenteredPhi = compressTowardLimit(centeredPhi, thresholdPhi, limitPhi, softnessPhi);
-  //     const mappedPhi = mappedCenteredPhi + Math.PI / 2;
-
-  //     const s = params.smoothing;
-  //     const newTheta = THREE.MathUtils.lerp(theta, mappedTheta, s);
-  //     const newPhi   = THREE.MathUtils.lerp(phi,   mappedPhi,   s);
-
-  //     const newSpherical = new THREE.Spherical(spherical.radius, newPhi, newTheta);
-  //     const newPos = new THREE.Vector3().setFromSpherical(newSpherical).add(controls.target);
-
-  //     applyingProgrammatic = true;
-  //     camera.position.copy(newPos);
-  //     camera.lookAt(controls.target);
-  //     controls.update();
-  //     applyingProgrammatic = false;
-  //   });
-  // }
+  
 
   /**
   * Change light colors and intensities.
@@ -3128,7 +3060,7 @@ class TalkingHead {
   animate(t) {
     // console.log("t = " + t + "; this.animClock = " + this.animClock);
     if (this.angleLimiterEnabled) {
-      this.applyAngleLimits();
+      this.applyEulerAngleLimits();
     }
     // Are we running?
     if ( !this.isRunning ) return;
