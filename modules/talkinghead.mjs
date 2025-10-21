@@ -2816,34 +2816,34 @@ class TalkingHead {
     let isHeadMove = null;
     const tasks = [];
     
-    if ( Date.now() - this.LastTime >= this.animInterval * 1000 ) {
-      if (this.TalkQueue.length === 0) {
-        this.TalkQueue.push(
-          'standby1'
-          // ['standby0', 'standby1', 'standby2'][Math.floor(Math.random() * 3)] 
-          //  test for the motion with the most time cost
-        )
-      }
-      this.LastTime = Date.now();
-      this.animInterval = this.SumUpQueueTime();
+    // if ( Date.now() - this.LastTime >= this.animInterval * 1000 ) {
+    //   if (this.TalkQueue.length === 0) {
+    //     this.TalkQueue.push(
+    //       'standby1'
+    //       // ['standby0', 'standby1', 'standby2'][Math.floor(Math.random() * 3)] 
+    //       //  test for the motion with the most time cost
+    //     )
+    //   }
+    //   this.LastTime = Date.now();
+    //   this.animInterval = this.SumUpQueueTime();
 
-      // const promises = this.TalkQueue.map( animID => {
-      //   this.GroupAnimationPlayer(animID)
-      // })
-      // this.TalkQueue = [];
+    //   // const promises = this.TalkQueue.map( animID => {
+    //   //   this.GroupAnimationPlayer(animID)
+    //   // })
+    //   // this.TalkQueue = [];
   
-      for( i=0, l=this.TalkQueue.length; i<l; i++) {
-        const animID = this.TalkQueue[i];
+    //   for( i=0, l=this.TalkQueue.length; i<l; i++) {
+    //     const animID = this.TalkQueue[i];
         
-        // this.GroupAnimationConstruct(animID);
-        this.GroupAnimationPlayer(animID);
-        if ( !this.seqItems || this.seqItems.length === 0  && ! this.currentAction) {  // ! this.isSpeaking
-          // this.cleanupSequence();
-        }
-        this.TalkQueue.splice(i--, 1);
-        l--;
-      }
-    }
+    //     // this.GroupAnimationConstruct(animID);
+    //     this.GroupAnimationPlayer(animID);
+    //     if ( !this.seqItems || this.seqItems.length === 0  && ! this.currentAction) {  // ! this.isSpeaking
+    //       // this.cleanupSequence();
+    //     }
+    //     this.TalkQueue.splice(i--, 1);
+    //     l--;
+    //   }
+    // }
 
     for( i=0, l=this.animQueue.length; i<l; i++ ) {
       // 仅允许eyecontact与viseme
@@ -2928,11 +2928,27 @@ class TalkingHead {
 
     }
 
-    
+    if (this.TalkQueue.length === 0) {
+      this.TalkQueue.push(
+        'standby1'
+        // ['standby0', 'standby1', 'standby2'][Math.floor(Math.random() * 3)] 
+        //  test for the motion with the most time cost
+      )
+    } else {
+      if (this.seqItems.length === 0 && t - this.LastTime >= this.animInterval * 1000) {
+        const animID = this.TalkQueue.shift();
+        this.animInterval = this.MetaTimeList[animID];
+        this.seqItems = this.AnimationFA_route[animID].map( x => x.split('.')[0] );
+      } else if (this.seqItems.length != 0) {
+        currentAnimName = this.seqItems.shift();
+        this.animClips.find( x => x.name === currentAnimName);
+      }
+    }
     // Tasks
     for( let i=0, l=tasks.length; i<l; i++ ) {
       j = tasks[i].val;
-
+      
+      
       switch(tasks[i].mt) {
 
         case 'speak':
