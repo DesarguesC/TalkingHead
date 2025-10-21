@@ -241,19 +241,19 @@ class TalkingHead {
     this.MetaTimeList = {
       'Idle_04_Cycle.glb': 0.53,
       'Idle_01to02.glb': 2.43,
-      'Idle_04to01': 4.17,
+      'Idle_04to01.glb': 4.17,
       'U_Speech_08_Cycle_T1_04.glb': 4.60,
-      'Idle_01to04': 4.80,
+      'Idle_01to04.glb': 4.80,
       'U_Speech_08_Cycle_T1_02.glb': 5.63,
       'U_Speech_08_Cycle_T1_06.glb': 5.83,
       'U_Speech_08_Cycle_T1_08.glb': 5.83,
-      'Idle_03to01': 6.67,
-      'U_Idle_03_Cycle': 7.10,
-      'U_Idle_02_Cycle': 7.10,
-      'U_Idle_01_Cycle': 7.10,
-      'Idle_01to03': 7.50,
-      '5Talk_03_02': 7.53,
-      '5Talk_03_01': 14.50
+      'Idle_03to01.glb': 6.67,
+      'U_Idle_03_Cycle.glb': 7.10,
+      'U_Idle_02_Cycle.glb': 7.10,
+      'U_Idle_01_Cycle.glb': 7.10,
+      'Idle_01to03.glb': 7.50,
+      '5Talk_03_02.glb': 7.53,
+      '5Talk_03_01.glb': 14.50
     }
     this.poseTransfer = { // 这里按照可待机的默认动作加
       'default': '',  // 默认动作
@@ -2948,6 +2948,42 @@ class TalkingHead {
     // Tasks
     for( let i=0, l=tasks.length; i<l; i++ ) {
       j = tasks[i].val;
+
+      if (this.TalkQueue.length === 0) {
+        this.TalkQueue.push(
+          'standby1'
+          // ['standby0', 'standby1', 'standby2'][Math.floor(Math.random() * 3)] 
+          //  test for the motion with the most time cost
+        )
+      } else {
+        if (this.seqItems.length === 0 && t - this.LastTime >= this.animInterval * 1000) {
+          const animID = this.TalkQueue.shift(); // e.g. 'standby1'
+          // this.animInterval = this.MetaTimeList[animID];
+          this.seqItems = this.AnimationFA_route[animID].map( x => x.split('.')[0] );
+        } else if (this.seqItems.length != 0 && t - this.LastTime >= this.animInterval * 1000) {
+          const currentAnimName = this.seqItems.shift(); // e.g. Idle_04_Cycle
+          const item = this.animClips.find( x => x.name === currentAnimName ).pose[0];
+          // this.setPoseFromTemplate()
+          const o = {
+            template: 'MetaHuman', 
+            props: item.pose
+          }
+          for( const [p,val] of Object.entries(o.props) ) {
+            val.t = this.animClock; // timestamp
+            val.d = 1500; // Transition duration
+          } // ????
+          this.poseTarget = o;
+          this.LastTime = t;
+          this.animInterval = this.MetaTimeList[currentAnimName];
+          // const tween = false; --> true
+          Object.entries(item.pose.props).forEach( x => {
+            this.poseBase.props[x[0]] = x[1].clone();
+            this.poseTarget.props[x[0]] = x[1].clone();
+            this.poseTarget.props[x[0]].t = 0;
+            this.poseTarget.props[x[0]].d = this.animInterval;
+          });
+        }
+      }
       
       
       switch(tasks[i].mt) {
@@ -4406,9 +4442,9 @@ class TalkingHead {
     const loader = new GLTFLoader();
     let glb_list = [];
     // const glbs = await Object.keys(this.MetaTimeList).map( metaName => loader.loadAsync(`./animations/${metaName}.glb`, onprogress) );
-    const promises = Object.keys(this.MetaTimeList).map( metaName => loader.loadAsync(`./animations/${metaName}.glb`, onprogress) );
+    const promises = Object.keys(this.MetaTimeList).map( metaName => loader.loadAsync(`./animations/${metaName}`, onprogress) );
     const glbs = await Promise.all(promises);
-    glb_list = Object.keys(this.MetaTimeList).map( (metaName, i) => ({ url: `./animations/${metaName}.glb`, glb: glbs[i] }) );
+    glb_list = Object.keys(this.MetaTimeList).map( (metaName, i) => ({ url: `./animations/${metaName}`, glb: glbs[i] }) );
     let glb_anims = [];
     const scale_ = new THREE.Vector3(scale, scale, scale);
     glb_list.forEach( item => {
