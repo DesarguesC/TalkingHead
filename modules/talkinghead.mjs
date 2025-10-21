@@ -1526,6 +1526,7 @@ class TalkingHead {
       希望在用户交互时做额外限制和约束，当用户拉动webgl展示的三维人物形象超过一定范围后，
       希望做限制（例如对拉动角度超过临界值30度后，鼠标拉动的幅度的真实值会被压缩并趋近于45度，当然也只是一个例子）
     */
+    await this.preProcessAnimations();
     // this.setMood( this.avatar.avatarMood || this.moodName || this.opt.avatarMood );
     this.start();
 
@@ -4400,6 +4401,74 @@ class TalkingHead {
     this.stopSequence = null;
     await this.playAnimation(`./animations/U_Idle_01_Cycle.glb`, null, 200, 0, 0.01, false);
   };
+
+  async preProcessAnimations(onprogress=null, dur=200, ndx=0, scale=0.01, tween=true) {
+    const loader = new GLTFLoader();
+    let glb_list = [];
+    // const glbs = await Object.keys(this.MetaTimeList).map( metaName => loader.loadAsync(`./animations/${metaName}.glb`, onprogress) );
+    const promises = Object.keys(this.MetaTimeList).map( metaName => loader.loadAsync(`./animations/${metaName}.glb`, onprogress) );
+    const glbs = await Promise.all(promises);
+    glb_list = Object.keys(this.MetaTimeList).map( (metaName, i) => ({ url: `./animations/${metaName}.glb`, glb: glbs[i] }) );
+    let glb_anims = [];
+    const scale_ = new THREE.Vector3(scale, scale, scale);
+    glb_list.forEach( item => {
+      const url = item['url']
+      const glb = item['glb']
+      if  ( glb && glb.animations && glb.animations[ndx] ) {
+        let anim = glb.animations[ndx];
+        const props = {};
+        anim.tracks.sort((a, b) => {
+            let ids1 = a.name.split('.');
+            let ids2 = b.name.split('.');
+            return ids2[1].localeCompare(ids1[1]); // scale first (scale, position, quaternion)
+          });
+        anim.tracks.forEach( t => {
+          if(t.name.includes('mixamorig')) t.name = t.name.replaceAll('mixamorig','');
+          const ids = t.name.split('.');
+          if ( ids[1] === 'position' ) { 
+            // [DONE] 初步定位是提供的ref文件中，带有position信息的t(即ids[1] === 'position'时)的time帧数不足；walking中是有 30帧就是30个time，ref中这部分只有2个time
+            const s_now = (ids[0]+'.scale' in props) ? props[ids[0]+'.scale'] : scale_ ;
+            for(let i=0; i<t.values.length; i++ ) {
+              t.values[i] = t.values[i] * (i%3===0?s_now.x:(i%3===1?s_now.y:s_now.z));
+            }
+            props[t.name] = new THREE.Vector3(t.values[0], t.values[1],t.values[2]);
+          } else if ( ids[1] === 'quaternion' ) {
+            props[t.name] = new THREE.Quaternion(t.values[0],t.values[1],t.values[2],t.values[3]);
+            // props[t.name].multiply(q_);
+          } else if ( ids[1] === 'rotation' ) {
+            props[ids[0]+".quaternion"] = new THREE.Quaternion().setFromEuler(new THREE.Euler(t.values[0],t.values[1],t.values[2],'XYZ')).normalize();
+          } 
+          else if  ( ids[1] === 'scale' ) {
+            // first
+            props[t.name] = new THREE.Vector3(t.values[0], t.values[1], t.values[2]);
+          }
+        });
+
+        const newPose = { props: props};
+        glb_anims.push({
+          url: url+'-'+ndx,
+          clip: anim,
+          pose: newPose
+        })
+      }
+    });
+    if ( glb_anims.length > 0 ) {
+      Object.entries(this.MetaTimeList).forEach( ([metaName, metaTime]) => {
+        if ( !this.animClips.some( _item_ => _item_.name == metaName)) {
+          let poses = glb_anims.filter( x => x.url.includes(`./animations/${metaName}`) );
+          if ( poses.length > 0 ) {
+            this.animClips.push({
+              'name': metaName,
+              'pose': poses,
+              'meta': metaTime
+            });
+          }
+        }
+      });
+    }
+    console.log("预处理动作组数量:", this.animClips.length);
+  }
+
 
   async GroupAnimationConstruct(groupName, onprogress=null, dur=200, ndx=0, scale=0.01, tween=true) {
     const animList = this.AnimationFA_route[groupName];
