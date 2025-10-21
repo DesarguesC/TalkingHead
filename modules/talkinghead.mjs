@@ -1409,12 +1409,6 @@ class TalkingHead {
     const required = [ this.opt.modelRoot ];
     this.posePropNames.forEach( x => required.push( x.split('.')[0] ) );
     // 用metahuman的绑定时注释，否则打开 ↓
-    // required.forEach( x => {
-    //   if ( !gltf.scene.getObjectByName(x) ) {
-    //     throw new Error('Avatar object ' + x + ' not found');
-    //   }
-    // });
-    // 用metahuman的绑定时注释，否则打开 ↑
     this.stop();
     this.avatar = avatar;
 
@@ -1428,27 +1422,9 @@ class TalkingHead {
     }
 
     // Avatar full-body
-    
-    // 用metahuman的绑定时注释，否则打开 ↑
-    // gltf.scene.rotateX(-Math.PI / 2);
-    // gltf.scene.rotateY(-Math.PI / 2);
-
-    // gltf.scene.rotateZ(Math.PI / 2);
-    // gltf.scene.translateX(20);
     this.armature = gltf.scene.children[0]
     // this.armature = gltf.scene.getObjectByName('root')
     this.armature.scale.setScalar(0.015);
-
-    // const bone = this.armature.getObjectByName('ball_r'); // 例如 upperarm_l
-    // if (bone) {
-    //   // 绕X轴旋转90度
-    //   bone.quaternion.multiply(
-    //     new THREE.Quaternion().setFromEuler(new THREE.Euler(0, 0, Math.PI / 2))
-    //   );
-    //   bone.updateMatrixWorld(true);
-    // }
-    
-
     // Morph targets
     this.morphs = [];
 
@@ -1558,9 +1534,7 @@ class TalkingHead {
 
     });
     this.mtAvatar = mtTemp;
-    // if (this.mtAvatar.hasOwnProperty('TongueOut')) {
-    //   delete this.mtAvatar.TongueOut;
-    // }
+
 
     // Objects for needed properties
     this.poseAvatar = { props: {} };
@@ -1708,16 +1682,6 @@ class TalkingHead {
 
     // Set pose, view and start animation
     if ( !this.viewName ) this.setView( this.opt.cameraView );
-    // this.installNonlinearAngleLimit(this.controls, this.camera, {
-    //   azimuth: { thresholdDeg: 30, limitDeg: 45, softnessDeg: 5 },
-    //   polar:   { thresholdDeg: 15, limitDeg: 75, softnessDeg: 5 },
-    //   smoothing: 0.15
-    // });
-    /*
-      希望在用户交互时做额外限制和约束，当用户拉动webgl展示的三维人物形象超过一定范围后，
-      希望做限制（例如对拉动角度超过临界值30度后，鼠标拉动的幅度的真实值会被压缩并趋近于45度，当然也只是一个例子）
-    */
-    
     await this.preProcessAnimations();
     this.enableAngleLimiter(true, 60); // 启用角度限制器，限制为 ±60度
     // this.setMood( this.avatar.avatarMood || this.moodName || this.opt.avatarMood );
@@ -1981,19 +1945,6 @@ class TalkingHead {
   */
   setLighting(opt) {
     opt = opt || {};
-    // console.log('--------------');
-    // console.log(opt.lightAmbientColor);
-    // console.log(opt.lightAmbientIntensity);
-    // console.log(opt.lightDirectColor);
-    // console.log(opt.lightDirectIntensity);
-    // console.log(opt.lightDirectPhi);
-    // console.log(opt.lightDirectTheta);
-    // console.log(opt.lightSpotColor);
-    // console.log(opt.lightSpotIntensity);
-    // console.log(opt.lightSpotPhi);
-    // console.log(opt.lightSpotTheta);
-    // console.log(opt.lightSpotDispersion);
-
 
     // Ambient light
     if ( opt.hasOwnProperty("lightAmbientColor") ) {
@@ -2517,45 +2468,7 @@ class TalkingHead {
   * @param {number} [ms=2000] Transition time in milliseconds
   */
   async setPoseFromTemplate(template, ms=1500, useGLB=false, poseName=null, scale = 0.01, ndx=0) {
-    // 已经规划好
-    // if ( ! (useGLB && poseName) ) {  // && ! this.PoseGLB
-    //   // Special cases
-    //   const isIntermediate = template && this.poseTarget && this.poseTarget.template && ((this.poseTarget.template.standing && template.lying) || (this.poseTarget.template.lying && template.standing));
-    //   const isSameTemplate = poseName && (poseName === this.poseCurrentTemplate);
-    //   const isWeightOnLeft = this.poseWeightOnLeft;
-    //   let duration = isIntermediate ? 1000 : ms;
-
-    //   // New pose template
-    //   if ( isIntermediate) {
-    //     this.poseCurrentTemplate = this.poseTemplates['oneknee'];
-    //     setTimeout( () => {
-    //       this.setPoseFromTemplate(template,ms);
-    //     }, duration);
-    //   } else {
-    //     this.poseCurrentTemplate = template || this.poseCurrentTemplate;
-    //   }
-
-    //   // Set target
-    //   this.poseTarget = this.poseFactory(this.poseCurrentTemplate, duration);
-    //   this.poseWeightOnLeft = true;
-
-    //   // Mirror properties, if necessary
-    //   if ( (!isSameTemplate && !isWeightOnLeft) || (isSameTemplate && isWeightOnLeft ) ) {
-    //     this.poseTarget.props = this.mirrorPose(this.poseTarget.props);
-    //     this.poseWeightOnLeft = !this.poseWeightOnLeft;
-    //   }
-
-    //   Object.keys(this.poseDelta.props).forEach( key => {
-    //     if ( !this.poseTarget.props.hasOwnProperty(key) ) {
-    //       // console.log(key)
-    //       this.poseTarget.props[key] = this.poseBase.props[key].clone();
-    //       this.poseTarget.props[key].t = this.animClock;
-    //       this.poseTarget.props[key].d = duration;
-    //     }
-    //   });
-    //   return;
-    // }
-
+    
     const loader = new GLTFLoader();
     // 使用 glb 文件中的姿势数据
     // const currentPose_candidates = this.poseTransfer.hasOwnProperty(poseName) ? this.poseTransfer[poseName] : ( this.poseDEFAULT.hasOwnProperty(poseName) ? this.poseDEFAULT[poseName] : 'standby0');
