@@ -2270,7 +2270,6 @@ class TalkingHead {
     const loader = new GLTFLoader();
     // 使用 glb 文件中的姿势数据
     // const currentPose_candidates = this.poseTransfer.hasOwnProperty(poseName) ? this.poseTransfer[poseName] : ( this.poseDEFAULT.hasOwnProperty(poseName) ? this.poseDEFAULT[poseName] : 'standby0');
-    // this.TalkQueue.push(currentPose_candidates); // play
     const currentPose_candedates = this.singlePose[poseName] || (['U_Idle_01_Cycle', 'U_Idle_02_Cycle', 'U_Idle_03_Cycle'][Math.floor(Math.random() * 3)]);
     
     // Priority: set single action for the default pose
@@ -2713,8 +2712,8 @@ class TalkingHead {
     return (value-r1[0]) * (r2[1]-r2[0]) / (r1[1]-r1[0]) + r2[0];
   }
 
-  ANIM(t) {
-    if (this.TalkQueue.length === 0) {
+  async ANIM(t) {
+    if (this.TalkQueue.length === 0 && t - this.LastTime >= this.animInterval * 1000) {
       this.TalkQueue.push(
         'standby1'
         // ['standby0', 'standby1', 'standby2'][Math.floor(Math.random() * 3)] 
@@ -2746,13 +2745,14 @@ class TalkingHead {
         Object.entries(item.pose.props).forEach( x => {
           this.poseBase.props[x[0]] = x[1].clone();
           this.poseTarget.props[x[0]] = x[1].clone();
-          this.poseTarget.props[x[0]].t = 0;
-          this.poseTarget.props[x[0]].d = this.animInterval;
+          this.poseTarget.props[x[0]].t = 1;// this.animClock;
+          this.poseTarget.props[x[0]].d = this.animInterval * 1000 * 2 + 1000; // 过渡时间(ms)
         });
 
-        this.mixer = new THREE.AnimationMixer(this.armature);
-        this.mixer.addEventListener( 'finished', this.stopAnimation.bind(this), { once: true });
-
+        if (!this.mixer) {
+          this.mixer = new THREE.AnimationMixer(this.armature);
+          this.mixer.addEventListener( 'finished', this.stopAnimation.bind(this), { once: true });
+        }
         // Play action
         const repeat = 0;
         const action = this.mixer.clipAction(item.clip);
@@ -2769,7 +2769,7 @@ class TalkingHead {
   * @param {number} t High precision timestamp in ms.
   */
   animate(t) {
-
+    console.log("t = " + t + "; this.animClock = " + this.animClock);
     // Are we running?
     if ( !this.isRunning ) return;
     requestAnimationFrame( this.animate.bind(this) );
@@ -2867,35 +2867,6 @@ class TalkingHead {
     let isEyeContact = null;
     let isHeadMove = null;
     const tasks = [];
-    
-    // if ( Date.now() - this.LastTime >= this.animInterval * 1000 ) {
-    //   if (this.TalkQueue.length === 0) {
-    //     this.TalkQueue.push(
-    //       'standby1'
-    //       // ['standby0', 'standby1', 'standby2'][Math.floor(Math.random() * 3)] 
-    //       //  test for the motion with the most time cost
-    //     )
-    //   }
-    //   this.LastTime = Date.now();
-    //   this.animInterval = this.SumUpQueueTime();
-
-    //   // const promises = this.TalkQueue.map( animID => {
-    //   //   this.GroupAnimationPlayer(animID)
-    //   // })
-    //   // this.TalkQueue = [];
-  
-    //   for( i=0, l=this.TalkQueue.length; i<l; i++) {
-    //     const animID = this.TalkQueue[i];
-        
-    //     // this.GroupAnimationConstruct(animID);
-    //     this.GroupAnimationPlayer(animID);
-    //     if ( !this.seqItems || this.seqItems.length === 0  && ! this.currentAction) {  // ! this.isSpeaking
-    //       // this.cleanupSequence();
-    //     }
-    //     this.TalkQueue.splice(i--, 1);
-    //     l--;
-    //   }
-    // }
 
     for( i=0, l=this.animQueue.length; i<l; i++ ) {
       // 仅允许eyecontact与viseme
@@ -3361,17 +3332,14 @@ class TalkingHead {
     let lipsyncAnim = []; // Lip-sync animation sequence
     let letters = [... this.lipsyncPreProcessText(s, lipsyncLang)];
     if (motion_start && full_string) {
-      const second_per_word = 0.5; // second
+      const second_per_word = 0.75; // second
       const time_estimated = second_per_word * letters.length;
-      const target_pose = time_estimated <= 6.00 ? 'standby1' : (time_estimated * 1.25 <= 7.53 ? 'speech-2' : [
-          'talk-1', 'talk-2', 'talk-3', 'talk-4', 'speech-1'
-      ][Math.floor(Math.random() * 5)]) ;
+      const target_pose =  time_estimated * 1.25 <= 7.53 ? 'speech-2' : [
+          'talk-1', 'talk-2', 'talk-3', 'talk-4', 'speech-1', 'standby-1'
+      ][Math.floor(Math.random() * 6)] ;
       this.TalkQueue.push(target_pose);
-      // this.AnimationFA_route[target_pose].forEach(x => this.TalkQueue.push(x));
     }
     
-
-
     if (this.containsChinese(letters)) {
       letters = this.preProcessChineseWords(letters);
     } 
@@ -5093,10 +5061,8 @@ class TalkingHead {
             anim.ts = anim.ts.map( x => first + scale * (x - first) );
           }
         }
-
         this.animQueue.push( anim );
       }
-        // this.TalkQueue.push('讲话-1');
       
     }
 
