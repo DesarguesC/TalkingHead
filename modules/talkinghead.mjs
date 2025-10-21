@@ -64,6 +64,180 @@ const axisx = new THREE.Vector3(1, 0, 0);
 const axisy = new THREE.Vector3(0, 1, 0);
 const axisz = new THREE.Vector3(0, 0, 1);
 
+
+
+/**
+ * Non-linear angle limiter for camera controls
+ * Applies soft constraints when rotation exceeds thresholds
+ */
+class NonlinearAngleLimiter {
+  constructor(controls, camera, config = {}) {
+    this.controls = controls;
+    this.camera = camera;
+    
+    // Configuration with defaults
+    this.config = {
+      azimuth: config.azimuth || { 
+        thresholdDeg: 30, 
+        limitDeg: 45, 
+        softnessDeg: 5 
+      },
+      polar: config.polar || { 
+        thresholdDeg: 15, 
+        limitDeg: 75, 
+        softnessDeg: 5 
+      },
+      smoothing: config.smoothing || 0.15
+    };
+
+    // Store previous angles for smoothing
+    this.prevAzimuth = 0;
+    this.prevPolar = 0;
+    this.targetAzimuth = 0;
+    this.targetPolar = 0;
+
+    this.init();
+  }
+
+  init() {
+    // Store original onChange handler if exists
+    this.originalOnChange = this.controls.onChange?.bind(this.controls);
+    
+    // Override onChange to apply constraints
+    this.controls.onChange = () => {
+      this.applyConstraints();
+      if (this.originalOnChange) this.originalOnChange();
+    };
+  }
+
+  /**
+   * Apply non-linear compression to angle within threshold/limit bounds
+   * @param {number} angle - Current angle in degrees
+   * @param {number} threshold - Threshold angle in degrees
+   * @param {number} limit - Maximum limit angle in degrees
+   * @param {number} softness - Softness transition zone in degrees
+   * @returns {number} Compressed angle in degrees
+   */
+  compressAngle(angle, threshold, limit, softness) {
+    const absAngle = Math.abs(angle);
+    const sign = angle < 0 ? -1 : 1;
+
+    // Within threshold - no compression
+    if (absAngle <= threshold) {
+      return angle;
+    }
+
+    // Beyond limit - clamp
+    if (absAngle >= limit) {
+      return sign * limit;
+    }
+
+    // In softness zone - apply non-linear compression
+    const excessAngle = absAngle - threshold;
+    const softZone = limit - threshold;
+    const t = excessAngle / softZone; // 0 to 1 in softness zone
+
+    // Use ease-out cubic for smooth deceleration
+    const eased = 1 - Math.pow(1 - t, 3);
+    const compressedExcess = eased * softZone;
+    
+    return sign * (threshold + compressedExcess);
+  }
+
+  applyConstraints() {
+    // Get spherical coordinates from controls
+    const spherical = this.controls.getSpherical?.() || this.extractSpherical();
+    
+    if (!spherical) return;
+
+    // Convert to degrees
+    let azimuth = THREE.MathUtils.radToDeg(spherical.theta);
+    let polar = THREE.MathUtils.radToDeg(spherical.phi);
+
+    // Normalize azimuth to -180 to 180
+    azimuth = ((azimuth + 180) % 360) - 180;
+
+    // Apply non-linear compression
+    const cfg = this.config;
+    const compressedAzimuth = this.compressAngle(
+      azimuth,
+      cfg.azimuth.thresholdDeg,
+      cfg.azimuth.limitDeg,
+      cfg.azimuth.softnessDeg
+    );
+    const compressedPolar = this.compressAngle(
+      polar,
+      cfg.polar.thresholdDeg,
+      cfg.polar.limitDeg,
+      cfg.polar.softnessDeg
+    );
+
+    // Apply smoothing
+    const s = cfg.smoothing;
+    this.targetAzimuth = compressedAzimuth;
+    this.targetPolar = compressedPolar;
+    
+    this.prevAzimuth += (this.targetAzimuth - this.prevAzimuth) * s;
+    this.prevPolar += (this.targetPolar - this.prevPolar) * s;
+
+    // Apply back to controls
+    this.setSpherical(
+      THREE.MathUtils.degToRad(this.prevAzimuth),
+      THREE.MathUtils.degToRad(this.prevPolar),
+      spherical.radius
+    );
+  }
+
+  /**
+   * Extract spherical coordinates from camera position
+   * Works with OrbitControls-like setups
+   */
+  extractSpherical() {
+    if (!this.controls.target) return null;
+
+    const position = this.camera.position;
+    const target = this.controls.target;
+    const delta = new THREE.Vector3().subVectors(position, target);
+
+    const spherical = new THREE.Spherical().setFromVector3(delta);
+    return spherical;
+  }
+
+  /**
+   * Set camera position from spherical coordinates
+   */
+  setSpherical(theta, phi, radius) {
+    if (!this.controls.target) return;
+
+    const target = this.controls.target;
+    const x = target.x + radius * Math.sin(phi) * Math.cos(theta);
+    const y = target.y + radius * Math.cos(phi);
+    const z = target.z + radius * Math.sin(phi) * Math.sin(theta);
+
+    this.camera.position.set(x, y, z);
+    this.camera.lookAt(target);
+  }
+
+  /**
+   * Update configuration
+   */
+  updateConfig(newConfig) {
+    this.config = { ...this.config, ...newConfig };
+  }
+
+  /**
+   * Reset to initial state
+   */
+  reset() {
+    this.prevAzimuth = 0;
+    this.prevPolar = 0;
+    this.targetAzimuth = 0;
+    this.targetPolar = 0;
+  }
+}
+
+
+
 class TalkingHead {
 
   /**
@@ -947,6 +1121,30 @@ class TalkingHead {
 
     // Dynamic Bones
     this.dynamicbones = new DynamicBones();
+    
+    this.angleLimiterEnabled = true;
+    this.angleLimiterConfig = {
+      azimuth: { thresholdDeg: 30, limitDeg: 45, softnessDeg: 5 },
+      polar: { thresholdDeg: 15, limitDeg: 75, softnessDeg: 5 },
+      smoothing: 0.15
+    };
+    this.prevAzimuth = 0;
+    this.prevPolar = 0;
+    this.targetAzimuth = 0;
+    this.targetPolar = 0;
+    // this.angleLimiter = new NonlinearAngleLimiter(this.controls, this.camera, {
+    //   azimuth: { 
+    //     thresholdDeg: 30,    // Allow free rotation up to 30°
+    //     limitDeg: 45,        // Hard limit at 45°
+    //     softnessDeg: 5       // Compression zone between 30° and 45°
+    //   },
+    //   polar: { 
+    //     thresholdDeg: 15,
+    //     limitDeg: 75,
+    //     softnessDeg: 5
+    //   },
+    //   smoothing: 0.15        // Smoothing factor (0-1)
+    // });
 
   }
 
@@ -1083,6 +1281,7 @@ class TalkingHead {
 
     return r;
   }
+
 
 
   /**
@@ -1526,7 +1725,9 @@ class TalkingHead {
       希望在用户交互时做额外限制和约束，当用户拉动webgl展示的三维人物形象超过一定范围后，
       希望做限制（例如对拉动角度超过临界值30度后，鼠标拉动的幅度的真实值会被压缩并趋近于45度，当然也只是一个例子）
     */
+    
     await this.preProcessAnimations();
+    this.enableAngleLimiter(true);
     // this.setMood( this.avatar.avatarMood || this.moodName || this.opt.avatarMood );
     this.start();
 
@@ -1611,6 +1812,30 @@ class TalkingHead {
     
     this.cameraEnd = new THREE.Vector3(x, y, z).applyEuler( new THREE.Euler( (opt.cameraRotateX || opt.cameraRotateX), (opt.cameraRotateY || this.opt.cameraRotateY), 0 ) );
 
+    if (this.angleLimiter) {
+      // 根据不同视图设置不同的约束
+      const configs = {
+        'head': { 
+          azimuth: { thresholdDeg: 20, limitDeg: 35, softnessDeg: 5 },
+          polar: { thresholdDeg: 10, limitDeg: 60, softnessDeg: 5 }
+        },
+        'upper': { 
+          azimuth: { thresholdDeg: 30, limitDeg: 45, softnessDeg: 5 },
+          polar: { thresholdDeg: 15, limitDeg: 70, softnessDeg: 5 }
+        },
+        'mid': { 
+          azimuth: { thresholdDeg: 35, limitDeg: 50, softnessDeg: 5 },
+          polar: { thresholdDeg: 15, limitDeg: 75, softnessDeg: 5 }
+        },
+        'full': { 
+          azimuth: { thresholdDeg: 40, limitDeg: 55, softnessDeg: 5 },
+          polar: { thresholdDeg: 20, limitDeg: 80, softnessDeg: 5 }
+        }
+      };
+      
+      this.angleLimiter.updateConfig(configs[view]);
+    }
+
     if ( this.cameraClock === null ) {
       this.controls.target.copy( this.controlsEnd );
       this.camera.position.copy( this.cameraEnd );
@@ -1619,72 +1844,204 @@ class TalkingHead {
     this.cameraStart = this.camera.position.clone();
     this.cameraClock = 0;
 
-  }
-
-
-  installNonlinearAngleLimit(controls, camera, options = {}) {
-
-    const params = Object.assign({
-      azimuth: { thresholdDeg: 30, limitDeg: 45, softnessDeg: 6 },
-      polar:   { thresholdDeg: 10, limitDeg: 80, softnessDeg: 6 },
-      smoothing: 0.18
-    }, options);
-
-    function degToRad(d){ return d * Math.PI / 180; }
-    function sign(x){ return x < 0 ? -1 : 1; }
-
-    function compressTowardLimit(value, threshold, limit, softness){
-      const a = Math.abs(value);
-      if (a <= threshold) return value;
-      const excess = a - threshold;
-      const mappedExcess = (limit - threshold) * (1 - Math.exp(-excess / (softness || 0.001)));
-      return sign(value) * (threshold + mappedExcess);
+    // ===== 添加以下代码：根据不同视图配置限制 =====
+    const viewConfigs = {
+      'head': { 
+        azimuth: { thresholdDeg: 20, limitDeg: 35, softnessDeg: 5 },
+        polar: { thresholdDeg: 10, limitDeg: 60, softnessDeg: 5 }
+      },
+      'upper': { 
+        azimuth: { thresholdDeg: 30, limitDeg: 45, softnessDeg: 5 },
+        polar: { thresholdDeg: 15, limitDeg: 70, softnessDeg: 5 }
+      },
+      'mid': { 
+        azimuth: { thresholdDeg: 35, limitDeg: 50, softnessDeg: 5 },
+        polar: { thresholdDeg: 15, limitDeg: 75, softnessDeg: 5 }
+      },
+      'full': { 
+        azimuth: { thresholdDeg: 40, limitDeg: 55, softnessDeg: 5 },
+        polar: { thresholdDeg: 20, limitDeg: 80, softnessDeg: 5 }
+      }
+    };
+    
+    if (viewConfigs[this.viewName]) {
+      this.updateAngleLimiterConfig(viewConfigs[this.viewName]);
     }
 
-    const spherical = new THREE.Spherical();
-    const tmpVec = new THREE.Vector3();
-    let applyingProgrammatic = false;
-
-    controls.addEventListener('change', () => {
-      if (applyingProgrammatic) return;
-
-      tmpVec.copy(camera.position).sub(controls.target);
-      spherical.setFromVector3(tmpVec);
-
-      let theta = spherical.theta;
-      let phi = spherical.phi;
-
-      const az = params.azimuth;
-      const pol = params.polar;
-
-      const thresholdTheta = degToRad(az.thresholdDeg);
-      const limitTheta     = degToRad(az.limitDeg);
-      const softnessTheta  = degToRad(az.softnessDeg);
-
-      const thresholdPhi = degToRad(pol.thresholdDeg);
-      const limitPhi     = degToRad(pol.limitDeg);
-      const softnessPhi  = degToRad(pol.softnessDeg);
-
-      const centeredPhi = phi - Math.PI / 2;
-
-      const mappedTheta = compressTowardLimit(theta, thresholdTheta, limitTheta, softnessTheta);
-      const mappedCenteredPhi = compressTowardLimit(centeredPhi, thresholdPhi, limitPhi, softnessPhi);
-      const mappedPhi = mappedCenteredPhi + Math.PI / 2;
-
-      const s = params.smoothing;
-      const newTheta = THREE.MathUtils.lerp(theta, mappedTheta, s);
-      const newPhi   = THREE.MathUtils.lerp(phi,   mappedPhi,   s);
-
-      const newSpherical = new THREE.Spherical(spherical.radius, newPhi, newTheta);
-      const newPos = new THREE.Vector3().setFromSpherical(newSpherical).add(controls.target);
-
-      applyingProgrammatic = true;
-      camera.position.copy(newPos);
-      camera.lookAt(controls.target);
-      controls.update();
-      applyingProgrammatic = false;
-    });
   }
+
+
+  compressAngle(angle, threshold, limit, softness) {
+    const absAngle = Math.abs(angle);
+    const sign = angle < 0 ? -1 : 1;
+
+    // 在阈值内 - 无压缩
+    if (absAngle <= threshold) {
+      return angle;
+    }
+
+    // 超过极限 - 夹制
+    if (absAngle >= limit) {
+      return sign * limit;
+    }
+
+    // 在软过渡区 - 应用非线性压缩
+    const excessAngle = absAngle - threshold;
+    const softZone = limit - threshold;
+    const t = excessAngle / softZone; // 0 to 1 in softness zone
+
+    // 使用ease-out cubic实现平滑减速
+    const eased = 1 - Math.pow(1 - t, 3);
+    const compressedExcess = eased * softZone;
+    
+    return sign * (threshold + compressedExcess);
+  }
+
+  applyAngleLimits() {
+    // 从controls的target和camera position计算球面坐标
+    const target = this.controls.target;
+    const position = this.camera.position;
+    const delta = new THREE.Vector3().subVectors(position, target);
+
+    // 转换为球面坐标
+    const spherical = new THREE.Spherical().setFromVector3(delta);
+    
+    // 转换为度数
+    let azimuth = THREE.MathUtils.radToDeg(spherical.theta);
+    let polar = THREE.MathUtils.radToDeg(spherical.phi);
+
+    // 归一化方位角到 -180 到 180
+    azimuth = ((azimuth + 180) % 360) - 180;
+
+    // 应用非线性压缩
+    const cfg = this.angleLimiterConfig;
+    const compressedAzimuth = this.compressAngle(
+      azimuth,
+      cfg.azimuth.thresholdDeg,
+      cfg.azimuth.limitDeg,
+      cfg.azimuth.softnessDeg
+    );
+    const compressedPolar = this.compressAngle(
+      polar,
+      cfg.polar.thresholdDeg,
+      cfg.polar.limitDeg,
+      cfg.polar.softnessDeg
+    );
+
+    // 应用平滑
+    const s = cfg.smoothing;
+    this.targetAzimuth = compressedAzimuth;
+    this.targetPolar = compressedPolar;
+    
+    this.prevAzimuth += (this.targetAzimuth - this.prevAzimuth) * s;
+    this.prevPolar += (this.targetPolar - this.prevPolar) * s;
+
+    // 转换回弧度并应用到相机
+    const newTheta = THREE.MathUtils.degToRad(this.prevAzimuth);
+    const newPhi = THREE.MathUtils.degToRad(this.prevPolar);
+    const radius = spherical.radius;
+
+    // 根据新的球面坐标设置相机位置
+    const x = target.x + radius * Math.sin(newPhi) * Math.cos(newTheta);
+    const y = target.y + radius * Math.cos(newPhi);
+    const z = target.z + radius * Math.sin(newPhi) * Math.sin(newTheta);
+
+    this.camera.position.set(x, y, z);
+    this.camera.lookAt(target);
+  }
+
+  // 5. 启用/禁用角度限制
+  enableAngleLimiter(enable = true) {
+    this.angleLimiterEnabled = enable;
+    if (enable) {
+      // 初始化当前角度
+      const target = this.controls.target;
+      const position = this.camera.position;
+      const delta = new THREE.Vector3().subVectors(position, target);
+      const spherical = new THREE.Spherical().setFromVector3(delta);
+      
+      this.prevAzimuth = THREE.MathUtils.radToDeg(spherical.theta);
+      this.prevPolar = THREE.MathUtils.radToDeg(spherical.phi);
+      this.prevAzimuth = ((this.prevAzimuth + 180) % 360) - 180;
+    }
+  }
+
+  // 6. 更新限制器配置（可选）
+  updateAngleLimiterConfig(newConfig) {
+    if (newConfig.azimuth) {
+      this.angleLimiterConfig.azimuth = { ...this.angleLimiterConfig.azimuth, ...newConfig.azimuth };
+    }
+    if (newConfig.polar) {
+      this.angleLimiterConfig.polar = { ...this.angleLimiterConfig.polar, ...newConfig.polar };
+    }
+    if (newConfig.smoothing !== undefined) {
+      this.angleLimiterConfig.smoothing = newConfig.smoothing;
+    }
+  }
+
+  // installNonlinearAngleLimit(controls, camera, options = {}) {
+
+  //   const params = Object.assign({
+  //     azimuth: { thresholdDeg: 30, limitDeg: 45, softnessDeg: 6 },
+  //     polar:   { thresholdDeg: 10, limitDeg: 80, softnessDeg: 6 },
+  //     smoothing: 0.18
+  //   }, options);
+
+  //   function degToRad(d){ return d * Math.PI / 180; }
+  //   function sign(x){ return x < 0 ? -1 : 1; }
+
+  //   function compressTowardLimit(value, threshold, limit, softness){
+  //     const a = Math.abs(value);
+  //     if (a <= threshold) return value;
+  //     const excess = a - threshold;
+  //     const mappedExcess = (limit - threshold) * (1 - Math.exp(-excess / (softness || 0.001)));
+  //     return sign(value) * (threshold + mappedExcess);
+  //   }
+
+  //   const spherical = new THREE.Spherical();
+  //   const tmpVec = new THREE.Vector3();
+  //   let applyingProgrammatic = false;
+
+  //   controls.addEventListener('change', () => {
+  //     if (applyingProgrammatic) return;
+
+  //     tmpVec.copy(camera.position).sub(controls.target);
+  //     spherical.setFromVector3(tmpVec);
+
+  //     let theta = spherical.theta;
+  //     let phi = spherical.phi;
+
+  //     const az = params.azimuth;
+  //     const pol = params.polar;
+
+  //     const thresholdTheta = degToRad(az.thresholdDeg);
+  //     const limitTheta     = degToRad(az.limitDeg);
+  //     const softnessTheta  = degToRad(az.softnessDeg);
+
+  //     const thresholdPhi = degToRad(pol.thresholdDeg);
+  //     const limitPhi     = degToRad(pol.limitDeg);
+  //     const softnessPhi  = degToRad(pol.softnessDeg);
+
+  //     const centeredPhi = phi - Math.PI / 2;
+
+  //     const mappedTheta = compressTowardLimit(theta, thresholdTheta, limitTheta, softnessTheta);
+  //     const mappedCenteredPhi = compressTowardLimit(centeredPhi, thresholdPhi, limitPhi, softnessPhi);
+  //     const mappedPhi = mappedCenteredPhi + Math.PI / 2;
+
+  //     const s = params.smoothing;
+  //     const newTheta = THREE.MathUtils.lerp(theta, mappedTheta, s);
+  //     const newPhi   = THREE.MathUtils.lerp(phi,   mappedPhi,   s);
+
+  //     const newSpherical = new THREE.Spherical(spherical.radius, newPhi, newTheta);
+  //     const newPos = new THREE.Vector3().setFromSpherical(newSpherical).add(controls.target);
+
+  //     applyingProgrammatic = true;
+  //     camera.position.copy(newPos);
+  //     camera.lookAt(controls.target);
+  //     controls.update();
+  //     applyingProgrammatic = false;
+  //   });
+  // }
 
   /**
   * Change light colors and intensities.
@@ -2769,7 +3126,10 @@ class TalkingHead {
   * @param {number} t High precision timestamp in ms.
   */
   animate(t) {
-    console.log("t = " + t + "; this.animClock = " + this.animClock);
+    // console.log("t = " + t + "; this.animClock = " + this.animClock);
+    if (this.angleLimiterEnabled) {
+      this.applyAngleLimits();
+    }
     // Are we running?
     if ( !this.isRunning ) return;
     requestAnimationFrame( this.animate.bind(this) );
@@ -3155,7 +3515,8 @@ class TalkingHead {
       this.stats.end();
     }
 
-    this.render();
+    // this.render();
+    this.render(this.scene, this.camera);
 
     // console.log('Animation Trace: ', this.poseTrace);
 
