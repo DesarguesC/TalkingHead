@@ -42,7 +42,7 @@ import{ DynamicBones } from './dynamicbones.mjs';
 
 import { segment, OutputFormat, addDict} from 'pinyin-pro';
 import CompleteDict from './complete.mjs';
-import { TechnicolorShader } from 'three/examples/jsm/Addons.js';
+
 
 // import { linearToneMapping } from 'three/tsl';
 // import CompleteDict from "https://cdn.jsdelivr.net/npm/@pinyin-pro/data@1.2.0/dist/complete.min.js";
@@ -239,21 +239,21 @@ class TalkingHead {
     
     
     this.MetaTimeList = {
-      'Idle_04_Cycle.glb': 0.53,
-      'Idle_01to02.glb': 2.43,
-      'Idle_04to01.glb': 4.17,
-      'U_Speech_08_Cycle_T1_04.glb': 4.60,
-      'Idle_01to04.glb': 4.80,
-      'U_Speech_08_Cycle_T1_02.glb': 5.63,
-      'U_Speech_08_Cycle_T1_06.glb': 5.83,
-      'U_Speech_08_Cycle_T1_08.glb': 5.83,
-      'Idle_03to01.glb': 6.67,
-      'U_Idle_03_Cycle.glb': 7.10,
-      'U_Idle_02_Cycle.glb': 7.10,
-      'U_Idle_01_Cycle.glb': 7.10,
-      'Idle_01to03.glb': 7.50,
-      '5Talk_03_02.glb': 7.53,
-      '5Talk_03_01.glb': 14.50
+      'Idle_04_Cycle': 0.53,
+      'Idle_01to02': 2.43,
+      'Idle_04to01': 4.17,
+      'U_Speech_08_Cycle_T1_04': 4.60,
+      'Idle_01to04': 4.80,
+      'U_Speech_08_Cycle_T1_02': 5.63,
+      'U_Speech_08_Cycle_T1_06': 5.83,
+      'U_Speech_08_Cycle_T1_08': 5.83,
+      'Idle_03to01': 6.67,
+      'U_Idle_03_Cycle': 7.10,
+      'U_Idle_02_Cycle': 7.10,
+      'U_Idle_01_Cycle': 7.10,
+      'Idle_01to03': 7.50,
+      '5Talk_03_02': 7.53,
+      '5Talk_03_01': 14.50
     }
     this.poseTransfer = { // 这里按照可待机的默认动作加
       'default': '',  // 默认动作
@@ -2713,6 +2713,57 @@ class TalkingHead {
     return (value-r1[0]) * (r2[1]-r2[0]) / (r1[1]-r1[0]) + r2[0];
   }
 
+  ANIM(t) {
+    if (this.TalkQueue.length === 0) {
+      this.TalkQueue.push(
+        'standby1'
+        // ['standby0', 'standby1', 'standby2'][Math.floor(Math.random() * 3)] 
+        //  test for the motion with the most time cost
+      )
+    } else {
+      // console.log("TalkQueue: " + this.TalkQueue);
+      if (this.seqItems.length === 0 && t - this.LastTime >= this.animInterval * 1000) {
+        const animID = this.TalkQueue.shift(); // e.g. 'standby1'
+        // this.animInterval = this.MetaTimeList[animID];
+        this.seqItems = this.AnimationFA_route[animID].map( x => x.split('.')[0] );
+      } else if (this.seqItems.length != 0 && t - this.LastTime >= this.animInterval * 1000) {
+        const currentAnimName = this.seqItems.shift(); // e.g. Idle_04_Cycle
+        const item = this.animClips.find( x => x.name === currentAnimName ).pose[0];
+        // this.setPoseFromTemplate()
+        const o = {
+          template: 'MetaHuman', 
+          props: item.pose
+        }
+        // for( const [p,val] of Object.entries(o.props) ) {
+        //   val.t = this.animClock; // timestamp
+        //   val.d = 1500; // Transition duration
+        // } // ????
+        this.poseTarget = o;
+        this.LastTime = t;
+        this.animInterval = this.MetaTimeList[currentAnimName];
+        // const tween = false; --> true
+        // let uu = 0;
+        Object.entries(item.pose.props).forEach( x => {
+          this.poseBase.props[x[0]] = x[1].clone();
+          this.poseTarget.props[x[0]] = x[1].clone();
+          this.poseTarget.props[x[0]].t = 0;
+          this.poseTarget.props[x[0]].d = this.animInterval;
+        });
+
+        this.mixer = new THREE.AnimationMixer(this.armature);
+        this.mixer.addEventListener( 'finished', this.stopAnimation.bind(this), { once: true });
+
+        // Play action
+        const repeat = 0;
+        const action = this.mixer.clipAction(item.clip);
+        action.setLoop( THREE.LoopRepeat, repeat );
+        action.clampWhenFinished = true;
+        action.fadeIn(0.5).play();
+        
+      }
+    }
+  }
+
   /**
   * Animate the avatar.
   * @param {number} t High precision timestamp in ms.
@@ -2929,62 +2980,14 @@ class TalkingHead {
 
     }
 
-    if (this.TalkQueue.length === 0) {
-      this.TalkQueue.push(
-        'standby1'
-        // ['standby0', 'standby1', 'standby2'][Math.floor(Math.random() * 3)] 
-        //  test for the motion with the most time cost
-      )
-    } else {
-      if (this.seqItems.length === 0 && t - this.LastTime >= this.animInterval * 1000) {
-        const animID = this.TalkQueue.shift();
-        this.animInterval = this.MetaTimeList[animID];
-        this.seqItems = this.AnimationFA_route[animID].map( x => x.split('.')[0] );
-      } else if (this.seqItems.length != 0) {
-        currentAnimName = this.seqItems.shift();
-        this.animClips.find( x => x.name === currentAnimName);
-      }
-    }
+    
+
+    this.ANIM(t);
+    
     // Tasks
     for( let i=0, l=tasks.length; i<l; i++ ) {
       j = tasks[i].val;
-
-      if (this.TalkQueue.length === 0) {
-        this.TalkQueue.push(
-          'standby1'
-          // ['standby0', 'standby1', 'standby2'][Math.floor(Math.random() * 3)] 
-          //  test for the motion with the most time cost
-        )
-      } else {
-        if (this.seqItems.length === 0 && t - this.LastTime >= this.animInterval * 1000) {
-          const animID = this.TalkQueue.shift(); // e.g. 'standby1'
-          // this.animInterval = this.MetaTimeList[animID];
-          this.seqItems = this.AnimationFA_route[animID].map( x => x.split('.')[0] );
-        } else if (this.seqItems.length != 0 && t - this.LastTime >= this.animInterval * 1000) {
-          const currentAnimName = this.seqItems.shift(); // e.g. Idle_04_Cycle
-          const item = this.animClips.find( x => x.name === currentAnimName ).pose[0];
-          // this.setPoseFromTemplate()
-          const o = {
-            template: 'MetaHuman', 
-            props: item.pose
-          }
-          for( const [p,val] of Object.entries(o.props) ) {
-            val.t = this.animClock; // timestamp
-            val.d = 1500; // Transition duration
-          } // ????
-          this.poseTarget = o;
-          this.LastTime = t;
-          this.animInterval = this.MetaTimeList[currentAnimName];
-          // const tween = false; --> true
-          Object.entries(item.pose.props).forEach( x => {
-            this.poseBase.props[x[0]] = x[1].clone();
-            this.poseTarget.props[x[0]] = x[1].clone();
-            this.poseTarget.props[x[0]].t = 0;
-            this.poseTarget.props[x[0]].d = this.animInterval;
-          });
-        }
-      }
-      
+      this.ANIM(t);   
       
       switch(tasks[i].mt) {
 
@@ -3135,7 +3138,7 @@ class TalkingHead {
         // this.objectHips.position.y -= box.min.y / 2;
         // this.objectHips.position.x -= (v.x+w.x)/4;
         // this.objectHips.position.z -= (v.z+w.z)/2;
-        this.LastTime = Date.now();
+        this.LastTime = t;
         this.animInterval = 7.10;
         this.playAnimation(`./animations/${this.AnimationFA_route[this.startAnim][0]}`, null, 200, 0, 0.01, false);
         this.startAnim = null;
@@ -4442,9 +4445,9 @@ class TalkingHead {
     const loader = new GLTFLoader();
     let glb_list = [];
     // const glbs = await Object.keys(this.MetaTimeList).map( metaName => loader.loadAsync(`./animations/${metaName}.glb`, onprogress) );
-    const promises = Object.keys(this.MetaTimeList).map( metaName => loader.loadAsync(`./animations/${metaName}`, onprogress) );
+    const promises = Object.keys(this.MetaTimeList).map( metaName => loader.loadAsync(`./animations/${metaName}.glb`, onprogress) );
     const glbs = await Promise.all(promises);
-    glb_list = Object.keys(this.MetaTimeList).map( (metaName, i) => ({ url: `./animations/${metaName}`, glb: glbs[i] }) );
+    glb_list = Object.keys(this.MetaTimeList).map( (metaName, i) => ({ url: `./animations/${metaName}.glb`, glb: glbs[i] }) );
     let glb_anims = [];
     const scale_ = new THREE.Vector3(scale, scale, scale);
     glb_list.forEach( item => {
