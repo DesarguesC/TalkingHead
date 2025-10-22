@@ -66,178 +66,6 @@ const axisz = new THREE.Vector3(0, 0, 1);
 
 
 
-/**
- * Non-linear angle limiter for camera controls
- * Applies soft constraints when rotation exceeds thresholds
- */
-class NonlinearAngleLimiter {
-  constructor(controls, camera, config = {}) {
-    this.controls = controls;
-    this.camera = camera;
-    
-    // Configuration with defaults
-    this.config = {
-      azimuth: config.azimuth || { 
-        thresholdDeg: 30, 
-        limitDeg: 45, 
-        softnessDeg: 5 
-      },
-      polar: config.polar || { 
-        thresholdDeg: 15, 
-        limitDeg: 75, 
-        softnessDeg: 5 
-      },
-      smoothing: config.smoothing || 0.15
-    };
-
-    // Store previous angles for smoothing
-    this.prevAzimuth = 0;
-    this.prevPolar = 0;
-    this.targetAzimuth = 0;
-    this.targetPolar = 0;
-
-    this.init();
-  }
-
-  init() {
-    // Store original onChange handler if exists
-    this.originalOnChange = this.controls.onChange?.bind(this.controls);
-    
-    // Override onChange to apply constraints
-    this.controls.onChange = () => {
-      this.applyConstraints();
-      if (this.originalOnChange) this.originalOnChange();
-    };
-  }
-
-  /**
-   * Apply non-linear compression to angle within threshold/limit bounds
-   * @param {number} angle - Current angle in degrees
-   * @param {number} threshold - Threshold angle in degrees
-   * @param {number} limit - Maximum limit angle in degrees
-   * @param {number} softness - Softness transition zone in degrees
-   * @returns {number} Compressed angle in degrees
-   */
-  compressAngle(angle, threshold, limit, softness) {
-    const absAngle = Math.abs(angle);
-    const sign = angle < 0 ? -1 : 1;
-
-    // Within threshold - no compression
-    if (absAngle <= threshold) {
-      return angle;
-    }
-
-    // Beyond limit - clamp
-    if (absAngle >= limit) {
-      return sign * limit;
-    }
-
-    // In softness zone - apply non-linear compression
-    const excessAngle = absAngle - threshold;
-    const softZone = limit - threshold;
-    const t = excessAngle / softZone; // 0 to 1 in softness zone
-
-    // Use ease-out cubic for smooth deceleration
-    const eased = 1 - Math.pow(1 - t, 3);
-    const compressedExcess = eased * softZone;
-    
-    return sign * (threshold + compressedExcess);
-  }
-
-  applyConstraints() {
-    // Get spherical coordinates from controls
-    const spherical = this.controls.getSpherical?.() || this.extractSpherical();
-    
-    if (!spherical) return;
-
-    // Convert to degrees
-    let azimuth = THREE.MathUtils.radToDeg(spherical.theta);
-    let polar = THREE.MathUtils.radToDeg(spherical.phi);
-
-    // Normalize azimuth to -180 to 180
-    azimuth = ((azimuth + 180) % 360) - 180;
-
-    // Apply non-linear compression
-    const cfg = this.config;
-    const compressedAzimuth = this.compressAngle(
-      azimuth,
-      cfg.azimuth.thresholdDeg,
-      cfg.azimuth.limitDeg,
-      cfg.azimuth.softnessDeg
-    );
-    const compressedPolar = this.compressAngle(
-      polar,
-      cfg.polar.thresholdDeg,
-      cfg.polar.limitDeg,
-      cfg.polar.softnessDeg
-    );
-
-    // Apply smoothing
-    const s = cfg.smoothing;
-    this.targetAzimuth = compressedAzimuth;
-    this.targetPolar = compressedPolar;
-    
-    this.prevAzimuth += (this.targetAzimuth - this.prevAzimuth) * s;
-    this.prevPolar += (this.targetPolar - this.prevPolar) * s;
-
-    // Apply back to controls
-    this.setSpherical(
-      THREE.MathUtils.degToRad(this.prevAzimuth),
-      THREE.MathUtils.degToRad(this.prevPolar),
-      spherical.radius
-    );
-  }
-
-  /**
-   * Extract spherical coordinates from camera position
-   * Works with OrbitControls-like setups
-   */
-  extractSpherical() {
-    if (!this.controls.target) return null;
-
-    const position = this.camera.position;
-    const target = this.controls.target;
-    const delta = new THREE.Vector3().subVectors(position, target);
-
-    const spherical = new THREE.Spherical().setFromVector3(delta);
-    return spherical;
-  }
-
-  /**
-   * Set camera position from spherical coordinates
-   */
-  setSpherical(theta, phi, radius) {
-    if (!this.controls.target) return;
-
-    const target = this.controls.target;
-    const x = target.x + radius * Math.sin(phi) * Math.cos(theta);
-    const y = target.y + radius * Math.cos(phi);
-    const z = target.z + radius * Math.sin(phi) * Math.sin(theta);
-
-    this.camera.position.set(x, y, z);
-    this.camera.lookAt(target);
-  }
-
-  /**
-   * Update configuration
-   */
-  updateConfig(newConfig) {
-    this.config = { ...this.config, ...newConfig };
-  }
-
-  /**
-   * Reset to initial state
-   */
-  reset() {
-    this.prevAzimuth = 0;
-    this.prevPolar = 0;
-    this.targetAzimuth = 0;
-    this.targetPolar = 0;
-  }
-}
-
-
-
 class TalkingHead {
 
   /**
@@ -633,8 +461,8 @@ class TalkingHead {
     this.gesture = null; // Values that override pose properties
     this.poseCurrentTemplate = this.poseTemplates[this.poseName];
     // default pose params ↓
-    this.poseBase = this.poseFactory( this.poseCurrentTemplate );
-    this.poseTarget = this.poseFactory( this.poseCurrentTemplate );
+    this.poseBase = this.poseFactory( this.poseCurrentTemplate);
+    this.poseTarget = this.poseFactory( this.poseCurrentTemplate);
     this.poseStraight = this.propsToThreeObjects( this.poseTemplates["straight"].props ); // Straight pose used as a reference
     this.poseAvatar = null; // Set when avatar has been loaded
 
@@ -927,6 +755,7 @@ class TalkingHead {
     this.TalkLocked = false; // this.TalkQueue同步锁，一轮对话只能用一次 | false -> 可以操作，true -> 禁止操作
     this.TalkQueue = []; // 讲话所需的动作控制
     this.seqItems = [];
+    this.currentPose = null;
     this.currentAction = null;
     // 对临界资源animSpeechQueue（在外部）的锁，默认为解锁状态，捕获到非零的animiSpeechQueue.length时锁定，长度置零时解锁 | 解锁时（false）可以this.UEanimQueue.push
     this.UEanimQueueActive = false;
@@ -1038,6 +867,7 @@ class TalkingHead {
     this.stateName = 'idle';
     this.speechQueue = [];
     this.isSpeaking = false;
+    this.beginSpeaking = false;
     this.isListening = false;
 
     // Setup Google text-to-speech
@@ -1683,6 +1513,13 @@ class TalkingHead {
     // Set pose, view and start animation
     if ( !this.viewName ) this.setView( this.opt.cameraView );
     await this.preProcessAnimations();
+
+    this.poseBase = this.poseFactory( this.poseCurrentTemplate, 2000, true );
+    this.poseTarget = this.poseFactory( this.poseCurrentTemplate, 2000, true );
+    // this.poseStraight = this.propsToThreeObjects( this.poseTemplates["straight"].props ); // Straight pose used as a reference
+    // this.poseAvatar = null; // Set when avatar has been loaded
+    // 重设一下this.poseBase系列参数看能不能消除闪现终止动作的问题
+
     this.enableAngleLimiter(true, 60); // 启用角度限制器，限制为 ±60度
     // this.setMood( this.avatar.avatarMood || this.moodName || this.opt.avatarMood );
     this.start();
@@ -2426,13 +2263,41 @@ class TalkingHead {
   * @param {numeric} [ms=2000] Transition duration in ms
   * @return {Object} A new pose object.
   */
-  poseFactory(template, ms=2000) {
+  poseFactory(template, ms=2000, animClips=false) {
     /*
       template:
         "standing": bool,
         "props": {item.position: ..., item.rotation: ..., ...}
 
     */ 
+    if (animClips) {
+      const anim = this.animClips.find( clip => clip.name === 'U_Idle_01_Cycle' );
+      if ( anim ) {
+        const template = {
+          "standing": true,
+          "props": anim.pose[0].pose.props
+        }
+        const o = {
+          template: template,
+          props: this.propsToThreeObjects( template.props ) // 处理为three.js对象
+        }
+        for( const [p,val] of Object.entries(o.props) ) {
+          if ( this.opt.modelMovementFactor < 1 && template.standing &&
+            (p === 'pelvis.quaternion' || p === 'spine_01.quaternion' ||
+            p === 'spine_02.quaternion' || p === 'spine_03.quaternion' ||
+            p === 'neck_01.quaternion' || p === 'thigh_l.quaternion' ||
+            p === 'calf_l.quaternion' || p === 'thigh_r.quaternion' ||
+            p === 'calf_r.quaternion') ) {
+            const ref = this.poseStraight[p];
+            const angle = val.angleTo( ref );
+            val.rotateTowards( ref, (1 - this.opt.modelMovementFactor) * angle );
+          }
+          val.t = this.animClock; // timestamp
+          val.d = 1 / this.MetaTimeList['U_Idle_01_Cycle']; // Transition duration
+        }
+        return o;
+      }
+    }
 
     // Pose object
     const o = {
@@ -2915,40 +2780,47 @@ class TalkingHead {
   }
 
   async ANIM(t) {
-    if (this.TalkQueue.length === 0 && t - this.LastTime >= this.animInterval * 1000) {
+    if (this.beginSpeaking && this.isSpeaking) {
+      this.seqItems = [];
+      this.beginSpeaking = false;
+    }
+    if (this.TalkQueue.length === 0 && this.seqItems.length === 0 && !this.isSpeaking) {
       this.TalkQueue.push(
-        'standby1'
-        // ['standby0', 'standby1', 'standby2'][Math.floor(Math.random() * 3)] 
+        // 'standby1'
+        ['standby0', 'standby1', 'standby1'][Math.floor(Math.random() * 3)] 
         //  test for the motion with the most time cost
       )
+    } else if( this.TalkQueue.length === 0 && this.seqItems.length === 0 && this.isSpeaking ) {
+      // 应该不会有这种情况
+      console.log("TalkQueue and seqItems are both empty while speaking.");
     } else {
       // console.log("TalkQueue: " + this.TalkQueue);
-      if (this.seqItems.length === 0 && t - this.LastTime >= this.animInterval * 1000) {
+      if (this.seqItems.length === 0 && t - this.LastTime - this.animInterval * 1000 >= 10) {
         const animID = this.TalkQueue.shift(); // e.g. 'standby1'
+        this.currentPose = animID;
         // this.animInterval = this.MetaTimeList[animID];
         this.seqItems = this.AnimationFA_route[animID].map( x => x.split('.')[0] );
-      } else if (this.seqItems.length != 0 && t - this.LastTime >= this.animInterval * 1000) {
-        const currentAnimName = this.seqItems.shift(); // e.g. Idle_04_Cycle
+      } else if (this.seqItems.length != 0 && t - this.LastTime - this.animInterval * 1000 >= 10) {
+        const currentAnimName = this.isSpeaking ? this.seqItems.shift() : 'U_Idle_01_Cycle';
+        if (!this.isSpeaking) this.seqItems = []; // clear the seqItems when not speaking
         const item = this.animClips.find( x => x.name === currentAnimName ).pose[0];
         // this.setPoseFromTemplate()
         const o = {
           template: 'MetaHuman', 
-          props: item.pose
+          props: item.pose.props
         }
-        // for( const [p,val] of Object.entries(o.props) ) {
-        //   val.t = this.animClock; // timestamp
-        //   val.d = 1500; // Transition duration
-        // } // ????
         this.poseTarget = o;
         this.LastTime = t;
+        const duration = 1 / this.animInterval * 2 + 2; // second
         this.animInterval = this.MetaTimeList[currentAnimName];
         // const tween = false; --> true
         // let uu = 0;
         Object.entries(item.pose.props).forEach( x => {
           this.poseBase.props[x[0]] = x[1].clone();
           this.poseTarget.props[x[0]] = x[1].clone();
-          this.poseTarget.props[x[0]].t = 1;// this.animClock;
-          this.poseTarget.props[x[0]].d = this.animInterval * 1000 * 2 + 1000; // 过渡时间(ms)
+          this.poseTarget.props[x[0]].t = 0;// this.animClock;
+          this.poseTarget.props[x[0]].d = (this.animInterval + duration) * 1000; // 过渡时间(ms)
+          this.poseTarget.props[x[0]].startTime = this.animClock;
         });
 
         if (!this.mixer) {
@@ -2960,6 +2832,7 @@ class TalkingHead {
         const action = this.mixer.clipAction(item.clip);
         action.setLoop( THREE.LoopRepeat, repeat );
         action.clampWhenFinished = true;
+        action.reset();
         action.fadeIn(0.5).play();
         
       }
@@ -3158,7 +3031,7 @@ class TalkingHead {
 
     
 
-    this.ANIM(t);
+    // this.ANIM(t);
     
     // Tasks
     for( let i=0, l=tasks.length; i<l; i++ ) {
@@ -3270,7 +3143,7 @@ class TalkingHead {
         Object.assign(j,{ base: (this.mood.baseline[i] || 0) + ( 1 + vol/255 ) * Math.random() / 5, needsUpdate: true });
       }
     }
-
+    this.ANIM(t);
     this.updatePoseBase(this.animClock);
     if ( this.mixer ) {
       this.mixer.update(dt / 1000 * this.mixer.timeScale);
@@ -3662,13 +3535,13 @@ class TalkingHead {
         }
 
         // Send emoji, if the divider was a known emoji
-        if ( isEmoji ) {
-          let emoji = this.animEmojis[letters[i]];
-          if ( emoji && emoji.link ) emoji = this.animEmojis[emoji.link];
-          if ( emoji ) {
-            this.speechQueue.push( { emoji: emoji } );
-          }
-        }
+        // if ( isEmoji ) {
+        //   let emoji = this.animEmojis[letters[i]];
+        //   if ( emoji && emoji.link ) emoji = this.animEmojis[emoji.link];
+        //   if ( emoji ) {
+        //     this.speechQueue.push( { emoji: emoji } );
+        //   }
+        // }
         this.speechQueue.push( { break: 100 * this.duration_factor } );
 
       }
@@ -3987,6 +3860,7 @@ class TalkingHead {
     if ( !this.armature || (this.isSpeaking && !force) ) return;
     this.stateName = 'speaking';
     this.isSpeaking = true;
+    this.beginSpeaking = true;
     if ( this.speechQueue.length ) {
       let line = this.speechQueue.shift();
 
