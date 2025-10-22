@@ -2779,7 +2779,7 @@ class TalkingHead {
     return (value-r1[0]) * (r2[1]-r2[0]) / (r1[1]-r1[0]) + r2[0];
   }
 
-  async ANIM(t, toSpeak=false) {
+  async ANIM(toSpeak=false) {
     // if (this.beginSpeaking && this.isSpeaking) {
     //   this.seqItems = [];
     //   this.beginSpeaking = false;
@@ -2793,15 +2793,16 @@ class TalkingHead {
     } else {
       if ( toSpeak && !(this.currentAnimName in this.TalkTimeList) ) {this.seqItems = []; return;} // clear the seqItems when not speaking
       // console.log("TalkQueue: " + this.TalkQueue);
-      if (this.seqItems.length === 0 && t - this.LastTime - this.animInterval * 1000 >= -200) {
+      if (this.seqItems.length === 0 && (Date.now() - this.LastTime) - this.animInterval * 1000 >= 200) {
         const animID = this.TalkQueue.shift(); // e.g. 'standby1'
         this.currentPose = animID;
         // this.animInterval = this.MetaTimeList[animID];
         this.seqItems = this.AnimationFA_route[animID].map( x => x.split('.')[0] );
       } 
-      else if (this.seqItems.length != 0 && t - this.LastTime - this.animInterval * 1000 >= -200) {
+      else if (this.seqItems.length != 0 && (Date.now() - this.LastTime) - this.animInterval * 1000 >= 200) {
         
         const currentAnimName = this.seqItems.shift(); // toSpeak ? this.seqItems.shift() : 'U_Idle_01_Cycle';
+        // 动作Idle_01to03有时手无法完全抬起（抬到一半回原位，然后快速到该动作位置）
         const item = this.animClips.find( x => x.name === currentAnimName ).pose[0];
         // this.setPoseFromTemplate()
         const o = {
@@ -2809,8 +2810,9 @@ class TalkingHead {
           props: item.pose.props
         }
         this.poseTarget = o;
-        this.LastTime = t;
-        const duration = 1 / this.animInterval * 2 + 2; // second
+        this.LastTime = Date.now();
+        // const duration = 1 / this.animInterval * 2 + 2; // second
+        const duration = 0;
         this.animInterval = this.MetaTimeList[currentAnimName];
         // const tween = false; --> true
         // let uu = 0;
@@ -2831,7 +2833,7 @@ class TalkingHead {
         const action = this.mixer.clipAction(item.clip);
         action.setLoop( THREE.LoopRepeat, repeat );
         action.clampWhenFinished = true;
-        // action.reset();
+        action.reset();
         action.fadeIn(0.5).play();
         console.log("played: " + currentAnimName);
         
@@ -3031,12 +3033,12 @@ class TalkingHead {
 
     
 
-    if (tasks.length === 0) this.ANIM(t);
+    if (tasks.length === 0) this.ANIM();
     
     // Tasks
     for( let i=0, l=tasks.length; i<l; i++ ) {
-      j = tasks[i].val;
-      this.ANIM(t, tasks[i].mt === 'speak');   
+      j = tasks[i].val; 
+      this.ANIM( tasks[i].mt === 'speak' ); // trigger ANIM when speaking
       
       switch(tasks[i].mt) {
 
@@ -3109,7 +3111,6 @@ class TalkingHead {
           break;
       }
 
-      // this.ANIM(t, tasks[i].mt === 'speak');   
 
     }
 
