@@ -1521,7 +1521,7 @@ class TalkingHead {
     // 重设一下this.poseBase系列参数看能不能消除闪现终止动作的问题
 
     this.enableAngleLimiter(true, 60); // 启用角度限制器，限制为 ±60度
-    // this.setMood( this.avatar.avatarMood || this.moodName || this.opt.avatarMood );
+    this.setMood( this.avatar.avatarMood || this.moodName || this.opt.avatarMood );
     this.start();
 
   }
@@ -2949,7 +2949,7 @@ class TalkingHead {
     const tasks = [];
 
     for( i=0, l=this.animQueue.length; i<l; i++ ) {
-      // 仅允许eyecontact与viseme
+      // 仅允许eyeContact与viseme
       const x = this.animQueue[i];
       
       if ( this.animClock < x.ts[0] ) continue;
@@ -3415,11 +3415,11 @@ class TalkingHead {
     let lipsyncAnim = []; // Lip-sync animation sequence
     let letters = [... this.lipsyncPreProcessText(s, lipsyncLang)];
     if (motion_start && full_string) {
-      const second_per_word = 0.75; // second
+      const second_per_word = 0.5; // second
       const time_estimated = second_per_word * letters.length;
-      const target_pose =  time_estimated * 1.25 <= 7.53 ? 'speech-2' : [
+      const target_pose = time_estimated < 7.53 ? ['standby0', 'standby1', 'standby2'][Math.floor(Math.random() * 3)] : (time_estimated <= 14 ? 'speech-2' : [
           'talk-1', 'talk-2', 'talk-3', 'talk-4', 'speech-1', 'standby-1'
-      ][Math.floor(Math.random() * 6)] ;
+      ][Math.floor(Math.random() * 6)]) ;
       this.TalkQueue.push(target_pose);
     }
     
@@ -4096,7 +4096,7 @@ class TalkingHead {
   */
   makeEyeContact(t) {
     this.animQueue.push( this.animFactory( {
-      name: 'eyecontact', dt: [0,t], vs: { eyeContact: [1] }
+      name: 'eyeContact', dt: [0,t], vs: { eyeContact: [1] }
     }));
   }
 
@@ -4146,7 +4146,7 @@ class TalkingHead {
   * @param {number} t Time in milliseconds
   */
   lookAtCamera(t) {
-    return;
+    // return;
     if ( this.avatar.hasOwnProperty('avatarIgnoreCamera') ) {
       if ( this.avatar.avatarIgnoreCamera ) {
         this.lookAhead(t);
@@ -4168,7 +4168,7 @@ class TalkingHead {
   * @param {number} t Time in milliseconds
   */
   lookAt(x,y,t) {
-    return;
+    // return;
     // Eyes position
     const rect = this.nodeAvatar.getBoundingClientRect();
     this.objectLeftEye.updateMatrixWorld(true);
@@ -4250,7 +4250,7 @@ class TalkingHead {
   * @return {Boolean} If true, (x,y) touch the avatar
   */
   touchAt(x,y) {
-
+    return;
     const rect = this.nodeAvatar.getBoundingClientRect();
     const pointer = new THREE.Vector2(
       ( (x - rect.left) / rect.width ) * 2 - 1,
