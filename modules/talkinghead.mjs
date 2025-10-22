@@ -2791,17 +2791,17 @@ class TalkingHead {
         //  test for the motion with the most time cost
       )
     } else {
-      // if ( toSpeak && !(this.currentAnimName in this.TalkTimeList) ) {this.seqItems = []; return;} // clear the seqItems when not speaking
+      if ( toSpeak && !(this.currentAnimName in this.TalkTimeList) ) {this.seqItems = []; return;} // clear the seqItems when not speaking
       // console.log("TalkQueue: " + this.TalkQueue);
-      if (this.seqItems.length === 0 && t - this.LastTime - this.animInterval * 1000 >= 1000) {
+      if (this.seqItems.length === 0 && t - this.LastTime - this.animInterval * 1000 >= -200) {
         const animID = this.TalkQueue.shift(); // e.g. 'standby1'
         this.currentPose = animID;
         // this.animInterval = this.MetaTimeList[animID];
         this.seqItems = this.AnimationFA_route[animID].map( x => x.split('.')[0] );
       } 
-      else if (this.seqItems.length != 0 && t - this.LastTime - this.animInterval * 1000 >= 1000) {
-        // if (!this.isSpeaking) {this.seqItems = []; return;} // clear the seqItems when not speaking
-        const currentAnimName = toSpeak ? this.seqItems.shift() : 'U_Idle_01_Cycle';
+      else if (this.seqItems.length != 0 && t - this.LastTime - this.animInterval * 1000 >= -200) {
+        
+        const currentAnimName = this.seqItems.shift(); // toSpeak ? this.seqItems.shift() : 'U_Idle_01_Cycle';
         const item = this.animClips.find( x => x.name === currentAnimName ).pose[0];
         // this.setPoseFromTemplate()
         const o = {
@@ -2831,7 +2831,7 @@ class TalkingHead {
         const action = this.mixer.clipAction(item.clip);
         action.setLoop( THREE.LoopRepeat, repeat );
         action.clampWhenFinished = true;
-        action.reset();
+        // action.reset();
         action.fadeIn(0.5).play();
         console.log("played: " + currentAnimName);
         
