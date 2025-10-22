@@ -2346,7 +2346,7 @@ class TalkingHead {
 
     let newPose = null;
     const duration = this.TalkQueue.length===0 ? 100 : Math.max(ms, this.SumUpQueueTime())
-    console.log('SumUpTime = ' + this.SumUpQueueTime());
+    // console.log('SumUpTime = ' + this.SumUpQueueTime());
     
     if (glb && glb.animations && glb.animations[ndx]) {
       let anim = glb.animations[ndx];
@@ -2779,30 +2779,29 @@ class TalkingHead {
     return (value-r1[0]) * (r2[1]-r2[0]) / (r1[1]-r1[0]) + r2[0];
   }
 
-  async ANIM(t) {
-    if (this.beginSpeaking && this.isSpeaking) {
-      this.seqItems = [];
-      this.beginSpeaking = false;
-    }
-    if (this.TalkQueue.length === 0 && this.seqItems.length === 0 && !this.isSpeaking) {
+  async ANIM(t, toSpeak=false) {
+    // if (this.beginSpeaking && this.isSpeaking) {
+    //   this.seqItems = [];
+    //   this.beginSpeaking = false;
+    // }
+    if (this.TalkQueue.length === 0 && this.seqItems.length === 0 ) {
       this.TalkQueue.push(
         // 'standby1'
         ['standby0', 'standby1', 'standby1'][Math.floor(Math.random() * 3)] 
         //  test for the motion with the most time cost
       )
-    } else if( this.TalkQueue.length === 0 && this.seqItems.length === 0 && this.isSpeaking ) {
-      // 应该不会有这种情况
-      console.log("TalkQueue and seqItems are both empty while speaking.");
     } else {
+      // if ( toSpeak && !(this.currentAnimName in this.TalkTimeList) ) {this.seqItems = []; return;} // clear the seqItems when not speaking
       // console.log("TalkQueue: " + this.TalkQueue);
-      if (this.seqItems.length === 0 && t - this.LastTime - this.animInterval * 1000 >= 10) {
+      if (this.seqItems.length === 0 && t - this.LastTime - this.animInterval * 1000 >= 1000) {
         const animID = this.TalkQueue.shift(); // e.g. 'standby1'
         this.currentPose = animID;
         // this.animInterval = this.MetaTimeList[animID];
         this.seqItems = this.AnimationFA_route[animID].map( x => x.split('.')[0] );
-      } else if (this.seqItems.length != 0 && t - this.LastTime - this.animInterval * 1000 >= 10) {
-        const currentAnimName = this.isSpeaking ? this.seqItems.shift() : 'U_Idle_01_Cycle';
-        if (!this.isSpeaking) this.seqItems = []; // clear the seqItems when not speaking
+      } 
+      else if (this.seqItems.length != 0 && t - this.LastTime - this.animInterval * 1000 >= 1000) {
+        // if (!this.isSpeaking) {this.seqItems = []; return;} // clear the seqItems when not speaking
+        const currentAnimName = toSpeak ? this.seqItems.shift() : 'U_Idle_01_Cycle';
         const item = this.animClips.find( x => x.name === currentAnimName ).pose[0];
         // this.setPoseFromTemplate()
         const o = {
@@ -2834,6 +2833,7 @@ class TalkingHead {
         action.clampWhenFinished = true;
         action.reset();
         action.fadeIn(0.5).play();
+        console.log("played: " + currentAnimName);
         
       }
     }
@@ -3031,12 +3031,12 @@ class TalkingHead {
 
     
 
-    // this.ANIM(t);
+    if (tasks.length === 0) this.ANIM(t);
     
     // Tasks
     for( let i=0, l=tasks.length; i<l; i++ ) {
       j = tasks[i].val;
-      this.ANIM(t);   
+      this.ANIM(t, tasks[i].mt === 'speak');   
       
       switch(tasks[i].mt) {
 
@@ -3108,6 +3108,9 @@ class TalkingHead {
           }, j.x ? new THREE.Vector3(j.x,j.y,j.z) : null, true, j.d );
           break;
       }
+
+      // this.ANIM(t, tasks[i].mt === 'speak');   
+
     }
 
     // Eye contact
@@ -3143,7 +3146,7 @@ class TalkingHead {
         Object.assign(j,{ base: (this.mood.baseline[i] || 0) + ( 1 + vol/255 ) * Math.random() / 5, needsUpdate: true });
       }
     }
-    this.ANIM(t);
+    
     this.updatePoseBase(this.animClock);
     if ( this.mixer ) {
       this.mixer.update(dt / 1000 * this.mixer.timeScale);
@@ -3198,7 +3201,7 @@ class TalkingHead {
         this.updateMorphTargets(dt);
       }
     // }
-    
+
     // Camera
     if ( this.cameraClock !== null && this.cameraClock < 1000 ) {
       this.cameraClock += dt;
