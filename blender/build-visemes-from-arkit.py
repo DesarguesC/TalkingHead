@@ -61,7 +61,7 @@ shapekeys = [
     { "name": "viseme_TH", "mix": [
         { "name": "mouthRollUpper", "value": 0.6 },
         { "name": "jawOpen", "value": 0.2 },
-        { "name": "tongueOut", "value": 0.4 }
+        # { "name": "tongueOut", "value": 0.4 }
     ]},
     { "name": "viseme_CH", "mix": [
         { "name": "mouthPucker", "value": 0.5 },
@@ -88,7 +88,7 @@ shapekeys = [
         { "name": "mouthFunnel", "value": 0.3 },
         { "name": "mouthPucker", "value": 0.3 },
         { "name": "jawOpen", "value": 0.15 },
-        { "name": "tongueOut", "value": 0.2 }
+        # { "name": "tongueOut", "value": 0.2 }
     ]},
     { "name": "viseme_sil", "mix": [] }
 ]

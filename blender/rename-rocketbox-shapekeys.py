@@ -58,7 +58,7 @@ shapekeyMap = [
 [ "AK_49_MouthUpperUpRight", "mouthUpperUpRight" ],
 [ "AK_50_NoseSneerLeft", "noseSneerLeft" ],
 [ "AK_51_NoseSneerRight", "noseSneerRight" ],
-[ "AK_52_TongueOut", "tongueOut" ],
+# [ "AK_52_TongueOut", "tongueOut" ],
 ]
 
 # Recursive traverse
