@@ -6,88 +6,88 @@ override = False
 # Oculus viseme blendshapes
 shapekeys = [
     { "name": "viseme_aa", "mix": [
-        { "name": "jawOpen", "value": 0.6 }
+        { "name": "JawOpen", "value": 0.6 }
     ]},
     { "name": "viseme_E", "mix": [
-        { "name": "mouthPressLeft", "value": 0.8 },
-        { "name": "mouthPressRight", "value": 0.8 },
-        { "name": "mouthDimpleLeft", "value": 1.0 },
-        { "name": "mouthDimpleRight", "value": 1.0 },
-        { "name": "jawOpen", "value": 0.3 }
+        { "name": "MouthPressLeft", "value": 0.8 },
+        { "name": "MouthPressRight", "value": 0.8 },
+        { "name": "MouthDimpleLeft", "value": 1.0 },
+        { "name": "MouthDimpleRight", "value": 1.0 },
+        { "name": "JawOpen", "value": 0.3 }
     ]},
     { "name": "viseme_I", "mix": [
-        { "name": "mouthPressLeft", "value": 0.6 },
-        { "name": "mouthPressRight", "value": 0.6 },
-        { "name": "mouthDimpleLeft", "value": 0.6 },
-        { "name": "mouthDimpleRight", "value": 0.6 },
-        { "name": "jawOpen", "value": 0.2 }
+        { "name": "MouthPressLeft", "value": 0.6 },
+        { "name": "MouthPressRight", "value": 0.6 },
+        { "name": "MouthDimpleLeft", "value": 0.6 },
+        { "name": "MouthDimpleRight", "value": 0.6 },
+        { "name": "JawOpen", "value": 0.2 }
     ]},
     { "name": "viseme_O", "mix": [
         { "name": "mouthPucker", "value": 1.0 },
         { "name": "jawForward", "value": 0.6 },
-        { "name": "jawOpen", "value": 0.2 }
+        { "name": "JawOpen", "value": 0.2 }
     ]},
     { "name": "viseme_U", "mix": [
         { "name": "mouthFunnel", "value": 1.0 }
     ]},
     { "name": "viseme_PP", "mix": [
-        { "name": "mouthRollLower", "value": 0.8 },
-        { "name": "mouthRollUpper", "value": 0.8 },
+        { "name": "MouthRollLower", "value": 0.8 },
+        { "name": "MouthRollUpper", "value": 0.8 },
         { "name": "mouthUpperUpLeft", "value": 0.3 },
         { "name": "mouthUpperUpRight", "value": 0.3 }
     ]},
     { "name": "viseme_FF", "mix": [
         { "name": "mouthPucker", "value": 1.0 },
-        { "name": "mouthShrugUpper", "value": 1.0 },
+        # { "name": "mouthShrugUpper", "value": 1.0 },
         { "name": "mouthLowerDownLeft", "value": 0.2 },
         { "name": "mouthLowerDownRight", "value": 0.2 },
-        { "name": "mouthDimpleLeft", "value": 1.0 },
-        { "name": "mouthDimpleRight", "value": 1.0 },
-        { "name": "mouthRollLower", "value": 1.0 }
+        { "name": "MouthDimpleLeft", "value": 1.0 },
+        { "name": "MouthDimpleRight", "value": 1.0 },
+        { "name": "MouthRollLower", "value": 1.0 }
     ]},
     { "name": "viseme_DD", "mix": [
-        { "name": "mouthPressLeft", "value": 0.8 },
-        { "name": "mouthPressRight", "value": 0.8 },
+        { "name": "MouthPressLeft", "value": 0.8 },
+        { "name": "MouthPressRight", "value": 0.8 },
         { "name": "mouthFunnel", "value": 0.5 },
-        { "name": "jawOpen", "value": 0.2 }
+        { "name": "JawOpen", "value": 0.2 }
     ]},
     { "name": "viseme_SS", "mix": [
-        { "name": "mouthPressLeft", "value": 0.8 },
-        { "name": "mouthPressRight", "value": 0.8 },
+        { "name": "MouthPressLeft", "value": 0.8 },
+        { "name": "MouthPressRight", "value": 0.8 },
         { "name": "mouthLowerDownLeft", "value": 0.5 },
         { "name": "mouthLowerDownRight", "value": 0.5 },
-        { "name": "jawOpen", "value": 0.1 }
+        { "name": "JawOpen", "value": 0.1 }
     ]},
     { "name": "viseme_TH", "mix": [
-        { "name": "mouthRollUpper", "value": 0.6 },
-        { "name": "jawOpen", "value": 0.2 },
+        { "name": "MouthRollUpper", "value": 0.6 },
+        { "name": "JawOpen", "value": 0.2 },
         # { "name": "tongueOut", "value": 0.4 }
     ]},
     { "name": "viseme_CH", "mix": [
         { "name": "mouthPucker", "value": 0.5 },
-        { "name": "jawOpen", "value": 0.2 }
+        { "name": "JawOpen", "value": 0.2 }
     ]},
     { "name": "viseme_RR", "mix": [
         { "name": "mouthPucker", "value": 0.5 },
-        { "name": "jawOpen", "value": 0.2 }
+        { "name": "JawOpen", "value": 0.2 }
     ]},
     { "name": "viseme_kk", "mix": [
         { "name": "mouthLowerDownLeft", "value": 0.4 },
         { "name": "mouthLowerDownRight", "value": 0.4 },
-        { "name": "mouthDimpleLeft", "value": 0.3 },
-        { "name": "mouthDimpleRight", "value": 0.3 },
+        { "name": "MouthDimpleLeft", "value": 0.3 },
+        { "name": "MouthDimpleRight", "value": 0.3 },
         { "name": "mouthFunnel", "value": 0.3 },
         { "name": "mouthPucker", "value": 0.3 },
-        { "name": "jawOpen", "value": 0.15 }
+        { "name": "JawOpen", "value": 0.15 }
     ]},
     { "name": "viseme_nn", "mix": [
         { "name": "mouthLowerDownLeft", "value": 0.4 },
         { "name": "mouthLowerDownRight", "value": 0.4 },
-        { "name": "mouthDimpleLeft", "value": 0.3 },
-        { "name": "mouthDimpleRight", "value": 0.3 },
+        { "name": "MouthDimpleLeft", "value": 0.3 },
+        { "name": "MouthDimpleRight", "value": 0.3 },
         { "name": "mouthFunnel", "value": 0.3 },
         { "name": "mouthPucker", "value": 0.3 },
-        { "name": "jawOpen", "value": 0.15 },
+        { "name": "JawOpen", "value": 0.15 },
         # { "name": "tongueOut", "value": 0.2 }
     ]},
     { "name": "viseme_sil", "mix": [] }
