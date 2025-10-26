@@ -35,14 +35,15 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
+import { EXRLoader } from 'three/addons/loaders/EXRLoader.js';
 import { FBXLoader } from 'three/addons/loaders/FBXLoader.js';
-import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import Stats from 'three/addons/libs/stats.module.js';
 
 import{ DynamicBones } from './dynamicbones.mjs';
 
 import { segment, OutputFormat, addDict} from 'pinyin-pro';
 import CompleteDict from './complete.mjs';
+// import { texture } from 'three/tsl';
 
 
 // import { linearToneMapping } from 'three/tsl';
@@ -892,7 +893,7 @@ class TalkingHead {
     this.renderer.setSize(this.nodeAvatar.clientWidth, this.nodeAvatar.clientHeight);
     this.renderer.outputColorSpace = THREE.SRGBColorSpace;
     this.renderer.toneMapping = THREE.LinearToneMapping;
-    this.renderer.toneMappingExposure = 0.55; // 曝光率，越大越亮
+    this.renderer.toneMappingExposure = 0.45; // 曝光率，越大越亮
     // this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
     // this.renderer.toneMappingExposure = 0.7; // 减小曝光：1.0(default)->0.9 或更低到0.7尝试
 
@@ -902,7 +903,40 @@ class TalkingHead {
     this.renderer.shadowMap.enabled = false; // ?
     this.nodeAvatar.appendChild( this.renderer.domElement );
     this.camera = new THREE.PerspectiveCamera( 10, this.nodeAvatar.clientWidth / this.nodeAvatar.clientHeight, 0.1, 2000 );
-    this.scene = new THREE.Scene();
+    let scene = new THREE.Scene();
+    const exrLoader = new EXRLoader();
+    const pmremGenerator = new THREE.PMREMGenerator(this.renderer);
+    pmremGenerator.compileEquirectangularShader(); // 可选：提前编译 shader
+    
+    exrLoader.load('./avatars/footprint_court_2k.exr', function (texture) {
+        // 2.1 设置贴图映射方式
+        texture.mapping = THREE.EquirectangularReflectionMapping;
+        // EXR 通常是线性 HDR，视需要设置编码（大多数情况用 LinearEncoding）
+        // 如果图像在显示上偏暗/偏亮，再尝试 texture.encoding = THREE.sRGBEncoding;
+        texture.encoding = THREE.LinearEncoding;
+
+        // 2.2 使用 PMREMGenerator 转换贴图 (PBR 必须步骤)
+        // --- 生成用于 PBR 的环境贴图（PMREM） ---
+        
+        const envMap = pmremGenerator.fromEquirectangular(texture).texture;
+
+        // --- 应用到场景 ---
+        // 1) envMap 作为 scene.environment（用于 PBR 材质的反射/光照）
+        scene.environment = envMap; // 光线
+
+        // 2) 同时把原始 equirectangular texture 作为背景（保留 HDR 细节）
+        //    注意：不要在这里 dispose 原始 texture，否则背景会变成空白
+        scene.background = texture; // 背景
+
+        // --- 清理 PMREM 生成器（可以释放临时 GL 资源） ---
+        
+    });
+    this.scene = scene;
+    // this.scene.scale.set(0.5, 0.5, 0.5);
+    // console.log('background: ', this.scene.background);
+    pmremGenerator.dispose();
+
+
     this.lightAmbient = new THREE.AmbientLight(
       new THREE.Color( this.opt.lightAmbientColor ),
       this.opt.lightAmbientIntensity
@@ -918,9 +952,9 @@ class TalkingHead {
       this.opt.lightSpotDispersion
     );
     this.setLighting( this.opt );
-    const pmremGenerator = new THREE.PMREMGenerator( this.renderer );
-    pmremGenerator.compileEquirectangularShader();
-    this.scene.environment = pmremGenerator.fromScene( new RoomEnvironment() ).texture;
+    
+    
+    // this.scene.environment = pmremGenerator.fromScene( new RoomEnvironment() ).texture;
     
     // this.scene.background = new THREE.Color( 0x888888 ); // 在这里设置背景，如果是图片的话
 
@@ -1313,11 +1347,12 @@ class TalkingHead {
         });
       }
       if ( obj.isMesh && obj.material ) {
-        // envMapIntensity 控制 PBR 材质对环境光（反射/漫射）的吸收强度
-        obj.material.envMapIntensity = 1.37;
-        obj.material.needsUpdate = true;
+        if (obj.material.isMeshStandardMaterial || obj.material.isMeshPhysicalMaterial) {
+          // envMapIntensity 控制 PBR 材质对环境光（反射/漫射）的吸收强度
+          obj.material.envMapIntensity = 1.5; // 1.37;
+          obj.material.needsUpdate = true;
+        }
       }
-
     });
 
     this.armature.traverse( x => {
@@ -1417,7 +1452,7 @@ class TalkingHead {
       }
     });
 
-
+    
     // Add avatar to scene
     this.scene.add(gltf.scene);
     
@@ -1450,7 +1485,7 @@ class TalkingHead {
     
     // HDR linear light //
     const directColor = 0xffffff;
-    const directIntensity = 1.8;
+    const directIntensity = 2.1; // 1.8;
 
     const dir = new THREE.DirectionalLight(directColor, directIntensity);
     dir.position.set(5, 5, 5); // 确保设置光源的位置
