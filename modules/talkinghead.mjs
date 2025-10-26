@@ -34,6 +34,7 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
 import { FBXLoader } from 'three/addons/loaders/FBXLoader.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import Stats from 'three/addons/libs/stats.module.js';
@@ -890,9 +891,15 @@ class TalkingHead {
     this.renderer.setPixelRatio( this.opt.modelPixelRatio * window.devicePixelRatio );
     this.renderer.setSize(this.nodeAvatar.clientWidth, this.nodeAvatar.clientHeight);
     this.renderer.outputColorSpace = THREE.SRGBColorSpace;
-    this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    this.renderer.toneMappingExposure = 0.7; // 减小曝光：1.0(default)->0.9 或更低到0.7尝试
-    this.renderer.shadowMap.enabled = false;
+    this.renderer.toneMapping = THREE.LinearToneMapping;
+    this.renderer.toneMappingExposure = 0.55; // 曝光率，越大越亮
+    // this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    // this.renderer.toneMappingExposure = 0.7; // 减小曝光：1.0(default)->0.9 或更低到0.7尝试
+
+    this.renderer.useLegacyLights = false; // 确保使用 PBR 规范
+    this.renderer.outputEncoding = THREE.sRGBEncoding;
+
+    this.renderer.shadowMap.enabled = false; // ?
     this.nodeAvatar.appendChild( this.renderer.domElement );
     this.camera = new THREE.PerspectiveCamera( 10, this.nodeAvatar.clientWidth / this.nodeAvatar.clientHeight, 0.1, 2000 );
     this.scene = new THREE.Scene();
@@ -914,6 +921,12 @@ class TalkingHead {
     const pmremGenerator = new THREE.PMREMGenerator( this.renderer );
     pmremGenerator.compileEquirectangularShader();
     this.scene.environment = pmremGenerator.fromScene( new RoomEnvironment() ).texture;
+    
+    // this.scene.background = new THREE.Color( 0x888888 ); // 在这里设置背景，如果是图片的话
+
+    // this.scene.environment = (this.renderer.capabilities.isWebGL2 ? 
+      // new THREE.WebGLCubeRenderTarget( 1, { format: THREE.RGBAFormat, encoding: THREE.sRGBEncoding } ).texture : null);
+
     this.resizeobserver = new ResizeObserver(this.onResize.bind(this));
     this.resizeobserver.observe(this.nodeAvatar);
 
@@ -1233,6 +1246,10 @@ class TalkingHead {
 
     // Loader | TODO: GLB error starts ↓
     const loader = new GLTFLoader();
+
+    const dracoLoader = new DRACOLoader();
+    dracoLoader.setDecoderPath('https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/libs/draco/');
+    loader.setDRACOLoader(dracoLoader);
     let gltf = await loader.loadAsync( avatar.url, onprogress );
 
     // Check the gltf
@@ -1247,9 +1264,9 @@ class TalkingHead {
 
     // Clear previous scene, if avatar was previously loaded
     this.mixer = null;
-    if ( this.armature ) {
-      this.clearThree( this.scene );
-    }
+    // if ( this.armature ) {
+    //   this.clearThree( this.scene );
+    // }
 
     // Avatar full-body
     this.armature = gltf.scene.children[0]
@@ -1261,7 +1278,7 @@ class TalkingHead {
     // TODO: 需要将所有this.morphs的注释打开
     gltf.scene.traverse(obj => {
       if (obj.isMesh) {
-        console.log(obj.name, obj.morphTargetDictionary, obj.morphTargetInfluences, obj.material);
+        // console.log(obj.name, obj.morphTargetDictionary, obj.morphTargetInfluences, obj.material);
         // 保证可以投影、接收阴影（如需要）
         obj.castShadow = true;
         obj.receiveShadow = true;
@@ -1292,10 +1309,15 @@ class TalkingHead {
 
           // 根据需要调整双面 / 透明
           // mat.side = THREE.DoubleSide;
-
           mat.needsUpdate = true;
         });
       }
+      if ( obj.isMesh && obj.material ) {
+        // envMapIntensity 控制 PBR 材质对环境光（反射/漫射）的吸收强度
+        obj.material.envMapIntensity = 1.37;
+        obj.material.needsUpdate = true;
+      }
+
     });
 
     this.armature.traverse( x => {
@@ -1398,10 +1420,13 @@ class TalkingHead {
 
     // Add avatar to scene
     this.scene.add(gltf.scene);
+    
+
+    
 
     // 晴天日光风格 //
-    const hemi = new THREE.HemisphereLight(0xbcdfff, 0x444444, 0.7);
-    const dir = new THREE.DirectionalLight(0xffffff, 1.0);
+    // const hemi = new THREE.HemisphereLight(0xbcdfff, 0x444444, 0.7);
+    // const dir = new THREE.DirectionalLight(0xffffff, 1.0);
 
     // 黄昏暖光风格 //
     // const hemi = new THREE.HemisphereLight(0xffcc88, 0x332211, 0.5);
@@ -1422,11 +1447,19 @@ class TalkingHead {
     // 默认光      //
     // const hemi = new THREE.HemisphereLight(0xffffff, 0x444444, 0.6);
     // const dir = new THREE.DirectionalLight(0xffffff, 0.6);
-    dir.position.set(5, 10, 2);
+    
+    // HDR linear light //
+    const directColor = 0xffffff;
+    const directIntensity = 1.8;
+
+    const dir = new THREE.DirectionalLight(directColor, directIntensity);
+    dir.position.set(5, 5, 5); // 确保设置光源的位置
+
+    // dir.position.set(5, 10, 2);
     dir.castShadow = true;
     dir.shadow.bias = -0.0003;
     dir.shadow.radius = 2;
-    this.scene.add(hemi);
+    // this.scene.add(hemi);
     this.scene.add(dir);
 
     // 添加一个“对侧填充光”与“背光”
