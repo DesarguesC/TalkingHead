@@ -3050,7 +3050,7 @@ async function llamaSendMessage(node,msgs) {
       let done = false;
       let buffer = "";
       const speakQueue = [];
-      const LengthThreshold = 10; // origin: 30
+      const LengthThreshold = 6; // origin: 30
       let delta = 0;
       let adding = 0;
       // let keep_reading = true;
@@ -3119,7 +3119,7 @@ async function llamaSendMessage(node,msgs) {
           }
 
           if ( tts.length >= LengthThreshold + delta && delta <= 27 ) { // 子串划分有问题
-            const indices = ['；', '。', '！', '？'] // 对非正常断句标点结尾的对象添加delta上界
+            const indices = ['。', '！', '？', '；'] // 对非正常断句标点结尾的对象添加delta上界
                     .map(p => tts.indexOf(p, LengthThreshold)) // start ths 45-th letter
                     .filter(index => index !== -1);
             const idx = indices.length > 0 ? Math.min(...indices) : -1;
@@ -3247,7 +3247,7 @@ async function llamaSendMessage(node,msgs) {
         // Speak | Useless ?
         if ( tts ) {
           let idx = 0;
-          ['.','!','?','\n'].forEach( x => {
+          ['。','！','？','\n'].forEach( x => {
             let tmp = tts.lastIndexOf(x,idx);
             if ( tmp > idx ) idx = tmp + 1;
           });

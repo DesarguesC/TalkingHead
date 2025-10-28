@@ -536,12 +536,14 @@ class TalkingHead {
     this.breath_factor = 0.4;
     this.animMoods = {
       'neutral' : {
-        baseline: { eyesLookDown: 0.1 },
+        baseline: { mouthSmile: 0.2, },
         speech: { deltaRate: 0, deltaPitch: 0, deltaVolume: 0 },
         anims: [
           { name: 'breathing', delay: 1500, dt: [ 1200,500,1000 ], vs: { chestInhale: [0.5 * this.breath_factor,0.5 * this.breath_factor,0] } },
           this.animTemplateEyes,
           this.animTemplateBlink,
+          { name: 'mouth', delay: [1000,5000], dt: [ [100,500],[100,5000,2] ], vs : { mouthRollLower: [[0,0.3,2]], mouthRollUpper: [[0,0.3,2]], mouthStretchLeft: [[0,0.3]], mouthStretchRight: [[0,0.3]], mouthPucker: [[0,0.3]] } },
+          { name: 'misc', delay: [100,5000], dt: [ [100,500],[1000,5000,2] ], vs : { eyeSquintLeft: [[0,0.3,2]], eyeSquintRight: [[0,0.3,2]], browInnerUp: [[0,0.3,2]], browOuterUpLeft: [[0,0.3,2]], browOuterUpRight: [[0,0.3,2]] } }
         ]
       },
       'happy' : {
@@ -748,7 +750,7 @@ class TalkingHead {
       { key: "mouthSmile", mix: { MouthSmileLeft: 0.8, MouthSmileRight: 0.8 } },
       { key: "eyesClosed", mix: { EyeBlinkLeft: 1.0, EyeBlinkRight: 1.0 } },
       { key: "eyesLookUp", mix: { eyeLookUpLeft: 1.0, eyeLookUpRight: 1.0 } },
-      { key: "eyesLookDown", mix: { eyeLookDownLeft: 1.0, eyeLookDownRight: 1.0 } }
+      { key: "eyesLookDown", mix: { eyeLookDownLeft: 1.0, eyeLookDownRight: 0.5 } }
     ];
 
     // Anim queues
@@ -764,7 +766,8 @@ class TalkingHead {
     this.LastTime = 0;
     this.animInterval = 0; // s
 
-    this.duration_factor = 0.2;
+    this.duration_factor = 0.1; // 句子间隔
+    this.visemeTimeScale = 0.75; // 视素时长
 
     this.word_per_second = 2.7; // 根据当前语速设置，向下取
     this.EvaluateTime = 999;
@@ -1589,7 +1592,7 @@ class TalkingHead {
     // 重设一下this.poseBase系列参数看能不能消除闪现终止动作的问题
 
     this.enableAngleLimiter(true, 60); // 启用角度限制器，限制为 ±60度
-    // this.setMood( this.avatar.avatarMood || this.moodName || this.opt.avatarMood );
+    this.setMood( this.avatar.avatarMood || this.moodName || this.opt.avatarMood );
     this.start();
 
   }
@@ -3432,7 +3435,7 @@ class TalkingHead {
   containsChinese(text) {
     return /[\u4e00-\u9fa5]/.test(text);
   }
-  preProcessChineseWords(words) {
+  preProcessChineseWords(words, merge=false) {
     // 直接添加空格
     // let cutWords = '';
     // for( let i=1; i<words.length; i++ ) {
@@ -3444,18 +3447,36 @@ class TalkingHead {
     // }
     // return cutWords;
 
-    const result = segment(words.join(''), { format: OutputFormat.AllString });
+    const result = segment(words.join(''), { format: OutputFormat.AllString }).origin
+                    .replace(/(\d)\s(?=\d|\.)/g, '$1') // 合并数字之间的空格
+                    .replace(/(\d)\s(?=\.\d+)/g, '$1') // 合并小数点前后的空格
+                    .replace(/(\.\d+)\s(?=\d)/g, '$1') // 合并小数点后数字的空格
+                    .replace(/(\d)\s(?=D)/g, '$1')  // 合并数字和非数字之间的空格
+                    .replace(/([0-9])\.\s([0-9])/g, '$1.$2');
   
     // 按照正常nlp的逻辑分词，以空格为分隔符
-
-    return result.origin
-            .replace(/(\d)\s(?=\d|\.)/g, '$1') // 合并数字之间的空格
-            .replace(/(\d)\s(?=\.\d+)/g, '$1') // 合并小数点前后的空格
-            .replace(/(\.\d+)\s(?=\d)/g, '$1') // 合并小数点后数字的空格
-            .replace(/(\d)\s(?=D)/g, '$1')  // 合并数字和非数字之间的空格
-            .replace(/([0-9])\.\s([0-9])/g, '$1.$2')
+    if ( !merge ) return result;
+    else {
+      let result_list = result.split(' ');
+      const wordThreshold = 6;
+      let merged_result = [];
+      let tmp = "";
+      while ( result_list.length > 0 ) {
+        const now = result_list.shift();
+        if ( ['！', '。', '；'].includes(now) ) {
+          merged_result.push( tmp );
+          merged_result.push( now );
+          tmp = "";
+        } else if ( tmp.length >= wordThreshold ) {
+          merged_result.push( tmp );
+          tmp = "";
+        } else {
+          tmp += now;
+        }
+      }
+      return merged_result.join(' ');
+    }
   }
-
   /**
   * Add text to the speech queue.
   * @param {string} s Text.
@@ -3620,7 +3641,7 @@ class TalkingHead {
 
     }
 
-    this.speechQueue.push( { break: 500 * this.duration_factor } );
+    this.speechQueue.push( { break: 110 * this.duration_factor } );
 
     // Start speaking (if not already)
     this.startSpeaking();
@@ -3752,7 +3773,7 @@ class TalkingHead {
       for( let i=0; i<r.words.length; i++ ) {
         const word = r.words[i];
         const time = r.wtimes[i];
-        let duration = r.wdurations[i];
+        let duration = r.wdurations[i] * ( this.visemeTimeScale ?? 1.0 );
 
         if ( word.length ) {
 
@@ -3800,7 +3821,7 @@ class TalkingHead {
         for( let i=0; i<r.visemes.length; i++ ) {
           const viseme = r.visemes[i];
           const time = r.vtimes[i];
-          const duration = r.vdurations[i];
+          const duration = r.vdurations[i] * ( this.visemeTimeScale ?? 1.0 );
           lipsyncAnim.push( {
             template: { name: 'viseme' },
             ts: [ time - 2 * duration/3, time + duration/2, time + duration + duration/2 ],
@@ -4173,6 +4194,20 @@ class TalkingHead {
   * @param {number} t Time in milliseconds
   */
   lookAhead(t) {
+    if (t) {
+      let old = this.animQueue.findIndex( y => y.template.name === 'lookat' );
+      if ( old !== -1 ) {
+        this.animQueue.splice(old, 1);
+      }
+      const template = {
+        name: 'lookat',
+        dt: [750,t],
+        vs: {
+          eyeContact: [0],
+        }
+      };
+      this.animQueue.push( this.animFactory( template ) );
+    }
     return;
 
 
