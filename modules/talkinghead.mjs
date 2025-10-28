@@ -535,28 +535,31 @@ class TalkingHead {
 
     this.breath_factor = 0.4;
     this.animMoods = {
-      'neutral' : {
-        baseline: { mouthSmile: 0.2, },
-        speech: { deltaRate: 0, deltaPitch: 0, deltaVolume: 0 },
-        anims: [
-          { name: 'breathing', delay: 1500, dt: [ 1200,500,1000 ], vs: { chestInhale: [0.5 * this.breath_factor,0.5 * this.breath_factor,0] } },
-          this.animTemplateEyes,
-          this.animTemplateBlink,
-          { name: 'mouth', delay: [1000,5000], dt: [ [100,500],[100,5000,2] ], vs : { mouthRollLower: [[0,0.3,2]], mouthRollUpper: [[0,0.3,2]], mouthStretchLeft: [[0,0.3]], mouthStretchRight: [[0,0.3]], mouthPucker: [[0,0.3]] } },
-          { name: 'misc', delay: [100,5000], dt: [ [100,500],[1000,5000,2] ], vs : { eyeSquintLeft: [[0,0.3,2]], eyeSquintRight: [[0,0.3,2]], browInnerUp: [[0,0.3,2]], browOuterUpLeft: [[0,0.3,2]], browOuterUpRight: [[0,0.3,2]] } }
-        ]
-      },
-      'happy' : {
-        baseline: { mouthSmile: 0.2, eyesLookDown: 0.1 },
+      // 'neutral' : {
+      //   baseline: { mouthSmile: 0.2, },
+      //   speech: { deltaRate: 0, deltaPitch: 0, deltaVolume: 0 },
+      //   anims: [
+      //     { name: 'breathing', delay: 1500, dt: [ 1200,500,1000 ], vs: { chestInhale: [0.5 * this.breath_factor,0.5 * this.breath_factor,0] } },
+      //     this.animTemplateEyes,
+      //     this.animTemplateBlink,
+      //     { name: 'mouth', delay: [1000,5000], dt: [ [100,500],[100,5000,2] ], vs : { mouthRollLower: [[0,0.3,2]], mouthRollUpper: [[0,0.3,2]], mouthStretchLeft: [[0,0.3]], mouthStretchRight: [[0,0.3]], mouthPucker: [[0,0.3]] } },
+      //     { name: 'misc', delay: [100,5000], dt: [ [100,500],[1000,5000,2] ], vs : { eyeSquintLeft: [[0,0.3,2]], eyeSquintRight: [[0,0.3,2]], browInnerUp: [[0,0.3,2]], browOuterUpLeft: [[0,0.3,2]], browOuterUpRight: [[0,0.3,2]] } }
+      //   ]
+      // },
+      // 'happy' : 
+      'neutral': {
+        baseline: { mouthSmile: 0.4, }, // origin: 0.2
         speech: { deltaRate: 0, deltaPitch: 0.1, deltaVolume: 0 },
         anims: [
           { name: 'breathing', delay: 1500, dt: [ 1200,500,1000 ], vs: { chestInhale: [0.5 * this.breath_factor,0.5 * this.breath_factor,0] } },
           this.animTemplateEyes,
           this.animTemplateBlink,
+          { name: 'mouth', delay: [1000,5000], dt: [ [100,500],[100,5000,2] ], vs : { mouthLeft: [[0,0.3,2]], mouthSmile: [[0,0.2,3]], mouthRollLower: [[0,0.3,2]], mouthRollUpper: [[0,0.3,2]], mouthStretchLeft: [[0,0.3]], mouthStretchRight: [[0,0.3]], mouthPucker: [[0,0.3]] } },
+          { name: 'misc', delay: [100,5000], dt: [ [100,500],[1000,5000,2] ], vs : { eyeSquintLeft: [[0,0.3,2]], eyeSquintRight: [[0,0.3,2]], browInnerUp: [[0,0.3,2]], browOuterUpLeft: [[0,0.3,2]], browOuterUpRight: [[0,0.3,2]] } }
         ]
       },
       'angry' : {
-        baseline: { eyesLookDown: 0.1, BrowDownLeft: 0.6, BrowDownRight: 0.6, jawForward: 0.3, mouthFrownLeft: 0.7, mouthFrownRight: 0.7, MouthRollLower: 0.2, mouthShrugLower: 0.3, handFistLeft: 1, handFistRight: 1 },
+        baseline: { BrowDownLeft: 0.6, BrowDownRight: 0.6, jawForward: 0.3, mouthFrownLeft: 0.7, mouthFrownRight: 0.7, MouthRollLower: 0.2, mouthShrugLower: 0.3, handFistLeft: 1, handFistRight: 1 },
         speech: { deltaRate: -0.2, deltaPitch: 0.2, deltaVolume: 0 },
         anims: [
           { name: 'breathing', delay: 500, dt: [ 1000,500,1000 ], vs: { chestInhale: [0.7 * this.breath_factor,0.7 * this.breath_factor,0] } },
@@ -565,7 +568,7 @@ class TalkingHead {
         ]
       },
       'sad' : {
-        baseline: { eyesLookDown: 0.2, BrowDownRight: 0.1, browInnerUp: 0.6, BrowOuterUpRight: 0.2, eyeSquintLeft: 0.7, eyeSquintRight: 0.7, mouthFrownLeft: 0.8, mouthFrownRight: 0.8, MouthLeft: 0.2, mouthPucker: 0.5, MouthRollLower: 0.2, MouthRollUpper: 0.2, mouthShrugLower: 0.2, mouthShrugUpper: 0.2, MouthStretchLeft: 0.4 },
+        baseline: { BrowDownRight: 0.1, browInnerUp: 0.6, BrowOuterUpRight: 0.2, eyeSquintLeft: 0.7, eyeSquintRight: 0.7, mouthFrownLeft: 0.8, mouthFrownRight: 0.8, MouthLeft: 0.2, mouthPucker: 0.5, MouthRollLower: 0.2, MouthRollUpper: 0.2, mouthShrugLower: 0.2, mouthShrugUpper: 0.2, MouthStretchLeft: 0.4 },
         speech: { deltaRate: -0.2, deltaPitch: -0.2, deltaVolume: 0 },
         anims: [
           { name: 'breathing', delay: 1500, dt: [ 1000,500,1000 ], vs: { chestInhale: [0.3 * this.breath_factor,0.3 * this.breath_factor,0] } },
