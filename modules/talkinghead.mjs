@@ -770,7 +770,8 @@ class TalkingHead {
     this.animInterval = 0; // s
 
     this.duration_factor = 0.25; // 句子间隔
-    this.visemeTimeScale = 0.3; // 视素时长
+    this.visemeDurationScale = 0.3; // 视素时长
+    this.visemeTimeScale = 0.5;
 
     this.word_per_second = 2.7; // 根据当前语速设置，向下取
     this.EvaluateTime = 999;
@@ -810,7 +811,7 @@ class TalkingHead {
     // Clock
     this.animFrameDur = 1000/ this.opt.modelFPS;
     this.animClock = 0;
-    this.animSlowdownRate = 0.95;
+    this.animSlowdownRate = 0.95; // 与动作相关?
     this.animTimeLast = 0;
     this.easing = this.sigmoidFactory(5); // Ease in and out
 
@@ -3120,7 +3121,7 @@ class TalkingHead {
           this.speakText(j); // j: 完整的文字返回
           break;
 
-        case 'subtitles':
+        case 'subtitles': // addText
           if ( this.onSubtitles && typeof this.onSubtitles === "function" ) {
             this.onSubtitles(/[\u4e00-\u9fa5]/.test(j) ? j.trim() : j); // 去除多余空格 「DONE!」
           }
@@ -3579,7 +3580,7 @@ class TalkingHead {
         if ( textWord.length ) {
           const val = this.lipsyncWordsToVisemes(textWord.match(/[0-9]/ug) ? this.readAllNumbers(textWord) : textWord, lipsyncLang);
           if ( val && val.visemes && val.visemes.length ) {
-            const d = val.times[ val.visemes.length-1 ] + val.durations[ val.visemes.length-1 ];
+            const d = val.times[ val.visemes.length-1 ] + val.durations[ val.visemes.length-1 ]; // viseme的时长和总时间有关系
             for( let j=0; j<val.visemes.length; j++ ) {
               const o =
               lipsyncAnim.push( {
@@ -3776,7 +3777,7 @@ class TalkingHead {
       for( let i=0; i<r.words.length; i++ ) {
         const word = r.words[i];
         const time = r.wtimes[i];
-        let duration = r.wdurations[i] * ( this.visemeTimeScale ?? 1.0 );
+        let duration = r.wdurations[i] * ( this.visemeDurationScale ?? 1.0 );
 
         if ( word.length ) {
 
@@ -3824,7 +3825,7 @@ class TalkingHead {
         for( let i=0; i<r.visemes.length; i++ ) {
           const viseme = r.visemes[i];
           const time = r.vtimes[i];
-          const duration = r.vdurations[i] * ( this.visemeTimeScale ?? 1.0 );
+          const duration = r.vdurations[i] * ( this.visemeDurationScale ?? 1.0 );
           lipsyncAnim.push( {
             template: { name: 'viseme' },
             ts: [ time - 2 * duration/3, time + duration/2, time + duration + duration/2 ],
@@ -3904,7 +3905,7 @@ class TalkingHead {
       }
 
       // AudioBuffer
-      let audio;
+      let audio; // 播放 audio
       if ( Array.isArray(item.audio) ) {
         // Convert from PCM samples
         let buf = this.concatArrayBuffers( item.audio );
@@ -3916,7 +3917,7 @@ class TalkingHead {
       // Create audio source
       this.audioSpeechSource = this.audioCtx.createBufferSource();
       this.audioSpeechSource.buffer = audio;
-      this.audioSpeechSource.playbackRate.value = 1 / this.animSlowdownRate;
+      this.audioSpeechSource.playbackRate.value = 1 / this.animSlowdownRate; // ???
       this.audioSpeechSource.connect(this.audioAnalyzerNode);
       this.audioSpeechSource.addEventListener('ended', () => {
         this.audioSpeechSource.disconnect();
@@ -3932,7 +3933,8 @@ class TalkingHead {
         delay = Math.abs(Math.min(0, ...item.anim.map( x => Math.min(...x.ts) ) ) );
         item.anim.forEach( x => {
           for(let i=0; i<x.ts.length; i++) {
-            x.ts[i] = this.animClock + x.ts[i] + delay;
+            // x.ts[i] = this.animClock + x.ts[i] + delay; // origin
+            x.ts[i] = this.animClock + (x.ts[i] + delay) * (44100/24000); // modified
           }
           this.animQueue.push(x);
         });
@@ -3980,11 +3982,11 @@ class TalkingHead {
         // Look at the camera
         this.lookAtCamera(500);
         
-
+        // TODO: check {anim: line.anim, audio: line.audio}
         // Make a playlist
         this.audioPlaylist.push({ anim: line.anim, audio: line.audio });
         // this.speakWithHands(undefined, undefined, able_to_push);
-        this.onSubtitles = line.onSubtitles || null;
+        this.onSubtitles = line.onSubtitles || null; // Callback interface for addText
         this.resetLips();
         if ( line.mood ) this.setMood( line.mood );
         this.playAudio();
@@ -4065,10 +4067,6 @@ class TalkingHead {
             // Audio data
             const buf = this.b64ToArrayBuffer(data.audioContent);
             const audio = await this.audioCtx.decodeAudioData( buf );
-
-            const sampleRate = audio.sampleRate;
-            const totalSamples = audio.length;
-            const durationMs = (totalSamples / sampleRate) * 1000;
             
 
             // Workaround for Google TTS not providing all timepoints
@@ -4095,10 +4093,10 @@ class TalkingHead {
                 let prevDuration = x - times[i-1];
                 if ( prevDuration > 150 ) prevDuration - 150; // Trim out leading space
                 timepoints[i-1].duration = prevDuration;
-                timepoints.push( { mark: i, time: x });
+                timepoints.push( { mark: i, time: x * (24000/44100) });
               }
             });
-            let d = 1000 * audio.duration; // Duration in ms
+            let d = 1000 * audio.duration  * (24000/44100); // Duration in ms
             if ( d > this.opt.ttsTrimEnd ) d = d - this.opt.ttsTrimEnd; // Trim out silence at the end
             timepoints[timepoints.length-1].duration = d - timepoints[timepoints.length-1].time;
 
@@ -4107,7 +4105,7 @@ class TalkingHead {
               const timepoint = timepoints[x.mark];
               if ( timepoint ) {
                 for(let i=0; i<x.ts.length; i++) {
-                  x.ts[i] = timepoint.time + (x.ts[i] * timepoint.duration) + this.opt.ttsTrimStart;
+                  x.ts[i] = timepoint.time + (x.ts[i] * timepoint.duration * (this.visemeTimeScale||1.0)) + this.opt.ttsTrimStart;
                 }
               }
             });
