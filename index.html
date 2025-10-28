@@ -3064,7 +3064,7 @@ async function llamaSendMessage(node,msgs) {
 
       while ( true ) {
         let { done, value } = await reader.read();
-        // await SyncSleep( 50 );
+        // await SyncSleep( 150 );
         // await SyncSleep( Math.min(Math.floor(Math.random() * ( 70 * ++adding - 50 + 1)) + 100, 200) ); 
         // 需要随服务器响应速度调整
         //adding++;

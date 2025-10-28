@@ -769,8 +769,8 @@ class TalkingHead {
     this.LastTime = 0;
     this.animInterval = 0; // s
 
-    this.duration_factor = 0.1; // 句子间隔
-    this.visemeTimeScale = 0.75; // 视素时长
+    this.duration_factor = 0.25; // 句子间隔
+    this.visemeTimeScale = 0.3; // 视素时长
 
     this.word_per_second = 2.7; // 根据当前语速设置，向下取
     this.EvaluateTime = 999;
@@ -4057,7 +4057,7 @@ class TalkingHead {
 
           const res = await fetch( this.opt.ttsEndpoint + (this.opt.ttsApikey ? "?key=" + this.opt.ttsApikey : ''), o);
           const data = await res.json();
-          await this.syncSleep( Math.min(Math.floor(Math.random() * 100) + 10, 200) ); // 需要根据服务器性能调整 * 2~10
+          // await this.syncSleep( Math.min(Math.floor(Math.random() * 100) + 10, 200) ); // 需要根据服务器性能调整 * 2~10
           
 
           if ( res.status === 200 && data && data.audioContent ) {
@@ -4065,6 +4065,10 @@ class TalkingHead {
             // Audio data
             const buf = this.b64ToArrayBuffer(data.audioContent);
             const audio = await this.audioCtx.decodeAudioData( buf );
+
+            const sampleRate = audio.sampleRate;
+            const totalSamples = audio.length;
+            const durationMs = (totalSamples / sampleRate) * 1000;
             
 
             // Workaround for Google TTS not providing all timepoints
