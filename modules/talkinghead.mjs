@@ -533,7 +533,7 @@ class TalkingHead {
       { delay: [1000,4000,1,2], dt: [50,[100,200],100,[10,400,0],50,[100,200],100], vs: { EyeBlinkLeft: [1,1,0,0,1,1,0], EyeBlinkRight: [1,1,0,0,1,1,0] } }
     ]};
 
-    this.breath_factor = 0.4;
+    this.breath_factor = 0.2;
     this.animMoods = {
       // 'neutral' : {
       //   baseline: { mouthSmile: 0.2, },
@@ -3934,7 +3934,7 @@ class TalkingHead {
         item.anim.forEach( x => {
           for(let i=0; i<x.ts.length; i++) {
             // x.ts[i] = this.animClock + x.ts[i] + delay; // origin
-            x.ts[i] = this.animClock + (x.ts[i] + delay) * (44100/24000); // modified
+            x.ts[i] = this.animClock + (x.ts[i] + delay) * (24000/44100); // modified
           }
           this.animQueue.push(x);
         });
@@ -4059,7 +4059,7 @@ class TalkingHead {
 
           const res = await fetch( this.opt.ttsEndpoint + (this.opt.ttsApikey ? "?key=" + this.opt.ttsApikey : ''), o);
           const data = await res.json();
-          // await this.syncSleep( Math.min(Math.floor(Math.random() * 100) + 10, 200) ); // 需要根据服务器性能调整 * 2~10
+          await this.syncSleep( Math.min(Math.floor(Math.random() * 100) + 10, 200) / 2 + 50 ); // 需要根据服务器性能调整 * 2~10
           
 
           if ( res.status === 200 && data && data.audioContent ) {
