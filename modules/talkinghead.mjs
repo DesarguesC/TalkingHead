@@ -811,7 +811,7 @@ class TalkingHead {
     // Clock
     this.animFrameDur = 1000/ this.opt.modelFPS;
     this.animClock = 0;
-    this.animSlowdownRate = 0.95; // 与动作相关?
+    this.animSlowdownRate = 1.0; // 与动作相关?
     this.animTimeLast = 0;
     this.easing = this.sigmoidFactory(5); // Ease in and out
 
@@ -933,11 +933,17 @@ class TalkingHead {
 
         // 2) 同时把原始 equirectangular texture 作为背景（保留 HDR 细节）
         //    注意：不要在这里 dispose 原始 texture，否则背景会变成空白
-        scene.background = texture; // 背景
+        // scene.background = texture; // 背景
 
         // --- 清理 PMREM 生成器（可以释放临时 GL 资源） ---
         
     });
+    const textureLoader = new THREE.TextureLoader();
+    textureLoader.load('./avatars/bg.png', (texture) => {
+      texture.encoding = THREE.sRGBEncoding;
+      scene.background = texture;
+    });
+
     this.scene = scene;
     // this.scene.scale.set(0.5, 0.5, 0.5);
     // console.log('background: ', this.scene.background);
