@@ -3923,7 +3923,7 @@ class TalkingHead {
       // Create audio source
       this.audioSpeechSource = this.audioCtx.createBufferSource();
       this.audioSpeechSource.buffer = audio;
-      this.audioSpeechSource.playbackRate.value = 1 / this.animSlowdownRate; // ???
+      this.audioSpeechSource.playbackRate.value = 1 / this.animSlowdownRate * (44100/24000); // ???
       this.audioSpeechSource.connect(this.audioAnalyzerNode);
       this.audioSpeechSource.addEventListener('ended', () => {
         this.audioSpeechSource.disconnect();
@@ -3936,11 +3936,11 @@ class TalkingHead {
         // line.anim: { template: 'visemes', ts: ..., vs: ...}
         // TODO: check here
         // Find the lowest negative time point, if any
-        delay = Math.abs(Math.min(0, ...item.anim.map( x => Math.min(...x.ts) ) ) );
+        delay = Math.abs(Math.min(0, ...item.anim.map( x => Math.min(...x.ts) ) ) ); delay *= (24000/44100);
         item.anim.forEach( x => {
           for(let i=0; i<x.ts.length; i++) {
             // x.ts[i] = this.animClock + x.ts[i] + delay; // origin
-            x.ts[i] = this.animClock + (x.ts[i] + delay) * (24000/44100); // modified
+            x.ts[i] = this.animClock + (x.ts[i] + delay); //* (24000/44100); // modified
           }
           this.animQueue.push(x);
         });
@@ -4082,7 +4082,7 @@ class TalkingHead {
               if ( i > 0 ) {
                 let ms = times[ times.length - 1 ];
                 if ( data.timepoints[markIndex] ) {
-                  ms = data.timepoints[markIndex].timeSeconds * 1000;
+                  ms = data.timepoints[markIndex].timeSeconds * 1000 * (24000/44100);
                   if ( data.timepoints[markIndex].markName === ""+x.mark ) {
                     markIndex++;
                   }
