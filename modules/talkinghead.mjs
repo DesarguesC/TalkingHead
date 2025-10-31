@@ -3936,11 +3936,11 @@ class TalkingHead {
         // line.anim: { template: 'visemes', ts: ..., vs: ...}
         // TODO: check here
         // Find the lowest negative time point, if any
-        delay = Math.abs(Math.min(0, ...item.anim.map( x => Math.min(...x.ts) ) ) ); delay *= (24000/44100);
+        delay = Math.abs(Math.min(0, ...item.anim.map( x => Math.min(...x.ts) ) ) );
         item.anim.forEach( x => {
           for(let i=0; i<x.ts.length; i++) {
             // x.ts[i] = this.animClock + x.ts[i] + delay; // origin
-            x.ts[i] = this.animClock + (x.ts[i] + delay); //* (24000/44100); // modified
+            x.ts[i] = this.animClock + (x.ts[i] + delay) * (24000/44100); // modified
           }
           this.animQueue.push(x);
         });
@@ -4098,7 +4098,7 @@ class TalkingHead {
               if ( i>0 ) {
                 let prevDuration = x - times[i-1];
                 if ( prevDuration > 150 ) prevDuration - 150; // Trim out leading space
-                timepoints[i-1].duration = prevDuration;
+                timepoints[i-1].duration = prevDuration * (24000/44100);
                 timepoints.push( { mark: i, time: x * (24000/44100) });
               }
             });
@@ -4111,7 +4111,7 @@ class TalkingHead {
               const timepoint = timepoints[x.mark];
               if ( timepoint ) {
                 for(let i=0; i<x.ts.length; i++) {
-                  x.ts[i] = timepoint.time + (x.ts[i] * timepoint.duration * (this.visemeTimeScale||1.0)) + this.opt.ttsTrimStart;
+                  x.ts[i] = timepoint.time + (x.ts[i] * timepoint.duration * (this.visemeTimeScale||1.0)) + this.opt.ttsTrimStart * (24000/44100);
                 }
               }
             });
