@@ -3923,7 +3923,7 @@ class TalkingHead {
       // Create audio source
       this.audioSpeechSource = this.audioCtx.createBufferSource();
       this.audioSpeechSource.buffer = audio;
-      this.audioSpeechSource.playbackRate.value = 1 / this.animSlowdownRate * (44100/24000); // ???
+      this.audioSpeechSource.playbackRate.value = 1 / this.animSlowdownRate; // * (44100/24000); // ???
       this.audioSpeechSource.connect(this.audioAnalyzerNode);
       this.audioSpeechSource.addEventListener('ended', () => {
         this.audioSpeechSource.disconnect();
@@ -4102,7 +4102,8 @@ class TalkingHead {
                 timepoints.push( { mark: i, time: x * (24000/44100) });
               }
             });
-            let d = 1000 * audio.duration  * (24000/44100); // Duration in ms
+            // let d = 1000 * audio.duration  * (24000/44100); // Duration in ms
+            let d = 1000 * audio.duration; // Duration in ms
             if ( d > this.opt.ttsTrimEnd ) d = d - this.opt.ttsTrimEnd; // Trim out silence at the end
             timepoints[timepoints.length-1].duration = d - timepoints[timepoints.length-1].time;
 
@@ -4111,7 +4112,7 @@ class TalkingHead {
               const timepoint = timepoints[x.mark];
               if ( timepoint ) {
                 for(let i=0; i<x.ts.length; i++) {
-                  x.ts[i] = timepoint.time + (x.ts[i] * timepoint.duration * (this.visemeTimeScale||1.0)) + this.opt.ttsTrimStart * (24000/44100);
+                  x.ts[i] = timepoint.time + (x.ts[i] * timepoint.duration * (this.visemeTimeScale||1.0)) + this.opt.ttsTrimStart;
                 }
               }
             });
