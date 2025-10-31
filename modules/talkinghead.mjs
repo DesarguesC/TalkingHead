@@ -3645,13 +3645,13 @@ class TalkingHead {
         //     this.speechQueue.push( { emoji: emoji } );
         //   }
         // }
-        this.speechQueue.push( { break: 100 * this.duration_factor } );
+        this.speechQueue.push( { break: 80 * this.duration_factor } );
 
       }
 
     }
 
-    this.speechQueue.push( { break: 110 * this.duration_factor } );
+    this.speechQueue.push( { break: 120 * this.duration_factor } );
 
     // Start speaking (if not already)
     this.startSpeaking();
@@ -4674,185 +4674,6 @@ class TalkingHead {
     }
     console.log("预处理动作组数量:", this.animClips.length);
   }
-
-
-  async GroupAnimationConstruct(groupName, onprogress=null, dur=200, ndx=0, scale=0.01, tween=true) {
-    const animList = this.AnimationFA_route[groupName];
-    const loader = new GLTFLoader();
-    let glb_list = []
-    const promises = animList.map(file => loader.loadAsync(`./animations/${file}`, onprogress));
-    const glbs = await Promise.all(promises);
-    glb_list = animList.map((file, i) => ({ url: `./animations/${file}`, glb: glbs[i] }));
-    let glb_anims = [];
-    const scale_ = new THREE.Vector3(scale, scale, scale);
-    glb_list.forEach( item => {
-      const url = item['url']
-      const glb = item['glb']
-      if  ( glb && glb.animations && glb.animations[ndx] ) {
-        let anim = glb.animations[ndx];
-        const props = {};
-        anim.tracks.sort((a, b) => {
-            let ids1 = a.name.split('.');
-            let ids2 = b.name.split('.');
-            return ids2[1].localeCompare(ids1[1]); // scale first (scale, position, quaternion)
-          });
-        anim.tracks.forEach( t => {
-          if(t.name.includes('mixamorig')) t.name = t.name.replaceAll('mixamorig','');
-          const ids = t.name.split('.');
-          if ( ids[1] === 'position' ) { 
-            // [DONE] 初步定位是提供的ref文件中，带有position信息的t(即ids[1] === 'position'时)的time帧数不足；walking中是有 30帧就是30个time，ref中这部分只有2个time
-            const s_now = (ids[0]+'.scale' in props) ? props[ids[0]+'.scale'] : scale_ ;
-            for(let i=0; i<t.values.length; i++ ) {
-              t.values[i] = t.values[i] * (i%3===0?s_now.x:(i%3===1?s_now.y:s_now.z));
-            }
-            props[t.name] = new THREE.Vector3(t.values[0], t.values[1],t.values[2]);
-          } else if ( ids[1] === 'quaternion' ) {
-            props[t.name] = new THREE.Quaternion(t.values[0],t.values[1],t.values[2],t.values[3]);
-            // props[t.name].multiply(q_);
-          } else if ( ids[1] === 'rotation' ) {
-            props[ids[0]+".quaternion"] = new THREE.Quaternion().setFromEuler(new THREE.Euler(t.values[0],t.values[1],t.values[2],'XYZ')).normalize();
-          } 
-          else if  ( ids[1] === 'scale' ) {
-            // first
-            props[t.name] = new THREE.Vector3(t.values[0], t.values[1], t.values[2]);
-          }
-        });
-
-        const newPose = { props: props};
-        glb_anims.push({
-          url: url+'-'-ndx,
-          clip: anim,
-          pose: newPose
-        })
-      }
-    });
-    if ( !this.animClips.some( _item_ => _item_.name == groupName)) {
-      this.animClips.push({
-        'name': groupName,
-        'pose': glb_anims
-      });
-    }
-    
-  }
-
-  async GroupAnimationPlayer(groupName, onprogress=null, dur=200, ndx=0, scale=0.01, tween=true) {
-    await this.GroupAnimationConstruct(groupName, onprogress, dur, ndx, scale, tween);
-    let item = this.animClips.find( x => x.name === groupName) || null;
-    // if ( !item ) {
-    //   await this.GroupAnimationConstruct(groupName, onprogress, dur, ndx, scale, tween);
-    //   item = this.animClips.find( x => x.name === groupName) || null;
-    //   if (!item) item = this.animClips.find( x => x.url.includes('U_Idle_01_Cycle.glb'));
-    // }
-    item['pose'].forEach(x => {this.seqItems.push(x)});
-    const applyPoseFromItem = (item, tween = true, dur = 400) => {
-      if (!item || !item.pose) return;
-      Object.entries(item.pose.props).forEach( x => {
-        this.poseBase.props[x[0]] = x[1].clone();
-        this.poseTarget.props[x[0]] = x[1].clone();
-        this.poseTarget.props[x[0]].t = tween ? 0 : 1;
-        this.poseTarget.props[x[0]].d = tween ? Math.max(200, Math.min(dur, 1000)) : 0;
-      });
-    };
-    if (this.mixer) {
-      try { this.mixer.stopAllAction(); } catch(e) {}
-      if (this._seqFinishedHandler && this.mixer.removeEventListener) {
-        try { this.mixer.removeEventListener('finished', this._seqFinishedHandler); } catch(e) {}
-      }
-      // 不立即置 null — 在下面会重建
-      this.mixer = null;
-      this._seqFinishedHandler = null;
-    }
-    // multi animations
-    if (this.seqItems.length >= 2 && item) {
-      // 使用所有匹配到的 clip（按 seqItems 中的顺序）
-      this.mixer = new THREE.AnimationMixer(this.armature);
-
-      // let idx = 0;
-      this.currentAction = null;
-      const fadeTime = 0.5; // 可调整淡入/淡出时间（秒）
-      const playNext = (evt) => { // 迭代器
-        // 只有当前 action 自己的 finished 事件才触发下一步（避免竞态）
-        if (evt && evt.action && this.currentAction && evt.action !== this.currentAction) {
-          return;
-        }
-        // fade out 旧 action（若存在）
-        if (this.currentAction) {
-          try { this.currentAction.fadeOut(fadeTime); } catch(e) {}
-        }
-
-        // 从队列头取下一个 item（只播放一次）
-        const itemNext = this.seqItems.shift(); // <- 这是关键：移除已播放的项
-        if ( this.seqItems.length === 0) return;
-        // 在开始新动作前应用 pose（如果不想补间，把 tween 设为 false）
-        applyPoseFromItem(itemNext, /*tween*/ tween, /*dur*/ dur);
-
-        // 创建 action 并配置（播放一次）
-        const action = this.mixer.clipAction(itemNext.clip);
-        action.reset();
-        action.setLoop(THREE.LoopOnce, 0); // 播放一次
-        action.clampWhenFinished = true;
-        action.enabled = true;
-
-        // 启动（淡入/播放）
-        this.LastTime = Date.now();
-        if (fadeTime > 0) {
-          action.fadeIn(fadeTime).play();
-        } else {
-          action.play();
-          action.setEffectiveWeight(1);
-        }
-
-        // 保存当前 action 引用（finished 事件时用来比对）
-        this.currentAction = action;
-        // 如果队列在此时已空，说明这是最后一个动作
-        // 但不要在这里 cleanup：等待该 action 的 finished 事件触发后再 cleanup，
-        // 这样可以保证动作完整播放结束后再销毁 mixer。
-        // （如果你想在播放最后一个动作时马上移除队列引用也可）
-        // 如果队列已空，清理并返回
-      };
-
-      
-
-      // 保存 handler 引用用于 later remove
-      this._seqFinishedHandler = (e) => playNext(e);
-      this.mixer.addEventListener('finished', this._seqFinishedHandler);
-
-      // 启动序列：先从 seqItems[0] 开始
-      playNext();
-
-      this.playAnimation(`./animations/U_Idle_01_Cycle.glb`, null, 200, 0, 0.01, false);
-
-    // ---------- 情况 2：找到了单个 item ----------
-    } else {
-      if (!item) item = this.animClips.find( x => x.url.includes('U_Idle_01_Cycle.glb'));
-      else item = this.seqItems[0]; // 取出元素
-
-      // Set new pose && 补间动画
-      Object.entries(item.pose.props).forEach( x => {
-        this.poseBase.props[x[0]] = x[1].clone();
-        this.poseTarget.props[x[0]] = x[1].clone();
-        this.poseTarget.props[x[0]].t = tween ? 0 : 1;
-        this.poseTarget.props[x[0]].d = tween ? Math.max(200, Math.min(dur, 1000)) : 0;
-      });
-
-      // Create a new mixer
-      this.mixer = new THREE.AnimationMixer(this.armature);
-      this.mixer.addEventListener( 'finished', this.stopAnimation.bind(this), { once: true });
-
-      // Play action
-      const repeat = 0;// -> 1 time // Math.ceil(dur / item.clip.duration);
-      const action = this.mixer.clipAction(item.clip);
-      action.setLoop( THREE.LoopRepeat, repeat );
-      action.clampWhenFinished = true;
-      action.fadeIn(0.5).play();
-
-    }
-
-    // this.animClips = [];
-    // this.stopSequence();
-
-  }
-
 
   /**
   * Play RPM/Mixamo animation clip.
