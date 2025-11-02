@@ -771,7 +771,7 @@ class TalkingHead {
 
     this.duration_factor = 0.25; // 句子间隔
     this.visemeDurationScale = 0.3; // 视素时长
-    this.visemeTimeScale = 0.5;
+    this.visemeTimeScale = 1.0; // 视素时间缩放
 
     this.word_per_second = 2.7; // 根据当前语速设置，向下取
     this.EvaluateTime = 999;
@@ -3273,8 +3273,8 @@ class TalkingHead {
         // this.objectHips.position.x -= (v.x+w.x)/4;
         // this.objectHips.position.z -= (v.z+w.z)/2;
         this.LastTime = t;
-        this.animInterval = 7.10;
-        this.playAnimation(`./animations/${this.AnimationFA_route[this.startAnim][0]}`, null, 200, 0, 0.01, false);
+        // this.animInterval = 7.10;
+        // this.playAnimation(`./animations/${this.AnimationFA_route[this.startAnim][0]}`, null, 200, 0, 0.01, false);
         this.startAnim = null;
       } else {
         // Update Dynamic Bones
@@ -4587,26 +4587,6 @@ class TalkingHead {
   stopListening() {
     this.isListening = false;
   }
-
-  async cleanupSequence() {
-    if (!this.mixer) return;
-    if (this._seqFinishedHandler) {
-      try { this.mixer.removeEventListener('finished', this._seqFinishedHandler); } catch(e) {}
-      this._seqFinishedHandler = null;
-    }
-    try { this.mixer.stopAllAction(); } catch(e) {}
-    try {
-      if (this.mixer._actions) {
-        this.mixer._actions.forEach(a => {
-          try { this.mixer.uncacheAction(a.getClip(), this.armature); } catch(e) {}
-        });
-      }
-    } catch(e) {}
-    this.mixer = null;
-    this.currentAction = null;
-    this.stopSequence = null;
-    await this.playAnimation(`./animations/U_Idle_01_Cycle.glb`, null, 200, 0, 0.01, false);
-  };
 
   async preProcessAnimations(onprogress=null, dur=200, ndx=0, scale=0.01, tween=true) {
     const loader = new GLTFLoader();
