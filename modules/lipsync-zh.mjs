@@ -180,66 +180,75 @@ class LipsyncZh {
       ],
     };
     this.CH_INITIALS = {
-        "ZH": "SS",
-        "CH": "SS",
-        "SH": "SS",
-        "B": "PP",
-        "P": "PP",
-        "M": "PP",
-        "F": "FF",
-        "D": "DD",
-        "T": "DD",
-        "N": "nn",
-        "L": "nn",
-        "G": "kk",
-        "K": "kk",
-        "H": "kk",
-        "J": "CH",    // 更接近 ch
-        "Q": "CH",    // 更接近 ch
-        "X": "SS",    // x 近似 sh
-        "R": "RR",
-        "Z": "SS",
-        "C": "SS",
-        "S": "SS",
-        "Y": "",      // 作为零声母时处理
-        "W": ""
+      "ZH": "CH",   // 卷舌音，中等开口
+      "CH": "CH",   // 卷舌音，中等开口  
+      "SH": "SH",   // 卷舌擦音，中等开口
+      "B": "PP",    // 双唇闭合音
+      "P": "PP",    // 双唇爆破音
+      "M": "PP",    // 双唇鼻音
+      "F": "FF",    // 唇齿擦音，轻微开口
+      "D": "TT",    // 齿龈音，中等开口
+      "T": "TT",    // 齿龈爆破音，中等开口
+      "N": "nn",    // 齿龈鼻音，中等开口
+      "L": "nn",    // 齿龈边音，中等开口
+      "G": "kk",    // 软腭音，中等开口
+      "K": "kk",    // 软腭爆破音，中等开口
+      "H": "hh",    // 喉擦音，较大开口
+      "J": "CH",    // 腭化音，较小开口
+      "Q": "CH",    // 腭化塞擦音，较小开口
+      "X": "SH",    // 腭化擦音，较小开口
+      "R": "RR",    // 卷舌近音，中等开口
+      "Z": "SS",    // 齿龈擦音，较小开口
+      "C": "CH",    // 齿龈塞擦音，中等开口
+      "S": "SS",    // 齿龈擦音，较小开口
+      "Y": "I",     // 腭化近音，较小开口
+      "W": "U"      // 唇化近音，圆唇较小开口
     };
+
+    this.CH_FINALS = {
+      // 大幅增加开口度的韵母
+      "IANG": "aa I aa nn",  // 增加aa强调开口
+      "UANG": "aa U aa nn",  // 增加aa强调开口
+      "IONG": "aa I O nn",   // 增加aa强调开口
+      "IAO": "aa I aa O",    // 增加aa强调开口
+      "IAN": "aa I aa nn",   // 增加aa强调开口
+      "UAN": "aa U aa nn",   // 增加aa强调开口
       
-      this.CH_FINALS = {
-        "IANG": "I aa nn",
-        "UANG": "U aa nn",
-        "IONG": "I O nn",
-        "IAO": "I aa O",
-        "IAN": "I aa nn",
-        "UAN": "U aa nn",
-        "ANG": "aa nn",
-        "ENG": "E nn",
-        "ING": "I nn",
-        "ONG": "O nn",
-        "AI": "aa I",
-        "EI": "E I",
-        "AO": "aa O",
-        "OU": "O U",
-        "ER": "E RR",
-        "IA": "I aa",
-        "IE": "I E",
-        "IU": "I U",
-        "UI": "U I",
-        "UA": "U aa",
-        "UO": "U O",
-        "VE": "I",     // ü -> I
-        "UE": "I E",   // üe -> I E
-        "A": "aa",
-        "O": "O",
-        "E": "E",
-        "I": "I",
-        "U": "U",
-        "V": "I",      // ü -> I
-        "AN": "aa nn",
-        "EN": "E nn",
-        "IN": "I nn",
-        "UN": "U nn"   // 可能需要额外区分 JUN=I nn
-      };
+      // 标准开口韵母
+      "ANG": "aa nn",        // 保持大开口
+      "ENG": "aa E nn",      // 增加aa前缀
+      "ING": "aa I nn",      // 增加aa前缀
+      "ONG": "aa O nn",      // 增加aa前缀
+      "AI": "aa I",          // 保持大开口
+      "EI": "aa E I",        // 增加aa前缀
+      "AO": "aa O",          // 保持大开口
+      "OU": "aa O U",        // 增加aa前缀
+      
+      // 其他韵母
+      "ER": "E RR",
+      "IA": "aa I aa",       // 增加aa强调开口
+      "IE": "aa I E",        // 增加aa前缀
+      "IU": "aa I U",        // 增加aa前缀
+      "UI": "aa U I",        // 增加aa前缀
+      "UA": "aa U aa",       // 增加aa强调开口
+      "UO": "aa U O",        // 增加aa前缀
+      
+      // 单韵母 - 确保足够开口度
+      "VE": "aa I E",        // 增加aa前缀
+      "UE": "aa I E",        // 增加aa前缀
+      "A": "aa",             // 大开口
+      "O": "aa O",           // 增加aa前缀确保开口
+      "E": "aa E",           // 增加aa前缀
+      "I": "I",              // 较小开口
+      "U": "U",              // 圆唇较小开口
+      "V": "I",              // 较小开口
+      
+      // 鼻韵母
+      "AN": "aa nn",         // 保持大开口
+      "EN": "aa E nn",       // 增加aa前缀
+      "IN": "aa I nn",       // 增加aa前缀
+      "UN": "aa U nn"        // 增加aa前缀
+    };
 
     const ops = {
       '#': '[AEIOUY]+', // One or more vowels AEIOUY
