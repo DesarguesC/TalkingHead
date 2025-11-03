@@ -455,22 +455,22 @@ class TalkingHead {
     this.GLBdefaultPose = './animations/U_Idle_01_Short04_Cycle_test.glb';
     this.GLBmotionList = []; // store GLB default animations as this.GLBmotion set to TRUE;
     // if this.GLBmotion is set to TRUE, execute this list instead of previous animation list / UE list;
-
+    
 
     // Use "side" as the first pose, weight on left leg
     this.poseName = "default";
     this.poseWeightOnLeft = true; // Initial weight on left leg
     this.gesture = null; // Values that override pose properties
-    this.poseCurrentTemplate = this.poseTemplates[this.poseName];
-    // default pose params ↓
-    this.poseBase = this.poseFactory( this.poseCurrentTemplate);
-    this.poseTarget = this.poseFactory( this.poseCurrentTemplate);
-    this.poseStraight = this.propsToThreeObjects( this.poseTemplates["straight"].props ); // Straight pose used as a reference
+    this.poseCurrentTemplate = null; // this.poseTemplates[this.poseName];
+    // default pose | start reading at showAvatar()
+    this.poseBase = null;
+    this.poseTarget = null;
+    this.poseStraight = null; // this.propsToThreeObjects( this.poseTemplates["straight"].props ); // Straight pose used as a reference
     this.poseAvatar = null; // Set when avatar has been loaded
 
     // Avatar height in meters
     // NOTE: The actual value is calculated based on the eye level on avatar load
-    this.avatarHeight = 1.2;
+    this.avatarHeight = 1.;
 
 
     // Animation templates
@@ -758,7 +758,6 @@ class TalkingHead {
 
     // Anim queues
     this.animQueue = [];
-    this.startAnim = 'standby0';
     this.TalkLocked = false; // this.TalkQueue同步锁，一轮对话只能用一次 | false -> 可以操作，true -> 禁止操作
     this.TalkQueue = []; // 讲话所需的动作控制
     this.seqItems = [];
@@ -1311,9 +1310,7 @@ class TalkingHead {
 
     // Clear previous scene, if avatar was previously loaded
     this.mixer = null;
-    // if ( this.armature ) {
-    //   this.clearThree( this.scene );
-    // }
+    await this.preProcessAnimations();
 
     // Avatar full-body
     this.armature = gltf.scene.children[0]
@@ -1438,11 +1435,13 @@ class TalkingHead {
 
     // Objects for needed properties
     this.poseAvatar = { props: {} };
+    this.poseBase = this.poseFactory( this.poseCurrentTemplate, 2000, true );
+    this.poseTarget = this.poseFactory( this.poseCurrentTemplate, 2000, true );
     this.posePropNames.forEach( x => {
       const ids = x.split('.');
       const o = this.armature.getObjectByName(ids[0]);
       this.poseAvatar.props[x] = o[ids[1]];
-      if ( this.poseBase.props.hasOwnProperty(x) ) {
+      if ( this.poseBase != null && this.poseBase.props.hasOwnProperty(x) ) {
         this.poseAvatar.props[x].copy( this.poseBase.props[x] );
       } else {
         this.poseBase.props[x] = this.poseAvatar.props[x].clone();
@@ -1593,7 +1592,7 @@ class TalkingHead {
 
     // Set pose, view and start animation
     if ( !this.viewName ) this.setView( this.opt.cameraView );
-    await this.preProcessAnimations();
+    
 
     this.poseBase = this.poseFactory( this.poseCurrentTemplate, 2000, true );
     this.poseTarget = this.poseFactory( this.poseCurrentTemplate, 2000, true );
@@ -2865,6 +2864,9 @@ class TalkingHead {
     //   this.seqItems = [];
     //   this.beginSpeaking = false;
     // }
+    if (this.mixer !== null) {
+        return; // 等待当前动作完成
+    }
     if (this.TalkQueue.length === 0 && this.seqItems.length === 0 ) {
       this.TalkQueue.push(
         // 'standby1'
@@ -2873,14 +2875,14 @@ class TalkingHead {
       )
     } else {
       if ( toSpeak && !(this.currentAnimName in this.TalkTimeList) ) {this.seqItems = []; return;} // clear the seqItems when not speaking
-      // console.log("TalkQueue: " + this.TalkQueue);
-      if (this.seqItems.length === 0 && (Date.now() - this.LastTime) - this.animInterval * 1000 >= 200) {
+      const timeSinceLastAnim = (Date.now() - this.LastTime) - this.animInterval * 1000;
+      
+      if (this.seqItems.length === 0 && timeSinceLastAnim >= 200) {
         const animID = this.TalkQueue.shift(); // e.g. 'standby1'
         this.currentPose = animID;
-        // this.animInterval = this.MetaTimeList[animID];
         this.seqItems = this.AnimationFA_route[animID].map( x => x.split('.')[0] );
       } 
-      else if (this.seqItems.length != 0 && (Date.now() - this.LastTime) - this.animInterval * 1000 >= 200) {
+      else if (this.seqItems.length != 0 && timeSinceLastAnim >= 0) {
         
         const currentAnimName = this.seqItems.shift(); // toSpeak ? this.seqItems.shift() : 'U_Idle_01_Cycle';
         // 动作Idle_01to03有时手无法完全抬起（抬到一半回原位，然后快速到该动作位置）
@@ -2891,35 +2893,36 @@ class TalkingHead {
           props: item.pose.props
         }
         this.poseTarget = o;
-        this.LastTime = Date.now();
-        // const duration = 1 / this.animInterval * 2 + 2; // second
-        const duration = 0;
         this.animInterval = this.MetaTimeList[currentAnimName];
         // const tween = false; --> true
         // let uu = 0;
         Object.entries(item.pose.props).forEach( x => {
           this.poseBase.props[x[0]] = x[1].clone();
           this.poseTarget.props[x[0]] = x[1].clone();
-          this.poseTarget.props[x[0]].t = 0;// this.animClock;
-          this.poseTarget.props[x[0]].d = (this.animInterval + duration) * 1000; // 过渡时间(ms)
-          this.poseTarget.props[x[0]].startTime = this.animClock;
+          this.poseTarget.props[x[0]].t = this.animClock; // 0;
+          this.poseTarget.props[x[0]].d = this.animInterval * 1000; // 过渡时间(ms)
+          // this.poseTarget.props[x[0]].startTime = this.animClock;
         });
 
-        if (!this.mixer) {
-          this.mixer = new THREE.AnimationMixer(this.armature);
-          this.mixer.addEventListener( 'finished', this.stopAnimation.bind(this), { once: true });
-        }
+        // directly using new mixer
+        // if (!this.mixer) {
+        this.mixer = new THREE.AnimationMixer(this.armature);
+        this.mixer.addEventListener( 'finished', this.stopAnimation.bind(this), { once: true });
+        // }
         // Play action
         const repeat = 0;
+        this.LastTime = Date.now();
         const action = this.mixer.clipAction(item.clip);
         action.setLoop( THREE.LoopRepeat, repeat );
         action.clampWhenFinished = true;
         action.reset();
-        action.fadeIn(0.5).play();
+        action.fadeIn(0.3).play();
+
         console.log("played: " + currentAnimName);
         
       }
     }
+    
   }
 
   /**
@@ -3194,7 +3197,7 @@ class TalkingHead {
 
 
     }
-
+    
     // Eye contact
     if (isEyeContact || isHeadMove) {
 
@@ -3234,6 +3237,7 @@ class TalkingHead {
       this.mixer.update(dt / 1000 * this.mixer.timeScale);
     }
     this.updatePoseDelta();
+    
 
 
     // Volume based head movement, set targets
@@ -3263,26 +3267,17 @@ class TalkingHead {
       this.objectNeck.quaternion.multiply(q);
     }
 
-    // if ( Date.now() - this.LastTime >= this.animInterval * 1000 ) {
-      if (this.startAnim) {
-        // Hip-feet balance
-        box.setFromObject( this.armature );
-        // this.objectLeftToeBase.getWorldPosition(v);
-        // this.objectRightToeBase.getWorldPosition(w);
-        // this.objectHips.position.y -= box.min.y / 2;
-        // this.objectHips.position.x -= (v.x+w.x)/4;
-        // this.objectHips.position.z -= (v.z+w.z)/2;
-        this.LastTime = t;
-        // this.animInterval = 7.10;
-        // this.playAnimation(`./animations/${this.AnimationFA_route[this.startAnim][0]}`, null, 200, 0, 0.01, false);
-        this.startAnim = null;
-      } else {
-        // Update Dynamic Bones
-        this.dynamicbones.update(dt);
-        // Update morph targets
-        this.updateMorphTargets(dt);
-      }
-    // }
+    // Hip-feet balance
+    box.setFromObject( this.armature );
+    this.objectLeftToeBase.getWorldPosition(v);
+    this.objectRightToeBase.getWorldPosition(w);
+    this.objectHips.position.y -= box.min.y / 2;
+    this.objectHips.position.x -= (v.x+w.x)/4;
+    this.objectHips.position.z -= (v.z+w.z)/2;
+    // Update Dynamic Bones
+    this.dynamicbones.update(dt);
+    // Update morph targets
+    this.updateMorphTargets(dt);
 
     // Camera
     if ( this.cameraClock !== null && this.cameraClock < 1000 ) {
@@ -3312,7 +3307,7 @@ class TalkingHead {
 
     // Autorotate
     if ( this.controls.autoRotate ) this.controls.update();
-
+    
     // Statistics end
     if ( this.stats ) {
       this.stats.end();
@@ -4843,29 +4838,49 @@ class TalkingHead {
   * Stop running animations.
   */
   stopAnimation() {
-
+    
+    // cache current pose
+    if (this.mixer && this.armature) {
+      this.poseBase = this.poseFactory(this.poseCurrentTemplate, 0, true);
+      this.poseTarget = this.poseFactory(this.poseCurrentTemplate, 0, true);
+    }
     // Stop mixer
     this.mixer = null;
+    this.currentAction = null;
+
+    setTimeout(() => {
+        if (this.gesture) {
+            const gs = Object.entries(this.gesture);
+            this.gesture = null;
+            for (const [p, val] of gs) {
+                if (this.poseTarget.props.hasOwnProperty(p)) {
+                    this.poseTarget.props[p].copy(this.getPoseTemplateProp(p, this.GLBmotion));
+                    this.poseTarget.props[p].t = this.animClock;
+                    this.poseTarget.props[p].d = 7100;
+                }
+            }
+        }
+    }, 50);
 
     // Restart gesture
-    if ( this.gesture ) {
-      for( let [p,v] of Object.entries(this.gesture) ) {
-        v.t = this.animClock;
-        v.d = 1000;
-        if ( this.poseTarget.props.hasOwnProperty(p) ) {
-          this.poseTarget.props[p].copy(v);
-          this.poseTarget.props[p].t = this.animClock;
-          this.poseTarget.props[p].d = 1000;
-        }
-      }
-    }
+    // if ( this.gesture ) {
+    //   for( let [p,v] of Object.entries(this.gesture) ) {
+    //     v.t = this.animClock;
+    //     v.d = 1000;
+    //     if ( this.poseTarget.props.hasOwnProperty(p) ) {
+    //       this.poseTarget.props[p].copy(v);
+    //       this.poseTarget.props[p].t = this.animClock;
+    //       this.poseTarget.props[p].d = 1000;
+    //     }
+    //   }
+    // }
 
-    // Restart pose animation
-    let anim = this.animQueue.find( x => x.template.name === 'pose' );
-    if ( anim ) {
-      anim.ts[0] = this.animClock;
-    }
-    this.setPoseFromTemplate( null );
+    // // Restart pose animation
+    // let anim = this.animQueue.find( x => x.template.name === 'pose' );
+    // if ( anim ) {
+    //   anim.ts[0] = this.animClock;
+    // }
+    // this.setPoseFromTemplate( null );
 
   }
 
