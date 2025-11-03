@@ -2008,10 +2008,11 @@ class TalkingHead {
       if ( d.x === 0 && d.y === 0 && d.z === 0 ) continue;
       e.set(d.x,d.y,d.z);
       const o = this.poseAvatar.props[key];
-      if ( o.isQuaternion ) {
-        q.setFromEuler(e);
-        o.multiply(q);
-      } else if ( o.isVector3 ) {
+      // if ( o.isQuaternion ) {
+      //   q.setFromEuler(e);
+      //   o.multiply(q);
+      // } else 
+      if ( o.isVector3 ) {
         o.add( e );
       }
     }
@@ -2877,12 +2878,12 @@ class TalkingHead {
       if ( toSpeak && !(this.currentAnimName in this.TalkTimeList) ) {this.seqItems = []; return;} // clear the seqItems when not speaking
       const timeSinceLastAnim = (Date.now() - this.LastTime) - this.animInterval * 1000;
       
-      if (this.seqItems.length === 0 && timeSinceLastAnim >= -200) {
+      if (this.seqItems.length === 0 && timeSinceLastAnim >= -100) {
         const animID = this.TalkQueue.shift(); // e.g. 'standby1'
         // this.currentPose = animID;
         this.seqItems = this.AnimationFA_route[animID].map( x => x.split('.')[0] );
       } 
-      else if (this.seqItems.length != 0 && timeSinceLastAnim >= -100) {
+      if (this.seqItems.length != 0 && timeSinceLastAnim >= -100) {
         
         const currentAnimName = this.seqItems.shift(); // toSpeak ? this.seqItems.shift() : 'U_Idle_01_Cycle';
         // this.poseBase = this.poseFactory(this.currentPose, 1111, true);
@@ -3238,7 +3239,7 @@ class TalkingHead {
     if ( this.mixer ) {
       this.mixer.update(dt / 1000 * this.mixer.timeScale);
     }
-    // this.updatePoseDelta();
+    this.updatePoseDelta();
     
 
 
@@ -4258,7 +4259,7 @@ class TalkingHead {
   * @param {number} t Time in milliseconds
   */
   lookAtCamera(t) {
-    // return;
+    return;
     if ( this.avatar.hasOwnProperty('avatarIgnoreCamera') ) {
       if ( this.avatar.avatarIgnoreCamera ) {
         this.lookAhead(t);
@@ -4678,7 +4679,7 @@ class TalkingHead {
                 }
             }
         }
-    }, 1000);
+    }, 50);
 
     // Restart gesture
     // if ( this.gesture ) {
