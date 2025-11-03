@@ -138,7 +138,7 @@ class TalkingHead {
   * @param {Object} node DOM element of the avatar
   * @param {Object} [opt=null] Global/default options
   */
-  constructor(node, opt = null ) {
+  constructor( node, opt = null ) {
     this.nodeAvatar = node;
     this.opt = {
       jwtGet: null, // Function to get JSON Web Token
@@ -218,24 +218,24 @@ class TalkingHead {
     this.AnimationFA_route = {
       'standby0': ['U_Idle_01_Cycle.glb'],
       'standby1': ['Idle_01to03.glb', 'U_Idle_03_Cycle.glb', 'Idle_03to01.glb'],
-      'standby2': ['Idle_01to04.glb', 'Idle_04_Cycle.glb', 'Idle_04to01.glb'],
-      'talk-1': ['Idle_01to04.glb', 'Idle_04_Cycle.glb', 'Idle_04to01.glb', 'U_Speech_08_Cycle_T1_02.glb'],
-      'talk-2': ['Idle_01to04.glb', 'Idle_04_Cycle.glb', 'Idle_04to01.glb', 'U_Speech_08_Cycle_T1_04.glb'],
-      'talk-3': ['Idle_01to04.glb', 'Idle_04_Cycle.glb', 'Idle_04to01.glb', 'U_Speech_08_Cycle_T1_06.glb'],
-      'talk-4': ['Idle_01to04.glb', 'Idle_04_Cycle.glb', 'Idle_04to01.glb', 'U_Speech_08_Cycle_T1_08.glb'],
+      'standby2': ['Idle_01to04.glb', 'Idle_04_Cycle.glb', 'Idle_04_Cycle.glb', 'Idle_04_Cycle.glb', 'Idle_04to01.glb'],
+      'talk-1': ['Idle_01to04.glb', 'Idle_04_Cycle.glb', 'Idle_04_Cycle.glb', 'Idle_04_Cycle.glb', 'Idle_04to01.glb', 'U_Speech_08_Cycle_T1_02.glb'],
+      'talk-2': ['Idle_01to04.glb', 'Idle_04_Cycle.glb', 'Idle_04_Cycle.glb', 'Idle_04_Cycle.glb', 'Idle_04to01.glb', 'U_Speech_08_Cycle_T1_04.glb'],
+      'talk-3': ['Idle_01to04.glb', 'Idle_04_Cycle.glb', 'Idle_04_Cycle.glb', 'Idle_04_Cycle.glb', 'Idle_04to01.glb', 'U_Speech_08_Cycle_T1_06.glb'],
+      'talk-4': ['Idle_01to04.glb', 'Idle_04_Cycle.glb', 'Idle_04_Cycle.glb', 'Idle_04_Cycle.glb', 'Idle_04to01.glb', 'U_Speech_08_Cycle_T1_08.glb'],
       'speech-1': ['5Talk_03_01.glb'],
       'speech-2': ['5Talk_03_02.glb']
     }
     this.DefaultTimeList = {
       'standby0': 7.10,
       'standby1': 21.27,
-      'standby2': 9.49,
+      'standby2': 9.49 + 0.53 * 2,
     }
     this.TalkTimeList = {
-      'talk-1': 15.12,
-      'talk-2': 14.09,
-      'talk-3': 15.32,
-      'talk-4': 15.32,
+      'talk-1': 15.12 + 0.53 * 2,
+      'talk-2': 14.09 + 0.53 * 2,
+      'talk-3': 15.32 + 0.53 * 2,
+      'talk-4': 15.32 + 0.53 * 2,
       'speech-1': 14.50,
       'speech-2': 7.53
     }
@@ -761,7 +761,7 @@ class TalkingHead {
     this.TalkLocked = false; // this.TalkQueue同步锁，一轮对话只能用一次 | false -> 可以操作，true -> 禁止操作
     this.TalkQueue = []; // 讲话所需的动作控制
     this.seqItems = [];
-    this.currentPose = null;
+    this.currentPose = 'U_Idle_01_Cycle';
     this.currentAction = null;
     // 对临界资源animSpeechQueue（在外部）的锁，默认为解锁状态，捕获到非零的animiSpeechQueue.length时锁定，长度置零时解锁 | 解锁时（false）可以this.UEanimQueue.push
     this.UEanimQueueActive = false;
@@ -1435,8 +1435,8 @@ class TalkingHead {
 
     // Objects for needed properties
     this.poseAvatar = { props: {} };
-    this.poseBase = this.poseFactory( this.poseCurrentTemplate, 2000, true );
-    this.poseTarget = this.poseFactory( this.poseCurrentTemplate, 2000, true );
+    this.poseBase = this.poseFactory( this.currentPose, 1111, true );
+    this.poseTarget = this.poseFactory( this.currentPose, 1111, true );
     this.posePropNames.forEach( x => {
       const ids = x.split('.');
       const o = this.armature.getObjectByName(ids[0]);
@@ -1454,7 +1454,7 @@ class TalkingHead {
 
       // Take target pose
       this.poseTarget.props[x].t = this.animClock;
-      this.poseTarget.props[x].d = 2000;
+      this.poseTarget.props[x].d = 7100;
     });
 
     // Reset IK bone positions
@@ -1594,8 +1594,8 @@ class TalkingHead {
     if ( !this.viewName ) this.setView( this.opt.cameraView );
     
 
-    this.poseBase = this.poseFactory( this.poseCurrentTemplate, 2000, true );
-    this.poseTarget = this.poseFactory( this.poseCurrentTemplate, 2000, true );
+    this.poseBase = this.poseFactory( this.currentPose, 1111, true );
+    this.poseTarget = this.poseFactory( this.currentPose, 1234, true );
     // this.poseStraight = this.propsToThreeObjects( this.poseTemplates["straight"].props ); // Straight pose used as a reference
     // this.poseAvatar = null; // Set when avatar has been loaded
     // 重设一下this.poseBase系列参数看能不能消除闪现终止动作的问题
@@ -2351,7 +2351,7 @@ class TalkingHead {
 
     */ 
     if (animClips) {
-      const anim = this.animClips.find( clip => clip.name === 'U_Idle_01_Cycle' );
+      const anim = this.animClips.find( clip => clip.name === template ); // e.g.: this.currentPose = 'U_Idle_01_Cycle'
       if ( anim ) {
         const template = {
           "standing": true,
@@ -2373,7 +2373,7 @@ class TalkingHead {
             val.rotateTowards( ref, (1 - this.opt.modelMovementFactor) * angle );
           }
           val.t = this.animClock; // timestamp
-          val.d = 1 / this.MetaTimeList['U_Idle_01_Cycle']; // Transition duration
+          val.d = ms===0 ? ms : this.MetaTimeList[template] * 1000; // Transition duration
         }
         return o;
       }
@@ -2877,14 +2877,16 @@ class TalkingHead {
       if ( toSpeak && !(this.currentAnimName in this.TalkTimeList) ) {this.seqItems = []; return;} // clear the seqItems when not speaking
       const timeSinceLastAnim = (Date.now() - this.LastTime) - this.animInterval * 1000;
       
-      if (this.seqItems.length === 0 && timeSinceLastAnim >= 200) {
+      if (this.seqItems.length === 0 && timeSinceLastAnim >= -200) {
         const animID = this.TalkQueue.shift(); // e.g. 'standby1'
-        this.currentPose = animID;
+        // this.currentPose = animID;
         this.seqItems = this.AnimationFA_route[animID].map( x => x.split('.')[0] );
       } 
-      else if (this.seqItems.length != 0 && timeSinceLastAnim >= 0) {
+      else if (this.seqItems.length != 0 && timeSinceLastAnim >= -100) {
         
         const currentAnimName = this.seqItems.shift(); // toSpeak ? this.seqItems.shift() : 'U_Idle_01_Cycle';
+        // this.poseBase = this.poseFactory(this.currentPose, 1111, true);
+        this.currentPose = currentAnimName;
         // 动作Idle_01to03有时手无法完全抬起（抬到一半回原位，然后快速到该动作位置）
         const item = this.animClips.find( x => x.name === currentAnimName ).pose[0];
         // this.setPoseFromTemplate()
@@ -2896,13 +2898,12 @@ class TalkingHead {
         this.animInterval = this.MetaTimeList[currentAnimName];
         // const tween = false; --> true
         // let uu = 0;
-        Object.entries(item.pose.props).forEach( x => {
-          this.poseBase.props[x[0]] = x[1].clone();
-          this.poseTarget.props[x[0]] = x[1].clone();
-          this.poseTarget.props[x[0]].t = this.animClock; // 0;
-          this.poseTarget.props[x[0]].d = this.animInterval * 1000; // 过渡时间(ms)
-          // this.poseTarget.props[x[0]].startTime = this.animClock;
-        });
+        // Object.entries(item.pose.props).forEach( x => {
+        //   this.poseBase.props[x[0]] = x[1].clone();
+        //   this.poseTarget.props[x[0]] = x[1].clone();
+        //   this.poseTarget.props[x[0]].t = this.animClock; // 0;
+        //   this.poseTarget.props[x[0]].d = this.animInterval * 1000; // 过渡时间(ms)
+        // });
 
         // directly using new mixer
         // if (!this.mixer) {
@@ -2922,7 +2923,8 @@ class TalkingHead {
         
       }
     }
-    
+    console.log("this.seqItem: " + this.seqItems);
+    console.log("this.TalkQueue: " + this.TalkQueue);
   }
 
   /**
@@ -3232,11 +3234,11 @@ class TalkingHead {
       }
     }
     
-    this.updatePoseBase(this.animClock);
+    // this.updatePoseBase(this.animClock); // 不加会往下走
     if ( this.mixer ) {
       this.mixer.update(dt / 1000 * this.mixer.timeScale);
     }
-    this.updatePoseDelta();
+    // this.updatePoseDelta();
     
 
 
@@ -4657,8 +4659,8 @@ class TalkingHead {
     
     // cache current pose
     if (this.mixer && this.armature) {
-      this.poseBase = this.poseFactory(this.poseCurrentTemplate, 0, true);
-      this.poseTarget = this.poseFactory(this.poseCurrentTemplate, 0, true);
+      // this.poseBase = this.poseFactory(this.currentPose, 0, true);
+      // this.poseTarget = this.poseFactory(this.currentPose, 0, true);
     }
     // Stop mixer
     this.mixer = null;
@@ -4670,13 +4672,13 @@ class TalkingHead {
             this.gesture = null;
             for (const [p, val] of gs) {
                 if (this.poseTarget.props.hasOwnProperty(p)) {
-                    this.poseTarget.props[p].copy(this.getPoseTemplateProp(p, this.GLBmotion));
-                    this.poseTarget.props[p].t = this.animClock;
-                    this.poseTarget.props[p].d = 7100;
+                    // this.poseBase.props[p].copy(this.poseFactory( this.currentPose, 1111, true ));
+                    // this.poseBase.props[p].t = this.animClock;
+                    // this.poseBase.props[p].d = this.MetaTimeList[this.currentPose];
                 }
             }
         }
-    }, 50);
+    }, 1000);
 
     // Restart gesture
     // if ( this.gesture ) {
