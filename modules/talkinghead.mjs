@@ -224,7 +224,7 @@ class TalkingHead {
       'talk-3': ['Idle_01to04.glb', 'Idle_04_Cycle.glb', 'Idle_04_Cycle.glb', 'U_Speech_08_Cycle_T1_06.glb', 'Idle_04to01.glb'],
       'talk-4': ['Idle_01to04.glb', 'Idle_04_Cycle.glb', 'Idle_04_Cycle.glb', 'U_Speech_08_Cycle_T1_08.glb', 'Idle_04to01.glb'],
       'speech-1': ['5Talk_03_01.glb'],
-      'speech-2': ['5Talk_03_02.glb'],
+      'speech-2': ['5Talk_03_02.glb', 'Idle_04to01.glb'],
       'talk-5': ['Idle_01to04.glb', 'Idle_04_Cycle.glb', 'Idle_04_Cycle.glb', 'U_Speech_08_Cycle_T1_02.glb', 'Idle_04_Cycle.glb', 'U_Speech_08_Cycle_T1_04.glb', 'Idle_04to01.glb'],
       'talk-6': ['Idle_01to04.glb', 'Idle_04_Cycle.glb', 'Idle_04_Cycle.glb', 'U_Speech_08_Cycle_T1_08.glb', 'Idle_04_Cycle.glb', 'U_Speech_08_Cycle_T1_06.glb', 'Idle_04to01.glb']
     }
@@ -239,7 +239,7 @@ class TalkingHead {
       'talk-3': 15.32 + 0.53,
       'talk-4': 15.32 + 0.53,
       'speech-1': 14.50,
-      'speech-2': 7.53,
+      'speech-2': 7.53 + 4.17,
       'talk-5': 15.32 + 0.53 * 2 + 4.60,
       'talk-6': 15.32 + 0.53 * 2 + 5.83
     }
@@ -3232,7 +3232,7 @@ class TalkingHead {
     }
     // this.updatePoseDelta();
     
-    box.setFromObject( this.armature ); // DEBUG ????
+    box.setFromObject( this.armature ); // 计算包围盒
     this.dynamicbones.update(dt);
     // Update morph targets
     this.updateMorphTargets(dt);
