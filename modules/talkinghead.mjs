@@ -3514,11 +3514,15 @@ class TalkingHead {
     let letters = [... this.lipsyncPreProcessText(s, lipsyncLang)];
     if (motion_start && full_string) {
       const second_per_word = 0.5; // second
-      const time_estimated = second_per_word * letters.length;
-      const target_pose = time_estimated < 7.53 ? ['standby0', 'standby1', 'standby2'][Math.floor(Math.random() * 3)] : (time_estimated <= 14 ? 'speech-2' : [
+      let time_estimated = second_per_word * letters.length;
+      while (time_estimated > 0) {
+        const target_pose = time_estimated < 7.53 ? ['standby0', 'standby1', 'standby2'][Math.floor(Math.random() * 3)] : (time_estimated <= 14 ? 'speech-2' : [
           'talk-1', 'talk-2', 'talk-3', 'talk-4', 'speech-1', 'standby-1'
-      ][Math.floor(Math.random() * 6)]) ;
-      this.TalkQueue.push(target_pose);
+        ][Math.floor(Math.random() * 6)]) ;
+        this.TalkQueue.push(target_pose);
+        time_estimated  = Math.max(0, time_estimated - (this.TalkTimeList[target_pose] || this.DefaultTimeList[target_pose]))
+      }
+      console.log("Estimated motion: " + this.TalkQueue);
     }
     
     if (this.containsChinese(letters)) {
