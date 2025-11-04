@@ -216,28 +216,32 @@ class TalkingHead {
     // for most natural result.
     this.poseTrace = [];
     this.AnimationFA_route = {
-      'standby0': ['5Talk_03_02.glb'], // ['U_Idle_01_Cycle.glb'], // DEBUG
-      'standby1': ['5Talk_03_01.glb'], // ['Idle_01to03.glb', 'U_Idle_03_Cycle.glb', 'Idle_03to01.glb'],
-      'standby2': ['5Talk_03_02.glb'], // ['Idle_01to04.glb', 'Idle_04_Cycle.glb', 'Idle_04_Cycle.glb', 'Idle_04_Cycle.glb', 'Idle_04to01.glb'],
-      'talk-1': ['Idle_01to04.glb', 'Idle_04_Cycle.glb', 'Idle_04_Cycle.glb', 'Idle_04_Cycle.glb', 'Idle_04to01.glb', 'U_Speech_08_Cycle_T1_02.glb'],
-      'talk-2': ['Idle_01to04.glb', 'Idle_04_Cycle.glb', 'Idle_04_Cycle.glb', 'Idle_04_Cycle.glb', 'Idle_04to01.glb', 'U_Speech_08_Cycle_T1_04.glb'],
-      'talk-3': ['Idle_01to04.glb', 'Idle_04_Cycle.glb', 'Idle_04_Cycle.glb', 'Idle_04_Cycle.glb', 'Idle_04to01.glb', 'U_Speech_08_Cycle_T1_06.glb'],
-      'talk-4': ['Idle_01to04.glb', 'Idle_04_Cycle.glb', 'Idle_04_Cycle.glb', 'Idle_04_Cycle.glb', 'Idle_04to01.glb', 'U_Speech_08_Cycle_T1_08.glb'],
+      'standby0': ['U_Idle_01_Cycle.glb'],
+      'standby1': ['Idle_01to03.glb', 'U_Idle_03_Cycle.glb', 'Idle_03to01.glb'],
+      'standby2': ['Idle_01to04.glb', 'Idle_04_Cycle.glb', 'Idle_04_Cycle.glb', 'Idle_04_Cycle.glb', 'Idle_04to01.glb'],
+      'talk-1': ['Idle_01to04.glb', 'Idle_04_Cycle.glb', 'Idle_04_Cycle.glb', 'U_Speech_08_Cycle_T1_02.glb', 'Idle_04to01.glb'],
+      'talk-2': ['Idle_01to04.glb', 'Idle_04_Cycle.glb', 'Idle_04_Cycle.glb', 'U_Speech_08_Cycle_T1_04.glb', 'Idle_04to01.glb'],
+      'talk-3': ['Idle_01to04.glb', 'Idle_04_Cycle.glb', 'Idle_04_Cycle.glb', 'U_Speech_08_Cycle_T1_06.glb', 'Idle_04to01.glb'],
+      'talk-4': ['Idle_01to04.glb', 'Idle_04_Cycle.glb', 'Idle_04_Cycle.glb', 'U_Speech_08_Cycle_T1_08.glb', 'Idle_04to01.glb'],
       'speech-1': ['5Talk_03_01.glb'],
-      'speech-2': ['5Talk_03_02.glb']
+      'speech-2': ['5Talk_03_02.glb'],
+      'talk-5': ['Idle_01to04.glb', 'Idle_04_Cycle.glb', 'Idle_04_Cycle.glb', 'U_Speech_08_Cycle_T1_02.glb', 'Idle_04_Cycle.glb', 'U_Speech_08_Cycle_T1_04.glb', 'Idle_04to01.glb'],
+      'talk-6': ['Idle_01to04.glb', 'Idle_04_Cycle.glb', 'Idle_04_Cycle.glb', 'U_Speech_08_Cycle_T1_08.glb', 'Idle_04_Cycle.glb', 'U_Speech_08_Cycle_T1_06.glb', 'Idle_04to01.glb']
     }
     this.DefaultTimeList = {
       'standby0': 7.10,
       'standby1': 21.27,
-      'standby2': 9.49 + 0.53 * 2,
+      'standby2': 9.49 + 0.53,
     }
     this.TalkTimeList = {
-      'talk-1': 15.12 + 0.53 * 2,
-      'talk-2': 14.09 + 0.53 * 2,
-      'talk-3': 15.32 + 0.53 * 2,
-      'talk-4': 15.32 + 0.53 * 2,
+      'talk-1': 15.12 + 0.53,
+      'talk-2': 14.09 + 0.53,
+      'talk-3': 15.32 + 0.53,
+      'talk-4': 15.32 + 0.53,
       'speech-1': 14.50,
-      'speech-2': 7.53
+      'speech-2': 7.53,
+      'talk-5': 15.32 + 0.53 * 2 + 4.60,
+      'talk-6': 15.32 + 0.53 * 2 + 5.83
     }
 
     
@@ -2886,7 +2890,7 @@ class TalkingHead {
       if (this.seqItems.length != 0 && timeSinceLastAnim >= -100) {
         
         const currentAnimName = this.seqItems.shift(); // toSpeak ? this.seqItems.shift() : 'U_Idle_01_Cycle';
-        this.poseBase = this.poseFactory(this.currentPose, 1111, true);
+        // this.poseBase = this.poseFactory(this.currentPose, 1111, true);
         
         this.currentPose = currentAnimName;
         // 动作Idle_01to03有时手无法完全抬起（抬到一半回原位，然后快速到该动作位置）
@@ -3206,9 +3210,9 @@ class TalkingHead {
     if (isEyeContact || isHeadMove) {
 
       // Get head position
-      e.setFromQuaternion( this.poseAvatar.props['head.quaternion'] );
-      e.x = Math.max(-0.9,Math.min(0.9, 2 * e.x - 0.5 ));
-      e.y = Math.max(-0.9,Math.min(0.9, -2.5 * e.y));
+      // e.setFromQuaternion( this.poseAvatar.props['head.quaternion'] );
+      // e.x = Math.max(-0.9,Math.min(0.9, 2 * e.x - 0.5 ));
+      // e.y = Math.max(-0.9,Math.min(0.9, -2.5 * e.y));
 
       if ( isEyeContact ) {
         Object.assign( this.mtAvatar['EyeLookInLeft'], { system: e.y < 0 ? -e.y : 0, needsUpdate: true });
@@ -3245,39 +3249,39 @@ class TalkingHead {
 
 
     // Volume based head movement, set targets
-    if ( (this.isSpeaking || this.isListening) && isEyeContact ) {
-      if ( vol > this.volumeMax ) {
-        this.volumeHeadBase = 0.05;
-        if ( Math.random() > 0.6 ) {
-          this.volumeHeadTarget = - 0.05 - Math.random() / 15;
-        }
-        this.volumeMax = vol;
-      } else {
-        this.volumeMax *= 0.92;
-        this.volumeHeadTarget = this.volumeHeadBase - 0.9 * (this.volumeHeadBase - this.volumeHeadTarget);
-      }
-    } else {
-      this.volumeHeadTarget = 0;
-      this.volumeMax = 0;
-    }
-    i = this.volumeHeadTarget - this.volumeHeadCurrent;
-    j = Math.abs(i);
-    if ( j > 0.0001 ) {
-      k = j * (this.volumeHeadEasing( Math.min(1, this.volumeHeadVelocity * dt / 1000 / j ) / 2 + 0.5 ) - 0.5 );
-      this.volumeHeadCurrent += Math.sign(i) * Math.min(j,k);
-    }
-    if ( Math.abs(this.volumeHeadCurrent) > 0.0001 ) {
-      q.setFromAxisAngle(axisx, this.volumeHeadCurrent );
-      this.objectNeck.quaternion.multiply(q);
-    }
+    // if ( (this.isSpeaking || this.isListening) && isEyeContact ) {
+    //   if ( vol > this.volumeMax ) {
+    //     this.volumeHeadBase = 0.05;
+    //     if ( Math.random() > 0.6 ) {
+    //       this.volumeHeadTarget = - 0.05 - Math.random() / 15;
+    //     }
+    //     this.volumeMax = vol;
+    //   } else {
+    //     this.volumeMax *= 0.92;
+    //     this.volumeHeadTarget = this.volumeHeadBase - 0.9 * (this.volumeHeadBase - this.volumeHeadTarget);
+    //   }
+    // } else {
+    //   this.volumeHeadTarget = 0;
+    //   this.volumeMax = 0;
+    // }
+    // i = this.volumeHeadTarget - this.volumeHeadCurrent;
+    // j = Math.abs(i);
+    // if ( j > 0.0001 ) {
+    //   k = j * (this.volumeHeadEasing( Math.min(1, this.volumeHeadVelocity * dt / 1000 / j ) / 2 + 0.5 ) - 0.5 );
+    //   this.volumeHeadCurrent += Math.sign(i) * Math.min(j,k);
+    // }
+    // if ( Math.abs(this.volumeHeadCurrent) > 0.0001 ) {
+    //   q.setFromAxisAngle(axisx, this.volumeHeadCurrent );
+    //   this.objectNeck.quaternion.multiply(q);
+    // }
 
     // Hip-feet balance
     box.setFromObject( this.armature );
-    this.objectLeftToeBase.getWorldPosition(v);
-    this.objectRightToeBase.getWorldPosition(w);
-    this.objectHips.position.y -= box.min.y / 2;
-    this.objectHips.position.x -= (v.x+w.x)/4;
-    this.objectHips.position.z -= (v.z+w.z)/2;
+    // this.objectLeftToeBase.getWorldPosition(v);
+    // this.objectRightToeBase.getWorldPosition(w);
+    // this.objectHips.position.y -= box.min.y / 2;
+    // this.objectHips.position.x -= (v.x+w.x)/4;
+    // this.objectHips.position.z -= (v.z+w.z)/2;
     // Update Dynamic Bones
     this.dynamicbones.update(dt);
     // Update morph targets
@@ -3516,9 +3520,8 @@ class TalkingHead {
       const second_per_word = 0.5; // second
       let time_estimated = second_per_word * letters.length;
       while (time_estimated > 0) {
-        const target_pose = time_estimated < 7.53 ? ['standby0', 'standby1', 'standby2'][Math.floor(Math.random() * 3)] : (time_estimated <= 14 ? 'speech-2' : [
-          'talk-1', 'talk-2', 'talk-3', 'talk-4', 'speech-1', 'standby-1'
-        ][Math.floor(Math.random() * 6)]) ;
+        const target_pose = time_estimated < 7.53 ? ['standby0', 'standby1', 'standby2'][Math.floor(Math.random() * 3)] : ( time_estimated <= 14 ? 'speech-2' : 
+          ( time_estimated <= 22 ? ['talk-1', 'talk-2', 'talk-3', 'talk-4', 'speech-1', 'standby-1'][Math.floor(Math.random() * 6)] : ['talk-5', 'talk-6'][Math.floor(Math.random() * 2)] ) );
         this.TalkQueue.push(target_pose);
         time_estimated  = Math.max(0, time_estimated - (this.TalkTimeList[target_pose] || this.DefaultTimeList[target_pose]))
       }
