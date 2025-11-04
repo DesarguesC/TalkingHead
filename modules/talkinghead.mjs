@@ -3197,22 +3197,18 @@ class TalkingHead {
 
     }
     
-    // Eye contact
-    if (isEyeContact || isHeadMove) {
-
-      if ( isEyeContact ) {
-        Object.assign( this.mtAvatar['EyeLookInLeft'], { system: e.y < 0 ? -e.y : 0, needsUpdate: true });
-        Object.assign( this.mtAvatar['EyeLookOutLeft'], { system: e.y < 0 ? 0 : e.y, needsUpdate: true });
-        Object.assign( this.mtAvatar['EyeLookInRight'], { system: e.y < 0 ? 0 : e.y, needsUpdate: true });
-        Object.assign( this.mtAvatar['EyeLookOutRight'], { system: e.y < 0 ? -e.y : 0, needsUpdate: true });
-
-      } else {
-        i = this.mtAvatar['EyeLookInLeft'].value - this.mtAvatar['EyeLookOutLeft'].value;
-        j = this.gaussianRandom(-0.2,0.2);
-
-      }
-
-    }
+    // Eye contact | TODO: 是否保留这一段EyeContact逻辑 => 暂时没发现控制逻辑
+    // if (isEyeContact || isHeadMove) {
+    //   if ( isEyeContact ) {
+    //     Object.assign( this.mtAvatar['EyeLookInLeft'], { system: e.y < 0 ? -e.y : 0, needsUpdate: true });
+    //     Object.assign( this.mtAvatar['EyeLookOutLeft'], { system: e.y < 0 ? 0 : e.y, needsUpdate: true });
+    //     Object.assign( this.mtAvatar['EyeLookInRight'], { system: e.y < 0 ? 0 : e.y, needsUpdate: true });
+    //     Object.assign( this.mtAvatar['EyeLookOutRight'], { system: e.y < 0 ? -e.y : 0, needsUpdate: true });
+    //   } else {
+    //     i = this.mtAvatar['EyeLookInLeft'].value - this.mtAvatar['EyeLookOutLeft'].value;
+    //     j = this.gaussianRandom(-0.2,0.2);
+    //   }
+    // }
 
     // Make sure we do not overshoot
     if ( dt > 2 * this.animFrameDur ) dt = 2 * this.animFrameDur;
