@@ -216,9 +216,9 @@ class TalkingHead {
     // for most natural result.
     this.poseTrace = [];
     this.AnimationFA_route = {
-      'standby0': ['U_Idle_01_Cycle.glb'],
-      'standby1': ['Idle_01to03.glb', 'U_Idle_03_Cycle.glb', 'Idle_03to01.glb'],
-      'standby2': ['Idle_01to04.glb', 'Idle_04_Cycle.glb', 'Idle_04_Cycle.glb', 'Idle_04_Cycle.glb', 'Idle_04to01.glb'],
+      'standby0': ['5Talk_03_02.glb'], // ['U_Idle_01_Cycle.glb'], // DEBUG
+      'standby1': ['5Talk_03_01.glb'], // ['Idle_01to03.glb', 'U_Idle_03_Cycle.glb', 'Idle_03to01.glb'],
+      'standby2': ['5Talk_03_02.glb'], // ['Idle_01to04.glb', 'Idle_04_Cycle.glb', 'Idle_04_Cycle.glb', 'Idle_04_Cycle.glb', 'Idle_04to01.glb'],
       'talk-1': ['Idle_01to04.glb', 'Idle_04_Cycle.glb', 'Idle_04_Cycle.glb', 'Idle_04_Cycle.glb', 'Idle_04to01.glb', 'U_Speech_08_Cycle_T1_02.glb'],
       'talk-2': ['Idle_01to04.glb', 'Idle_04_Cycle.glb', 'Idle_04_Cycle.glb', 'Idle_04_Cycle.glb', 'Idle_04to01.glb', 'U_Speech_08_Cycle_T1_04.glb'],
       'talk-3': ['Idle_01to04.glb', 'Idle_04_Cycle.glb', 'Idle_04_Cycle.glb', 'Idle_04_Cycle.glb', 'Idle_04to01.glb', 'U_Speech_08_Cycle_T1_06.glb'],
@@ -2007,14 +2007,14 @@ class TalkingHead {
     for( const [key,d] of Object.entries(this.poseDelta.props) ) {
       if ( d.x === 0 && d.y === 0 && d.z === 0 ) continue;
       e.set(d.x,d.y,d.z);
-      const o = this.poseAvatar.props[key];
-      // if ( o.isQuaternion ) {
-      //   q.setFromEuler(e);
-      //   o.multiply(q);
-      // } else 
-      if ( o.isVector3 ) {
-        o.add( e );
-      }
+      // const o = this.poseAvatar.props[key];
+      // // if ( o.isQuaternion ) {
+      // //   q.setFromEuler(e);
+      // //   o.multiply(q);
+      // // } else 
+      // if ( o.isVector3 ) {
+      //   o.add( e );
+      // }
     }
   }
 
@@ -2886,16 +2886,17 @@ class TalkingHead {
       if (this.seqItems.length != 0 && timeSinceLastAnim >= -100) {
         
         const currentAnimName = this.seqItems.shift(); // toSpeak ? this.seqItems.shift() : 'U_Idle_01_Cycle';
-        // this.poseBase = this.poseFactory(this.currentPose, 1111, true);
+        this.poseBase = this.poseFactory(this.currentPose, 1111, true);
+        
         this.currentPose = currentAnimName;
         // 动作Idle_01to03有时手无法完全抬起（抬到一半回原位，然后快速到该动作位置）
         const item = this.animClips.find( x => x.name === currentAnimName ).pose[0];
         // this.setPoseFromTemplate()
-        const o = {
-          template: 'MetaHuman', 
-          props: item.pose.props
-        }
-        this.poseTarget = o;
+        // const o = {
+        //   template: 'MetaHuman', 
+        //   props: item.pose.props
+        // }
+        // this.poseTarget = o;
         this.animInterval = this.MetaTimeList[currentAnimName];
         // const tween = false; --> true
         // let uu = 0;
@@ -2919,7 +2920,7 @@ class TalkingHead {
         action.clampWhenFinished = true;
         action.reset();
         action.fadeIn(0.3).play();
-
+        // this.updatePoseBase(this.animClock); // debug TRY
         console.log("played: " + currentAnimName);
         
       }
@@ -3239,7 +3240,7 @@ class TalkingHead {
     if ( this.mixer ) {
       this.mixer.update(dt / 1000 * this.mixer.timeScale);
     }
-    this.updatePoseDelta();
+    // this.updatePoseDelta();
     
 
 
@@ -4673,9 +4674,9 @@ class TalkingHead {
             this.gesture = null;
             for (const [p, val] of gs) {
                 if (this.poseTarget.props.hasOwnProperty(p)) {
-                    // this.poseBase.props[p].copy(this.poseFactory( this.currentPose, 1111, true ));
-                    // this.poseBase.props[p].t = this.animClock;
-                    // this.poseBase.props[p].d = this.MetaTimeList[this.currentPose];
+                    this.poseBase.props[p].copy(this.poseFactory( this.currentPose, 1111, true ));
+                    this.poseBase.props[p].t = this.animClock;
+                    this.poseBase.props[p].d = this.MetaTimeList[this.currentPose];
                 }
             }
         }
