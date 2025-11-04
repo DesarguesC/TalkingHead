@@ -2902,15 +2902,6 @@ class TalkingHead {
         // }
         // this.poseTarget = o;
         this.animInterval = this.MetaTimeList[currentAnimName];
-        // const tween = false; --> true
-        // let uu = 0;
-        // Object.entries(item.pose.props).forEach( x => {
-        //   this.poseBase.props[x[0]] = x[1].clone();
-        //   this.poseTarget.props[x[0]] = x[1].clone();
-        //   this.poseTarget.props[x[0]].t = this.animClock; // 0;
-        //   this.poseTarget.props[x[0]].d = this.animInterval * 1000; // 过渡时间(ms)
-        // });
-
         // directly using new mixer
         // if (!this.mixer) {
         this.mixer = new THREE.AnimationMixer(this.armature);
@@ -3209,11 +3200,6 @@ class TalkingHead {
     // Eye contact
     if (isEyeContact || isHeadMove) {
 
-      // Get head position
-      // e.setFromQuaternion( this.poseAvatar.props['head.quaternion'] );
-      // e.x = Math.max(-0.9,Math.min(0.9, 2 * e.x - 0.5 ));
-      // e.y = Math.max(-0.9,Math.min(0.9, -2.5 * e.y));
-
       if ( isEyeContact ) {
         Object.assign( this.mtAvatar['EyeLookInLeft'], { system: e.y < 0 ? -e.y : 0, needsUpdate: true });
         Object.assign( this.mtAvatar['EyeLookOutLeft'], { system: e.y < 0 ? 0 : e.y, needsUpdate: true });
@@ -3246,43 +3232,7 @@ class TalkingHead {
     }
     // this.updatePoseDelta();
     
-
-
-    // Volume based head movement, set targets
-    // if ( (this.isSpeaking || this.isListening) && isEyeContact ) {
-    //   if ( vol > this.volumeMax ) {
-    //     this.volumeHeadBase = 0.05;
-    //     if ( Math.random() > 0.6 ) {
-    //       this.volumeHeadTarget = - 0.05 - Math.random() / 15;
-    //     }
-    //     this.volumeMax = vol;
-    //   } else {
-    //     this.volumeMax *= 0.92;
-    //     this.volumeHeadTarget = this.volumeHeadBase - 0.9 * (this.volumeHeadBase - this.volumeHeadTarget);
-    //   }
-    // } else {
-    //   this.volumeHeadTarget = 0;
-    //   this.volumeMax = 0;
-    // }
-    // i = this.volumeHeadTarget - this.volumeHeadCurrent;
-    // j = Math.abs(i);
-    // if ( j > 0.0001 ) {
-    //   k = j * (this.volumeHeadEasing( Math.min(1, this.volumeHeadVelocity * dt / 1000 / j ) / 2 + 0.5 ) - 0.5 );
-    //   this.volumeHeadCurrent += Math.sign(i) * Math.min(j,k);
-    // }
-    // if ( Math.abs(this.volumeHeadCurrent) > 0.0001 ) {
-    //   q.setFromAxisAngle(axisx, this.volumeHeadCurrent );
-    //   this.objectNeck.quaternion.multiply(q);
-    // }
-
-    // Hip-feet balance
-    box.setFromObject( this.armature );
-    // this.objectLeftToeBase.getWorldPosition(v);
-    // this.objectRightToeBase.getWorldPosition(w);
-    // this.objectHips.position.y -= box.min.y / 2;
-    // this.objectHips.position.x -= (v.x+w.x)/4;
-    // this.objectHips.position.z -= (v.z+w.z)/2;
-    // Update Dynamic Bones
+    box.setFromObject( this.armature ); // DEBUG ????
     this.dynamicbones.update(dt);
     // Update morph targets
     this.updateMorphTargets(dt);
@@ -4688,26 +4638,6 @@ class TalkingHead {
             }
         }
     }, 50);
-
-    // Restart gesture
-    // if ( this.gesture ) {
-    //   for( let [p,v] of Object.entries(this.gesture) ) {
-    //     v.t = this.animClock;
-    //     v.d = 1000;
-    //     if ( this.poseTarget.props.hasOwnProperty(p) ) {
-    //       this.poseTarget.props[p].copy(v);
-    //       this.poseTarget.props[p].t = this.animClock;
-    //       this.poseTarget.props[p].d = 1000;
-    //     }
-    //   }
-    // }
-
-    // // Restart pose animation
-    // let anim = this.animQueue.find( x => x.template.name === 'pose' );
-    // if ( anim ) {
-    //   anim.ts[0] = this.animClock;
-    // }
-    // this.setPoseFromTemplate( null );
 
   }
 
