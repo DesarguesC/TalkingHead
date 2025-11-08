@@ -2445,7 +2445,8 @@ function openaiBuildMessage( extra_system_prompt = "") {
       msgs.push( { n: n, role: x.role, content: n.value } );
     }
     if(x.role === "system") {
-      n.value = condition + "仅返回不超过100字的中文, 禁用markdown格式, 禁止分点作答." + extra_system_prompt; // 约定只有中文且无markdoswn
+      // n.value = condition + "仅返回不超过100字的中文, 禁用markdown格式, 禁止分点作答." + extra_system_prompt; // 约定只有中文且无markdoswn
+      n.value = condition + "禁用markdown格式, 禁止分点作答." + extra_system_prompt;
       // TODO: 在此添加约束（如有需要）
     }
   });
@@ -3723,7 +3724,7 @@ function ensureParagraphStructure(pEl, isUserMessage) {
 
       const stop = document.createElement('span');
       stop.className = 'command';
-      stop.innerHTML = svgStop;
+      stop.innerHTML = svgStop; // stop icon for speaking interruption
       stop.addEventListener('click', function(ev) {
         head.stopSpeaking();
         if (aiController) {
@@ -4907,9 +4908,40 @@ document.addEventListener('DOMContentLoaded', async function(e) {
     delete this.dataset.score;
     delete this.dataset.words;
   });
+  // Record button
+  d3.select('#record').on('click', async function(ev) {
+    const x = d3.select(this);
+    const mode = !x.classed("selected");
+    x.classed("selected",mode);
+    // recordingPlaySound();
+    if ( mode ) {
+      recordingRecord();
+    } else {
+      if ( recordingMediaRecorder ) {
+        if ( recordingMediaRecorder.state === 'recording' ) {
+          recordingIgnoreData = true;
+          recordingMediaRecorder.stop();
+        }
+        recordingMediaRecorder.stream.getTracks().forEach( track => track.stop() );
+        recordingMediaRecorder = null;
+      }
+      head.stopListening();
+    }
+  });
 
   // Send message
   d3.select("#input").on("keydown", async function(ev) {
+    // autamically stop speaking and abort AI response
+    head.stopSpeaking();
+    if (aiController) {
+      aiController.abort();
+      aiController = null;
+    }
+    // .inline-caret
+    document.querySelectorAll('.inline-caret').forEach(el => el.classList.remove('inline-caret'));
+    document.querySelectorAll('.message-content.caret').forEach(el => el.classList.remove('caret'));
+
+    // extra system prompt
     let ext_pp = ev.hasOwnProperty('extra_system_prompt') ? ev.properties('extra_system_prompt') : "";
     
     if ( ev.keyCode === 13 && !ev.shiftKey ) {

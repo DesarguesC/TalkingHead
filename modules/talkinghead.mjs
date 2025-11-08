@@ -1323,7 +1323,6 @@ class TalkingHead {
     // Morph targets
     this.morphs = [];
 
-    // TODO: 需要将所有this.morphs的注释打开
     gltf.scene.traverse(obj => {
       if (obj.isMesh) {
         // console.log(obj.name, obj.morphTargetDictionary, obj.morphTargetInfluences, obj.material);
@@ -1527,39 +1526,36 @@ class TalkingHead {
     this.scene.add(rim);
     this.scene.add(rim.target);
 
-
-    // 展示坐标轴
-    function makeLabel(text, color) {
-      const canvas = document.createElement('canvas');
-      const context = canvas.getContext('2d');
-      context.font = '50px Arial';
-      context.fillStyle = color;
-      context.fillText(text, 10, 50);
+    // function makeLabel(text, color) {
+    //   const canvas = document.createElement('canvas');
+    //   const context = canvas.getContext('2d');
+    //   context.font = '50px Arial';
+    //   context.fillStyle = color;
+    //   context.fillText(text, 10, 50);
       
-      const texture = new THREE.CanvasTexture(canvas);
-      const material = new THREE.SpriteMaterial({ map: texture, transparent: true });
-      const sprite = new THREE.Sprite(material);
-      sprite.scale.set(0.5, 0.25, 1); // 控制大小
-      return sprite;
-    }
-    const axesHelper = new THREE.AxesHelper(5);
-    this.scene.add(axesHelper);
-    // X 轴标签
-    const xLabel = makeLabel('X', 'red');
-    xLabel.position.set(5.5, 0, 0);
-    this.scene.add(xLabel);
-    // Y 轴标签
-    const yLabel = makeLabel('Y', 'green');
-    yLabel.position.set(0, 5.5, 0);
-    this.scene.add(yLabel);
-    // Z 轴标签
-    const zLabel = makeLabel('Z', 'blue');
-    zLabel.position.set(0, 0, 5.5);
-    this.scene.add(zLabel);
-    const gridHelper = new THREE.GridHelper(10, 10); // 网格大小 10，分 10 格
-    this.scene.add(gridHelper);
+    //   const texture = new THREE.CanvasTexture(canvas);
+    //   const material = new THREE.SpriteMaterial({ map: texture, transparent: true });
+    //   const sprite = new THREE.Sprite(material);
+    //   sprite.scale.set(0.5, 0.25, 1); // 控制大小
+    //   return sprite;
+    // }
+    // const axesHelper = new THREE.AxesHelper(5);
+    // this.scene.add(axesHelper);
+    // // X 轴标签
+    // const xLabel = makeLabel('X', 'red');
+    // xLabel.position.set(5.5, 0, 0);
+    // this.scene.add(xLabel);
+    // // Y 轴标签
+    // const yLabel = makeLabel('Y', 'green');
+    // yLabel.position.set(0, 5.5, 0);
+    // this.scene.add(yLabel);
+    // // Z 轴标签
+    // const zLabel = makeLabel('Z', 'blue');
+    // zLabel.position.set(0, 0, 5.5);
+    // this.scene.add(zLabel);
+    // const gridHelper = new THREE.GridHelper(10, 10); // 网格大小 10，分 10 格
+    // this.scene.add(gridHelper);
     // 展示坐标轴
-
 
     // Add lights
     this.scene.add( this.lightAmbient );
@@ -1596,13 +1592,8 @@ class TalkingHead {
 
     // Set pose, view and start animation
     if ( !this.viewName ) this.setView( this.opt.cameraView );
-    
-
     this.poseBase = this.poseFactory( this.currentPose, 1111, true );
     this.poseTarget = this.poseFactory( this.currentPose, 1234, true );
-    // this.poseStraight = this.propsToThreeObjects( this.poseTemplates["straight"].props ); // Straight pose used as a reference
-    // this.poseAvatar = null; // Set when avatar has been loaded
-    // 重设一下this.poseBase系列参数看能不能消除闪现终止动作的问题
 
     this.enableAngleLimiter(true, 60); // 启用角度限制器，限制为 ±60度
     this.setMood( this.avatar.avatarMood || this.moodName || this.opt.avatarMood );
