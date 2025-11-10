@@ -3454,8 +3454,8 @@ class TalkingHead {
     let lipsyncAnim = []; // Lip-sync animation sequence
     let letters = [... this.lipsyncPreProcessText(s, lipsyncLang)];
     if (motion_start && full_string) {
-      const second_per_word = 0.5; // second
-      let time_estimated = second_per_word * letters.length;
+      const second_per_word = 0.3; // second
+      let time_estimated = second_per_word * full_string.length;
       while (time_estimated > 0) {
         const target_pose = time_estimated < 7.53 ? ['standby0', 'standby1', 'standby2'][Math.floor(Math.random() * 3)] : ( time_estimated <= 14 ? 'speech-2' : 
           ( time_estimated <= 22 ? ['talk-1', 'talk-2', 'talk-3', 'talk-4', 'speech-1', 'standby-1'][Math.floor(Math.random() * 6)] : ['talk-5', 'talk-6'][Math.floor(Math.random() * 2)] ) );
@@ -4129,6 +4129,9 @@ class TalkingHead {
     this.isSpeaking = false;
     this.isAudioPlaying = false;
     if ( this.armature ) {
+      this.TalkQueue = [];
+      this.seqItems = [];
+      // this.stop();
       this.resetLips();
       this.render();
     }
