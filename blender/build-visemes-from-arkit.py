@@ -5,38 +5,38 @@ override = False
 
 # Oculus viseme blendshapes
 shapekeys = [
-    { "name": "viseme_aa", "mix": [
+    { "name": "aa", "mix": [
         { "name": "JawOpen", "value": 0.6 }
     ]},
-    { "name": "viseme_E", "mix": [
+    { "name": "E", "mix": [
         { "name": "MouthPressLeft", "value": 0.8 },
         { "name": "MouthPressRight", "value": 0.8 },
         { "name": "MouthDimpleLeft", "value": 1.0 },
         { "name": "MouthDimpleRight", "value": 1.0 },
         { "name": "JawOpen", "value": 0.3 }
     ]},
-    { "name": "viseme_I", "mix": [
+    { "name": "I", "mix": [
         { "name": "MouthPressLeft", "value": 0.6 },
         { "name": "MouthPressRight", "value": 0.6 },
         { "name": "MouthDimpleLeft", "value": 0.6 },
         { "name": "MouthDimpleRight", "value": 0.6 },
         { "name": "JawOpen", "value": 0.2 }
     ]},
-    { "name": "viseme_O", "mix": [
+    { "name": "O", "mix": [
         { "name": "mouthPucker", "value": 1.0 },
         { "name": "jawForward", "value": 0.6 },
         { "name": "JawOpen", "value": 0.2 }
     ]},
-    { "name": "viseme_U", "mix": [
+    { "name": "U", "mix": [
         { "name": "mouthFunnel", "value": 1.0 }
     ]},
-    { "name": "viseme_PP", "mix": [
+    { "name": "PP", "mix": [
         { "name": "MouthRollLower", "value": 0.8 },
         { "name": "MouthRollUpper", "value": 0.8 },
         { "name": "mouthUpperUpLeft", "value": 0.3 },
         { "name": "mouthUpperUpRight", "value": 0.3 }
     ]},
-    { "name": "viseme_FF", "mix": [
+    { "name": "FF", "mix": [
         { "name": "mouthPucker", "value": 1.0 },
         # { "name": "mouthShrugUpper", "value": 1.0 },
         { "name": "mouthLowerDownLeft", "value": 0.2 },
@@ -45,33 +45,33 @@ shapekeys = [
         { "name": "MouthDimpleRight", "value": 1.0 },
         { "name": "MouthRollLower", "value": 1.0 }
     ]},
-    { "name": "viseme_DD", "mix": [
+    { "name": "DD", "mix": [
         { "name": "MouthPressLeft", "value": 0.8 },
         { "name": "MouthPressRight", "value": 0.8 },
         { "name": "mouthFunnel", "value": 0.5 },
         { "name": "JawOpen", "value": 0.2 }
     ]},
-    { "name": "viseme_SS", "mix": [
+    { "name": "SS", "mix": [
         { "name": "MouthPressLeft", "value": 0.8 },
         { "name": "MouthPressRight", "value": 0.8 },
         { "name": "mouthLowerDownLeft", "value": 0.5 },
         { "name": "mouthLowerDownRight", "value": 0.5 },
         { "name": "JawOpen", "value": 0.1 }
     ]},
-    { "name": "viseme_TH", "mix": [
+    { "name": "TH", "mix": [
         { "name": "MouthRollUpper", "value": 0.6 },
         { "name": "JawOpen", "value": 0.2 },
         # { "name": "tongueOut", "value": 0.4 }
     ]},
-    { "name": "viseme_CH", "mix": [
+    { "name": "CH", "mix": [
         { "name": "mouthPucker", "value": 0.5 },
         { "name": "JawOpen", "value": 0.2 }
     ]},
-    { "name": "viseme_RR", "mix": [
+    { "name": "RR", "mix": [
         { "name": "mouthPucker", "value": 0.5 },
         { "name": "JawOpen", "value": 0.2 }
     ]},
-    { "name": "viseme_kk", "mix": [
+    { "name": "kk", "mix": [
         { "name": "mouthLowerDownLeft", "value": 0.4 },
         { "name": "mouthLowerDownRight", "value": 0.4 },
         { "name": "MouthDimpleLeft", "value": 0.3 },
@@ -80,7 +80,7 @@ shapekeys = [
         { "name": "mouthPucker", "value": 0.3 },
         { "name": "JawOpen", "value": 0.15 }
     ]},
-    { "name": "viseme_nn", "mix": [
+    { "name": "nn", "mix": [
         { "name": "mouthLowerDownLeft", "value": 0.4 },
         { "name": "mouthLowerDownRight", "value": 0.4 },
         { "name": "MouthDimpleLeft", "value": 0.3 },
@@ -90,7 +90,7 @@ shapekeys = [
         { "name": "JawOpen", "value": 0.15 },
         # { "name": "tongueOut", "value": 0.2 }
     ]},
-    { "name": "viseme_sil", "mix": [] }
+    { "name": "sil", "mix": [] }
 ]
 
 # Recursive traverse

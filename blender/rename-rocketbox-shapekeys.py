@@ -2,11 +2,11 @@ import bpy
 
 # Shape key map for Microsoft Rocketbox
 shapekeyMap = [
-[ "AA_VI_00_Sil", "viseme_sil" ], [ "AA_VI_01_PP", "viseme_PP" ], [ "AA_VI_02_FF", "viseme_FF" ],
-[ "AA_VI_03_TH", "viseme_TH" ], [ "AA_VI_04_DD", "viseme_DD" ], [ "AA_VI_05_KK", "viseme_kk" ],
-[ "AA_VI_06_CH", "viseme_CH" ], [ "AA_VI_07_SS", "viseme_SS" ], [ "AA_VI_08_nn", "viseme_nn" ],
-[ "AA_VI_09_RR", "viseme_RR" ], [ "AA_VI_10_aa", "viseme_aa" ], [ "AA_VI_11_E", "viseme_E" ],
-[ "AA_VI_12_I", "viseme_I" ], [ "AA_VI_13_O", "viseme_O" ], [ "AA_VI_14_U", "viseme_U" ],
+[ "AA_VI_00_Sil", "sil" ], [ "AA_VI_01_PP", "PP" ], [ "AA_VI_02_FF", "FF" ],
+[ "AA_VI_03_TH", "TH" ], [ "AA_VI_04_DD", "DD" ], [ "AA_VI_05_KK", "kk" ],
+[ "AA_VI_06_CH", "CH" ], [ "AA_VI_07_SS", "SS" ], [ "AA_VI_08_nn", "nn" ],
+[ "AA_VI_09_RR", "RR" ], [ "AA_VI_10_aa", "aa" ], [ "AA_VI_11_E", "E" ],
+[ "AA_VI_12_I", "I" ], [ "AA_VI_13_O", "O" ], [ "AA_VI_14_U", "U" ],
 [ "AK_01_BrowDownLeft", "browDownLeft" ],
 [ "AK_02_BrowDownRight", "browDownRight" ],
 [ "AK_03_BrowInnerUp", "browInnerUp" ],

@@ -2,11 +2,11 @@ import bpy
 
 # Shape key maps for Avatar SDK
 shapekeyMap = [
-    [ "sil", "viseme_sil" ], [ "PP", "viseme_PP" ], [ "FF", "viseme_FF" ],
-    [ "TH", "viseme_TH" ], [ "DD", "viseme_DD" ], [ "kk", "viseme_kk" ],
-    [ "CH", "viseme_CH" ], [ "SS", "viseme_SS" ], [ "nn", "viseme_nn" ],
-    [ "RR", "viseme_RR" ], [ "aa", "viseme_aa" ], [ "E", "viseme_E" ],
-    [ "ih", "viseme_I" ], [ "oh", "viseme_O" ], [ "ou", "viseme_U" ],
+    [ "sil", "sil" ], [ "PP", "PP" ], [ "FF", "FF" ],
+    [ "TH", "TH" ], [ "DD", "DD" ], [ "kk", "kk" ],
+    [ "CH", "CH" ], [ "SS", "SS" ], [ "nn", "nn" ],
+    [ "RR", "RR" ], [ "aa", "aa" ], [ "E", "E" ],
+    [ "ih", "I" ], [ "oh", "O" ], [ "ou", "U" ],
 ]
 
 # Recursive traverse

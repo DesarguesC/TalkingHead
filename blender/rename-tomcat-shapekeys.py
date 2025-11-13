@@ -30,11 +30,11 @@ import bpy
 
 # Shape key map for Microsoft Rocketbox
 shapekeyMap = [
-[ "vrc.v_sil", "viseme_sil" ], [ "vrc.v_pp", "viseme_PP" ], [ "vrc.v_ff", "viseme_FF" ],
-[ "vrc.v_th", "viseme_TH" ], [ "vrc.v_dd", "viseme_DD" ], [ "vrc.v_kk", "viseme_kk" ],
-[ "vrc.v_ch", "viseme_CH" ], [ "vrc.v_ss", "viseme_SS" ], [ "vrc.v_nn", "viseme_nn" ],
-[ "vrc.v_rr", "viseme_RR" ], [ "vrc.v_aa", "viseme_aa" ], [ "vrc.v_ee", "viseme_E" ],
-[ "vrc.v_ih", "viseme_I" ], [ "vrc.v_oh", "viseme_O" ], [ "vrc.v_ou", "viseme_U" ]
+[ "vrc.v_sil", "sil" ], [ "vrc.v_pp", "PP" ], [ "vrc.v_ff", "FF" ],
+[ "vrc.v_th", "TH" ], [ "vrc.v_dd", "DD" ], [ "vrc.v_kk", "kk" ],
+[ "vrc.v_ch", "CH" ], [ "vrc.v_ss", "SS" ], [ "vrc.v_nn", "nn" ],
+[ "vrc.v_rr", "RR" ], [ "vrc.v_aa", "aa" ], [ "vrc.v_ee", "E" ],
+[ "vrc.v_ih", "I" ], [ "vrc.v_oh", "O" ], [ "vrc.v_ou", "U" ]
 ]
 
 # Recursive traverse
