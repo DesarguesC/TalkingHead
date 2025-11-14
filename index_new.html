@@ -121,30 +121,219 @@
       /* height: 100%; 确保填满网格单元 */
   }
 
-  #right-column-wrapper {
-      /* position: relative; */
-      display: flex;
-      flex-direction: column;
-      height: 100%;
-      padding: 5px;
-      /* border: 2px solid var(--colorBorderPassive); */
-      border: none;
-      flex-direction: column;
-      flex: 1;
-      overflow: hidden;
+  #canvas-container {
+    position: fixed;
+    inset: 0;               /* top:0; right:0; bottom:0; left:0; */
+    width: 100vw;
+    height: 100vh;
+    z-index: 1;             /* canvas 在最底层 */
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
   }
-  /* 在聊天框和输入框之间增加间距 */
+  #canvas-container canvas,
+  #canvas-container > canvas {
+    width: 100%;
+    height: 100%;
+    display: block;
+  }
 
+  /* ===========================
+  左侧聊天面板（悬浮） — 保留 id 名称
+  =========================== */
   #chat-container-left {
+    position: fixed;
+    top: 6vh;               /* 与顶部有间隙，视觉更靠近图片示例 */
+    left: 4vw;              /* 离左侧保留一些边距 */
+    width: 22vw;            /* 左侧宽度：约为屏幕 22%（可调整） */
+    max-width: 420px;
+    min-width: 260px;
+    height: calc(100vh - 12vh); /* 上下都有 margin，留出页面安全区 */
+    z-index: 30;            /* 高于 canvas */
+    pointer-events: auto;   /* 接收事件 */
     display: flex;
     flex-direction: column;
-    height: 100%;
+    gap: 12px;
+    box-sizing: border-box;
+    background: transparent; /* 面板背景由气泡决定，保持透明 */
   }
+  /* 内部保持一个 .chat-container（按你当前结构） */
+  #chat-container-left .chat-container {
+    background: transparent;
+    border: none;
+    padding: 0;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    overflow: hidden;
+  }
+
+  /* 左侧消息区（垂直堆叠气泡） */
   #chat-container-left .messages-area {
-    flex-grow: 1;
+    flex: 1 1 auto;
+    min-height: 0;          /* 关键：允许内部滚动而不撑开父容器 */
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 22px;              /* 气泡之间距离 */
+    padding: 6px;
+    -webkit-overflow-scrolling: touch;
+  }
+
+
+
+  /* ===========================
+   右侧聊天面板（悬浮） — 保留 id 名称
+   =========================== */
+  #right-column-wrapper {
+    position: fixed;
+    top: 6vh;
+    right: 4vw;
+    width: 22vw;
+    max-width: 420px;
+    min-width: 260px;
+    height: calc(100vh - 12vh);
+    z-index: 30;
+    display: flex;
+    flex-direction: column;
+    box-sizing: border-box;
+    background: transparent;
+    pointer-events: auto;
+    overflow: hidden;
+  }
+  /* 右侧上部：消息容器；下部：输入区（保持你现有 .chat-container/.bottom 结构） */
+  #right-column-wrapper .chat-container {
+    background: transparent;
+    border: none;
+    padding: 0;
+    flex: 1 1 auto;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  /* 右侧消息堆叠（靠右对齐） */
+  #right-column-wrapper .messages-area,
+  #right-column-wrapper .chat-container > .messages-area {
+    flex: 1 1 auto;
     min-height: 0;
     overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+    padding: 6px;
+    align-items: flex-end; /* 让气泡靠右对齐 */
   }
+
+  /* 右侧底部输入区域（.bottom 内） */
+  #right-column-wrapper .bottom {
+    flex: 0 0 auto;
+    padding-top: 8px;
+    display: flex;
+    align-items: flex-end;
+    justify-content: flex-end;
+    min-height: 0;
+  }
+
+  /* ===========================
+   气泡样式（左右通用）
+   =========================== */
+  .bubble {
+    max-width: 86%;
+    padding: 16px 18px;
+    border-radius: 18px;
+    line-height: 1.5;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.35);
+    font-size: 1rem;
+    color: var(--colorBody, #0b233f);
+    word-break: break-word;
+    background: rgba(255,255,255,0.88); /* 默认浅色气泡（可被覆盖） */
+  }
+
+  /* 左侧气泡外观（偏白但略透明，文本为深色） */
+  #chat-container-left .bubble {
+    background: rgba(246,249,253,0.95);
+    color: #0b2030;
+    border-radius: 20px;
+    align-self: flex-start;
+    box-shadow: 0 14px 30px rgba(5,25,45,0.35);
+  }
+
+  /* 右侧气泡外观（偏蓝色调） */
+  #right-column-wrapper .bubble,
+  #right-column-wrapper .messages-area .bubble {
+    background: linear-gradient(180deg, rgba(220,235,255,0.98), rgba(205,230,255,0.98));
+    color: #0a2438;
+    border-radius: 16px;
+    align-self: flex-end;
+    box-shadow: 0 10px 26px rgba(0,20,60,0.25);
+  }
+
+  /* 缩小型气泡（如最后一条、提示） */
+  .bubble.small {
+    padding: 10px 12px;
+    font-size: 0.95rem;
+    max-width: 70%;
+    opacity: 0.95;
+  }
+
+  /* ===========================
+    底部输入“大气泡”（右下角）
+    =========================== */
+  .input-bubble {
+    width: calc(100% - 8px);
+    max-width: 420px;
+    padding: 16px 18px;
+    border-radius: 22px;
+    background: rgba(255,255,255,0.95);
+    color: #0b2030;
+    box-shadow: 0 18px 40px rgba(0,10,30,0.25);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-left: auto;
+  }
+
+  /* 输入区中占位文本样式 */
+  .input-bubble .placeholder {
+    flex: 1 1 auto;
+    color: rgba(10,30,50,0.65);
+    font-size: 1rem;
+  }
+
+  /* 控件区（麦克风、暂停、发送） */
+  .input-bubble .controls {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .input-bubble .icon {
+    border: none;
+    background: rgba(0,0,0,0.04);
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: 0 6px 14px rgba(0,0,0,0.08);
+  }
+
+  .input-bubble .icon.send {
+    background: linear-gradient(90deg,#3fa7ff,#2d8ff3);
+    color: #fff;
+  }
+
+
+  
+
 
   #chat-container-right {
       display: flex;
@@ -608,14 +797,7 @@
     50% { opacity: 0; }
   }
   
-  #canvas-container {
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      height: 100%;
-      width: 100%;
-      grid-column: 2 / 3; /* 放置在网格的第二列 */
-  }
+  
 
 
   code { font-family: monospace; font-size: 1rem; }
@@ -796,95 +978,33 @@
   #canvas-container.presence-vr #avatar { bottom: -8px; left: -400px; right: -400px; }
   #canvas-container.layout-full #avatar { top: 0; left: 0; bottom: 0; right: 45%; }
 
-  @media (max-width: 1200px) {
-  /* --------- 1. 取消 grid 布局对 overlay 的影响 --------- */
-  body {
-    display: block !important;      /* 关键：不再使用 grid 布局 */
-    width: 100%;
-    height: 100%;
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-    overflow: hidden;               /* 全屏 canvas，阻止外层滚动 */
+  @media (max-width: 900px) {
+    #chat-container-left, #right-column-wrapper {
+      width: 30vw;
+      max-width: 320px;
+      min-width: 220px;
+    }
+
+    .bubble { font-size: 0.95rem; padding: 12px 14px; }
+    .input-bubble { padding: 12px 14px; max-width: 360px; }
   }
 
-  /* --------- 2. canvas 全屏（最底层） --------- */
-  #canvas-container {
-    position: fixed !important;
-    inset: 0;
-    width: 100vw !important;
-    height: 100vh !important;
-    z-index: 1 !important;
+  /* 当需要让面板“视觉覆盖但允许点击穿透 canvas”时：
+    给面板加上 .overlay-click-through（例如：<aside id="chat-container-left" class="overlay-click-through">）
+    并给需要交互的内部元素加上 .interactive（例如 .messages-area、button 等）。 */
+  .overlay-click-through {
+    pointer-events: none;
+  }
+  .overlay-click-through .interactive {
+    pointer-events: auto;
   }
 
-  /* --------- 3. 左侧面板：fixed 覆盖 --------- */
-  #chat-container-left {
-    position: fixed !important;
-    top: 0;
-    left: 0;
-    width: 25vw;
-    max-width: 380px;
-    height: 100vh !important;
-    z-index: 20 !important;
-    box-sizing: border-box;
-    padding: 12px;
-    display: flex;
-    flex-direction: column;
-    background: rgba(0,0,0,0.45);
-    backdrop-filter: blur(6px);
-    overflow: hidden;               /* 内部滚动由 messages-area 管理 */
-  }
-
-  /* 可交互/穿透控制（如需穿透，添加 overlay-click-through 类） */
-  .overlay-click-through { pointer-events: none; }
-  .overlay-click-through .interactive { pointer-events: auto; }
-
-  /* 左侧消息区允许滚动 */
-  #chat-container-left .messages-area {
-    flex: 1 1 auto;
-    min-height: 0;                  /* 关键：允许滚动而不是撑高父容器 */
-    overflow-y: auto;
-    -webkit-overflow-scrolling: touch;
-  }
-
-  /* --------- 4. 右侧面板：fixed 覆盖 --------- */
-  #right-column-wrapper {
-    position: fixed !important;
-    top: 0;
-    right: 0;
-    width: 25vw;
-    max-width: 380px;
-    height: 100vh !important;
-    z-index: 20 !important;
-    box-sizing: border-box;
-    padding: 12px;
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
-    background: rgba(0,0,0,0.45);
-    backdrop-filter: blur(6px);
-  }
-
-  /* 右侧内部 80/20（保留原逻辑） */
-  #right-column-wrapper .chat-container {
-    flex: 4 1 0%;
-    min-height: 0;
-    overflow-y: auto;
-  }
-  #right-column-wrapper .bottom {
-    flex: 1 0 auto;
-    min-height: 0;
-    overflow-y: auto;
-  }
-
-  /* 覆盖原 .chat-container 的那些会影响 overlay 的属性 */
-  .chat-container {
-    flex: 0 0 auto !important;
-    height: auto !important;
-    min-height: 0 !important;
-    overflow: hidden; /* 内部滚动由 .messages-area 管理 */
-  }
-}
+/* ===========================
+   方便调试：可在开发时开启轮廓
+   ===========================
+#chat-container-left { outline: 1px dashed rgba(255,255,255,0.06); }
+#right-column-wrapper { outline: 1px dashed rgba(255,255,255,0.06); }
+*/
 
   /*控制浅色背景*/
   body {
