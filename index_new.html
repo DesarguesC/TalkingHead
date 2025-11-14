@@ -584,9 +584,9 @@
 
   /*Messages*/
   /* 聊天气泡基础样式 */
-  .message {
-    margin-bottom: 15px; /* 增加间距以容纳气泡尾巴 */
-    padding: 10px 15px; /* 2px 12px; */
+  /* .message {
+    margin-bottom: 15px;
+    padding: 10px 15px;
     border-radius: 10px;
     line-height: 1.5;
     max-width: 90%;
@@ -595,6 +595,29 @@
     opacity: 0;
     transform: translateY(10px);
     animation: fadeIn 0.5s forwards;
+  } */
+  .message {
+    background: rgba(31, 41, 55, 0.95);
+    border: 2px solid #3b82f6;
+    border-radius: 18px;
+    padding: 20px;
+    box-shadow: 
+        0 8px 32px rgba(59, 130, 246, 0.3),
+        0 0 20px rgba(59, 130, 246, 0.2);
+    backdrop-filter: blur(15px);
+    pointer-events: auto;
+    animation: slideIn 0.5s ease-out;
+    position: relative;
+    margin-bottom: 10px;
+  }
+
+  .message::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    width: 0;
+    height: 0;
+    border: 8px solid transparent;
   }
 
   @keyframes fadeIn {
@@ -637,7 +660,7 @@
     text-align: left; /* 气泡内文本左对齐 */
     border-bottom-right-radius: 0; /* 尾巴连接处的圆角变直角 */
   }
-  .user-message::after {
+  /* .user-message::after {
     content: '';
     position: absolute;
     right: -10px;
@@ -646,6 +669,20 @@
     height: 0;
     border-bottom: 15px solid var(--user-bubble-bg);
     border-right: 15px solid transparent;
+  } */
+  .user-message::before {
+    content: '';
+    position: absolute;
+    right: -10px;
+    bottom: 0;
+    width: 0;
+    height: 0;
+    /* border-bottom: 15px solid var(--user-bubble-bg); */
+    /* border-right: 15px solid transparent; */
+    /* right: -18px; */
+    border-left-color: #3b82f6;
+    border-right: none;
+    transform: translateY(-50%);
   }
 
   .user-message > .message.user {
