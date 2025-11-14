@@ -469,12 +469,12 @@ def log_ukey_access(ukey, user_ip, operation_time, operation_type, operation_con
         app.logger.error(f"数据库请求异常 - ukey:{ukey} - 错误:{str(e)}")
     
 
-# 服务静态文件（index.html 等）
+# 服务静态文件（index_new.html 等）
 @app.route('/')
 def serve_index():
     ukey, user_ip, current_time = get_log_string()
     log_ukey_access(ukey, user_ip, current_time, TYPE_MAP['login'], "", STATUS_MAP['success'], request.cookies.get("conv_id", "?"))
-    return send_from_directory('.', 'index.html')
+    return send_from_directory('.', 'index_new.html')
 
 # 服务其他静态文件（js, css, images 等）
 @app.route('/<path:path>')
@@ -504,7 +504,7 @@ def ukey_access_handler():
     
     # 记录日志
     log_ukey_access(ukey, user_ip, current_time, TYPE_MAP['login'], "", STATUS_MAP['success'], request.cookies.get("conv_id", "?"))
-    return send_from_directory('.', 'index.html')
+    return send_from_directory('.', 'index_new.html')
     
     # # 返回成功响应
     # return jsonify({
