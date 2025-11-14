@@ -5206,17 +5206,37 @@ document.addEventListener('DOMContentLoaded', async function(e) {
   d3.selectAll("[data-session]").on('click.command', entrySelect );
   d3.selectAll("[data-entry-move]").on('click.command', entryMove );
 
-  d3.select("#selectall").on("click", function(ev) {
-    const e = d3.select(this);
-    const mode = !e.classed("selected");
-    e.classed("selected", mode);
+  d3.select("#interruption").on("click", function(ev) {
+    
+  });
 
-    d3.select(".session.selected").selectAll(".select").nodes().forEach( (n) => {
-      const x = d3.select(n);
-      if ( x.classed("selected") !== mode ) {
-        x.dispatch("click");
-      }
+  d3.select("#selectall").on("click", function(ev) {
+    // const e = d3.select(this);
+    // const mode = !e.classed("selected");
+    // e.classed("selected", mode);
+
+    // d3.select(".session.selected").selectAll(".select").nodes().forEach( (n) => {
+    //   const x = d3.select(n);
+    //   if ( x.classed("selected") !== mode ) {
+    //     x.dispatch("click");
+    //   }
+    // });
+    // 修改为发送按键
+    const inputElement = d3.select("#input").node();
+    let ext_pp = ev.hasOwnProperty('extra_system_prompt') ? ev.properties('extra_system_prompt') : "";
+    // inputElement.value = ...;
+    const event_key = new KeyboardEvent("keydown", {
+      key: "Enter",
+      keyCode: 13,
+      code: "Enter",
+      which: 13,
+      bubbles: true,
+      cancelable: true,
+      extra_system_prompt: ext_pp
     });
+    // 触发键盘事件
+    inputElement.dispatchEvent(event_key);
+    // e.dispatchEvent(event_key);
   });
 
   // Reset range
@@ -7443,16 +7463,25 @@ document.addEventListener('DOMContentLoaded', async function(e) {
           </div>
           <div id="scriptstatus" class="text starttransparent" style="margin-left:-8px;">1/1</div>
           <div class="filler"></div>
-          <div id="selectall" class="command starttransparent">
-            <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-              <path d="M10.5858 13.4142L7.75735 10.5858L6.34314 12L10.5858 16.2427L17.6568 9.1716L16.2426 7.75739L10.5858 13.4142Z" fill="currentColor" />
-            </svg>
-          </div>
-          <div id="record" class="command starttransparent" data-i18n-title="Record">
-            <svg viewBox="-2 -2 28 28" xmlns="http://www.w3.org/2000/svg">
+          <div id="record" class="command starttransparent" data-i18n-title="点击开始持续录音">
+            <!-- <svg viewBox="-2 -2 28 28" xmlns="http://www.w3.org/2000/svg">
               <path fill-rule="evenodd" clip-rule="evenodd" d="M9 4C9 2.34315 10.3431 1 12 1C13.6569 1 15 2.34315 15 4V12C15 13.6569 13.6569 15 12 15C10.3431 15 9 13.6569 9 12V4ZM13 4V12C13 12.5523 12.5523 13 12 13C11.4477 13 11 12.5523 11 12V4C11 3.44772 11.4477 3 12 3C12.5523 3 13 3.44772 13 4Z" fill="currentColor" />
               <path d="M18 12C18 14.973 15.8377 17.441 13 17.917V21H17V23H7V21H11V17.917C8.16229 17.441 6 14.973 6 12V9H8V12C8 14.2091 9.79086 16 12 16C14.2091 16 16 14.2091 16 12V9H18V12Z" fill="currentColor" />
-            </svg>
+            </svg> -->
+             <img src="./images/icon-语音.png" alt="Record Icon" class="record-icon"/>
+          </div>
+          <div id="interruption" class="command starttransparent" data-i18n-title="中断">
+            <!-- <svg viewBox="-2 -2 28 28" xmlns="http://www.w3.org/2000/svg">
+              <path fill-rule="evenodd" clip-rule="evenodd" d="M9 4C9 2.34315 10.3431 1 12 1C13.6569 1 15 2.34315 15 4V12C15 13.6569 13.6569 15 12 15C10.3431 15 9 13.6569 9 12V4ZM13 4V12C13 12.5523 12.5523 13 12 13C11.4477 13 11 12.5523 11 12V4C11 3.44772 11.4477 3 12 3C12.5523 3 13 3.44772 13 4Z" fill="currentColor" />
+              <path d="M18 12C18 14.973 15.8377 17.441 13 17.917V21H17V23H7V21H11V17.917C8.16229 17.441 6 14.973 6 12V9H8V12C8 14.2091 9.79086 16 12 16C14.2091 16 16 14.2091 16 12V9H18V12Z" fill="currentColor" />
+            </svg> -->
+             <img src="./images/icon-暂停.png" alt="Stop Icon" class="stop-icon"/>
+          </div>
+          <div id="selectall" class="command starttransparent" data-i18n-title="发送">
+            <!-- <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+              <path d="M10.5858 13.4142L7.75735 10.5858L6.34314 12L10.5858 16.2427L17.6568 9.1716L16.2426 7.75739L10.5858 13.4142Z" fill="currentColor" />
+            </svg> -->
+            <img src="./images/发送按钮.png" alt="Send Icon" class="send-icon"/>
           </div>
           <div id="motion" class="command starttransparent" data-i18n-title="Motion" style="display: none;">
             <svg viewBox="0 0 50 50" xmlns="http://www.w3.org/2000/svg">

@@ -942,7 +942,7 @@ class TalkingHead {
         
     });
     const textureLoader = new THREE.TextureLoader();
-    textureLoader.load('./avatars/bg.png', (texture) => {
+    textureLoader.load('./images/background.png', (texture) => {
       texture.encoding = THREE.sRGBEncoding;
       scene.background = texture;
     });
