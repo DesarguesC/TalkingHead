@@ -653,8 +653,8 @@ class TalkingHead {
       '😳': { dt: [1000,1000], rescale: [0,1], vs: { browInnerUp: [1], eyeWideLeft: [0.5], eyeWideRight: [0.5], eyesRotateY: [0.05], eyesRotateX: [0.05], mouthClose: [0.2], mouthFunnel: [0.5], mouthPucker: [0.4], MouthRollLower: [0.4], MouthRollUpper: [0.4] } },
       '☹️': { dt: [500,1500], rescale: [0,1], vs: { mouthFrownLeft: [1], mouthFrownRight: [1], mouthPucker: [0.1], MouthRollLower: [0.8] } },
 
-      '😚': { dt: [500,1000,1000], rescale: [0,1,0], vs: { browInnerUp: [0.6], EyeBlinkLeft: [1], EyeBlinkRight: [1], eyeSquintLeft: [1], eyeSquintRight: [1], mouthPucker: [0,0.5], NoseSneerLeft: [0,0.7], NoseSneerRight: [0,0.7], viseme_U: [0,1] } },
-      '😘': { dt: [500,500,200,500], rescale: [0,0,0,1], vs: { browInnerUp: [0.6], EyeBlinkLeft: [0,0,1,0], EyeBlinkRight: [0], eyesRotateY: [0], bodyRotateY: [0], bodyRotateX: [0,0.05,0.05,0], bodyRotateZ: [0,-0.05,-0.05,0], eyeSquintLeft: [1], eyeSquintRight: [1], mouthPucker: [0,0.5,0], NoseSneerLeft: [0,0.7], NoseSneerRight: [0.7], viseme_U: [0,1] } },
+      '😚': { dt: [500,1000,1000], rescale: [0,1,0], vs: { browInnerUp: [0.6], EyeBlinkLeft: [1], EyeBlinkRight: [1], eyeSquintLeft: [1], eyeSquintRight: [1], mouthPucker: [0,0.5], NoseSneerLeft: [0,0.7], NoseSneerRight: [0,0.7], U: [0,1] } },
+      '😘': { dt: [500,500,200,500], rescale: [0,0,0,1], vs: { browInnerUp: [0.6], EyeBlinkLeft: [0,0,1,0], EyeBlinkRight: [0], eyesRotateY: [0], bodyRotateY: [0], bodyRotateX: [0,0.05,0.05,0], bodyRotateZ: [0,-0.05,-0.05,0], eyeSquintLeft: [1], eyeSquintRight: [1], mouthPucker: [0,0.5,0], NoseSneerLeft: [0,0.7], NoseSneerRight: [0.7], U: [0,1] } },
       '🥰': { dt: [1000,1000], rescale: [0,1], vs: { browInnerUp: [0.6], eyeSquintLeft: [1], eyeSquintRight: [1], mouthSmile: [0.7], NoseSneerLeft: [0.7], NoseSneerRight: [0.7] } },
       '😍': { dt: [1000,1000], rescale: [0,1], vs: { browInnerUp: [0.6], JawOpen: [0.1], MouthDimpleLeft: [0.2], MouthDimpleRight: [0.2], mouthOpen: [0.3], MouthPressLeft: [0.3], MouthPressRight: [0.3], MouthRollLower: [0.4], mouthShrugUpper: [0.4], mouthSmile: [0.7], mouthUpperUpLeft: [0.3], mouthUpperUpRight: [0.3], NoseSneerLeft: [0.4], NoseSneerRight: [0.4] } },
       '🤩': { link:  '😍' },
@@ -3059,11 +3059,16 @@ class TalkingHead {
             // Volume effect
             if ( vol ) {
               switch(mt){
-                case 'viseme_aa':
-                case 'viseme_E':
-                case 'viseme_I':
-                case 'viseme_O':
-                case 'viseme_U':
+                // case 'viseme_aa':
+                // case 'viseme_E':
+                // case 'viseme_I':
+                // case 'viseme_O':
+                // case 'viseme_U':
+                case 'aa':
+                case 'E':
+                case 'I':
+                case 'O':
+                case 'U':
                   m.newvalue *= 1 + vol / 255 - 0.5;
               }
             }
@@ -3537,7 +3542,8 @@ class TalkingHead {
                 template: { name: 'viseme' },
                 ts: [ (val.times[j] - 0.6) / d, (val.times[j] + 0.5) / d, (val.times[j] + val.durations[j] + 0.5) / d ],
                 vs: {
-                  ['viseme_'+val.visemes[j]]: [null,(val.visemes[j] === 'PP' || val.visemes[j] === 'FF') ? 0.9 : 0.6,0]
+                  // ['viseme_'+val.visemes[j]]: [null,(val.visemes[j] === 'PP' || val.visemes[j] === 'FF') ? 0.9 : 0.6,0]
+                  [val.visemes[j]]: [null,(val.visemes[j] === 'PP' || val.visemes[j] === 'FF') ? 0.9 : 0.6,0]
                 }
               });
             }
@@ -3759,7 +3765,8 @@ class TalkingHead {
                     template: { name: 'viseme' },
                     ts: [ t - Math.min(60,2*d/3), t + Math.min(25,d/2), t + d + Math.min(60,d/2) ],
                     vs: {
-                      ['viseme_'+val.visemes[j]]: [null,(val.visemes[j] === 'PP' || val.visemes[j] === 'FF') ? 0.9 : level, 0]
+                      // ['viseme_'+val.visemes[j]]: [null,(val.visemes[j] === 'PP' || val.visemes[j] === 'FF') ? 0.9 : level, 0]
+                      [val.visemes[j]]: [null,(val.visemes[j] === 'PP' || val.visemes[j] === 'FF') ? 0.9 : level, 0]
                     }
                   });
                 }
@@ -3779,7 +3786,8 @@ class TalkingHead {
             template: { name: 'viseme' },
             ts: [ time - 2 * duration/3, time + duration/2, time + duration + duration/2 ],
             vs: {
-              ['viseme_'+viseme]: [null,(viseme === 'PP' || viseme === 'FF') ? 0.9 : 0.6, 0]
+              // ['viseme_'+viseme]: [null,(viseme === 'PP' || viseme === 'FF') ? 0.9 : 0.6, 0]
+              [viseme]: [null,(viseme === 'PP' || viseme === 'FF') ? 0.9 : 0.6, 0]
             }
           });
         }
