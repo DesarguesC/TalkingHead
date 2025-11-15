@@ -107,7 +107,7 @@
       padding: 15px;
       box-sizing: border-box;
   }
-  .chat-container {
+  /* .chat-container {
       background-color: var(--colorPanel);
       border: 2px solid var(--colorBorderPassive);
       border-radius: 10px;
@@ -117,9 +117,8 @@
       overflow: hidden;
       padding: 15px;
       box-sizing: border-box;
-      flex: 0 0 85%; /* 占父容器的80% */
-      /* height: 100%; 确保填满网格单元 */
-  }
+      flex: 0 0 85%;
+  } */
 
   #canvas-container {
     position: fixed;
@@ -158,17 +157,6 @@
     box-sizing: border-box;
     background: transparent; /* 面板背景由气泡决定，保持透明 */
   }
-  /* 内部保持一个 .chat-container（按你当前结构） */
-  #chat-container-left .chat-container {
-    background: transparent;
-    border: none;
-    padding: 0;
-    min-height: 0;
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-    overflow: hidden;
-  }
 
   /* 左侧消息区（垂直堆叠气泡） */
   #chat-container-left .messages-area {
@@ -198,6 +186,7 @@
     z-index: 30;
     display: flex;
     flex-direction: column;
+    gap: 12px; /* additional */
     box-sizing: border-box;
     background: transparent;
     pointer-events: auto;
@@ -241,7 +230,7 @@
   /* ===========================
    气泡样式（左右通用）
    =========================== */
-  .bubble {
+  .chat-container {
     max-width: 86%;
     padding: 16px 18px;
     border-radius: 18px;
@@ -254,7 +243,7 @@
   }
 
   /* 左侧气泡外观（偏白但略透明，文本为深色） */
-  #chat-container-left .bubble {
+  #chat-container-left .chat-container {
     background: rgba(246,249,253,0.95);
     color: #0b2030;
     border-radius: 20px;
@@ -597,6 +586,12 @@
     animation: fadeIn 0.5s forwards;
   } */
   .message {
+    line-height: 1.5;
+    max-width: 90%;
+    word-wrap: break-word;
+    /* opacity: 0; */
+    transform: translateY(10px);
+
     background: rgba(31, 41, 55, 0.95);
     border: 2px solid #3b82f6;
     border-radius: 18px;
@@ -614,7 +609,7 @@
   .message::before {
     content: '';
     position: absolute;
-    top: 50%;
+    top: 20%;
     width: 0;
     height: 0;
     border: 8px solid transparent;
@@ -630,10 +625,9 @@
 
   /* 系统消息气泡 (左侧) */
   .system-message {
-    background-color: var(--system-bubble-bg); /* rgba(131, 20, 235, 0.3); */
+    background-color: var(--system-bubble-bg); 
     color: var(--colorSystemText);
     margin-right: auto;
-    border-bottom-left-radius: 0; /* 尾巴连接处的圆角变直角 */
   }
   
   .system-message::after {
@@ -643,10 +637,10 @@
     bottom: 0;
     width: 0;
     height: 0;
-    /* border-bottom: 15px solid var(--system-bubble-bg);
-    border-left: 15px solid transparent; */
+    border-bottom: 15px solid var(--system-bubble-bg);
+    border-left: 15px solid transparent;
     border-right-color: #3b82f6;
-    border-left: none;
+    /* border-left: none; */
     transform: translateY(-50%);
   }
   
@@ -658,7 +652,8 @@
     color: var(--colorUserText);
     margin-left: auto;
     text-align: left; /* 气泡内文本左对齐 */
-    border-bottom-right-radius: 0; /* 尾巴连接处的圆角变直角 */
+    /* border-bottom-right-radius: 0;  */
+    /* 尾巴连接处的圆角变直角 */
   }
   /* .user-message::after {
     content: '';
@@ -3966,7 +3961,8 @@ function ensureParagraphStructure(pEl, isUserMessage) {
 
 // Add new message to UI
 function addMessage(user = false) {
-  const session = user ? d3.select(".message.user-message") : d3.select(".message.system-message");
+  // const session = user ? d3.select(".message.user-message") : d3.select(".message.system-message");
+  const session = user ? d3.select("#chat-container-right") : d3.select("#chat-container-left");
   const message = session.append("div");
 
   message.classed("message", true)
@@ -3982,7 +3978,8 @@ function addMessage(user = false) {
   ensureParagraphStructure(p, user);
 
   // scroll 保持不变
-  const nodeSessions = user ? d3.select("#user-messages").node() : d3.select("#system-messages").node();
+  // const nodeSessions = user ? d3.select("#user-messages").node() : d3.select("#system-messages").node();
+  const nodeSessions = user ? d3.select("#chat-container-right").node() : d3.select("#chat-container-left").node();
   nodeSessions.scrollTop = nodeSessions.scrollHeight;
   document.querySelectorAll('.message-content.caret').forEach(el => el.classList.remove('caret')); // user端取消闪烁
   // 返回 message.node() 保持不变（外部代码可以继续使用）
@@ -3992,7 +3989,8 @@ function addMessage(user = false) {
 // Add text to session
 function addText(node, s) { // s 是新的词（preprocess 已分词过）
   // 修正可能的拼写，确保获取正确的 scroll 容器
-  const nodeSessions = node.className === "user-messages" ? d3.select("#user-messages").node() : d3.select("#system-messages").node();
+  // const nodeSessions = node.className === "user-messages" ? d3.select("#user-messages").node() : d3.select("#system-messages").node();
+  const nodeSessions = node.className === "user-messages" ? d3.select("#chat-container-right").node() : d3.select("#chat-container-left").node();
   const onbottom = Math.abs(nodeSessions.scrollHeight - nodeSessions.scrollTop - nodeSessions.clientHeight) < 20;
 
   let last = node.lastElementChild;
@@ -6028,12 +6026,11 @@ document.addEventListener('DOMContentLoaded', async function(e) {
       </div>
       <div id="avatar"></div>
       <div class="border starttransparent"></div> -->
-      <div id="system-messages" class="messages-area">
-        <!-- <div class="sessions"> -->
-            <div id="session-0" class="message system-message"></div>
-            <div id="session-1" class="session"></div>
-        <!-- </div> -->
-      </div>
+
+      <!-- <div id="system-messages" class="messages-area">
+        <div id="session-0" class="message system-message"></div>
+        <div id="session-1" class="session"></div>
+      </div> -->
       
   </div>
 
@@ -6058,8 +6055,10 @@ document.addEventListener('DOMContentLoaded', async function(e) {
       </div>
   </div>
 
-  <div id="right-column-wrapper">
-    <div id="chat-container-right" class="chat-container">
+  <div id="right-column-wrapper" class="chat-container">
+
+    
+    <div id="chat-container-right">
 
       <!-- <div class="pages"> -->
 
@@ -7543,19 +7542,19 @@ document.addEventListener('DOMContentLoaded', async function(e) {
 
         </div>
 
-        <div id="user-messages" class="messages-area">
+        <!-- <div id="user-messages" class="messages-area"> -->
           <!-- <h3>用户输入</h3> -->
-          <div class="sessions">
+          <!-- <div class="sessions">
             <div id="session-0" class="message user-message"></div>
             <div id="session-1" class="session"></div>
-          </div>
+          </div> -->
           <!-- 插入的：
             <div class="message user-message">你好</div> -->
           <!-- <div id="sessions">
             <div id="user-message" class="messages-area"></div>
             <div id="session-1" class="session"></div>
           </div> -->
-        </div>
+        <!-- </div> -->
 
         <div id="right-session" class="page noselect nodrag hidden">
 
