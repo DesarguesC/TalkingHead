@@ -236,8 +236,8 @@
     border-radius: 18px;
     line-height: 1.5;
     box-shadow: 0 8px 20px rgba(0,0,0,0.35);
-    font-size: 1rem;
-    color: var(--colorBody, #0b233f);
+    font-size: 1.4rem;
+    color: rgba(0,0,0,0);
     word-break: break-word;
     background: rgba(255,255,255,0.88); /* 默认浅色气泡（可被覆盖） */
   }
@@ -264,7 +264,7 @@
   /* 缩小型气泡（如最后一条、提示） */
   .bubble.small {
     padding: 10px 12px;
-    font-size: 0.95rem;
+    font-size: 1.4rem;
     max-width: 70%;
     opacity: 0.95;
   }
@@ -291,7 +291,7 @@
   .input-bubble .placeholder {
     flex: 1 1 auto;
     color: rgba(10,30,50,0.65);
-    font-size: 1rem;
+    font-size: 1.4rem;
   }
 
   /* 控件区（麦克风、暂停、发送） */
@@ -325,7 +325,7 @@
 
 
   #chat-container-right {
-      display: flex;
+      /* display: flex; */
       flex-direction: column;
       /* height: auto; */
       flex-grow: 1; /* 占据所有可用空间 */
@@ -487,8 +487,10 @@
   }
   .border {
     position: absolute; top: 0; left: 0; bottom: 0; right: 0;
-    background: transparent; border-width: 3px; border-style: solid;
-    border-color: var(--colorBorderActive); pointer-events: none;
+    background: transparent; border-width: 3px; 
+    border-style: solid;
+    /* border-color: var(--colorBorderActive);  */
+    pointer-events: none;
     border-radius: inherit;
   }
   .glow { box-shadow: 0 0 25px 5px var(--colorGlow); }
@@ -531,7 +533,7 @@
   /* Loading */
   #loading {
     display: block; position: absolute; top: 6px; left: 6px; width: 300px;
-    height: 30px; pointer-events: none; font-size: 1rem;
+    height: 30px; pointer-events: none; font-size: 1.2rem;
     background-color: transparent;
   }
   #loading-back, #loading-top {
@@ -567,7 +569,9 @@
     position: absolute; margin: 4px;
     background-color: var(--colorPanel);
   }
-  #right .border { border-color: var(--colorBorderPassive); }
+  #right .border { 
+    border-color: var(--colorBorderPassive); 
+  }
   .session { display: none; width: 100%; }
   .session.selected { display: block; }
 
@@ -592,10 +596,10 @@
     /* opacity: 0; */
     transform: translateY(10px);
 
-    background: rgba(31, 41, 55, 0.95);
-    border: 2px solid #3b82f6;
+    /* background: rgba(31, 41, 55, 0.95); */
+    /* border: 2px solid #3b82f6; */ /* 待定 */
     border-radius: 18px;
-    padding: 20px;
+    padding: 15px;
     box-shadow: 
         0 8px 32px rgba(59, 130, 246, 0.3),
         0 0 20px rgba(59, 130, 246, 0.2);
@@ -1020,7 +1024,7 @@
       min-width: 220px;
     }
 
-    .bubble { font-size: 0.95rem; padding: 12px 14px; }
+    .bubble { font-size: 1.14rem; padding: 12px 14px; }
     .input-bubble { padding: 12px 14px; max-width: 360px; }
   }
 
