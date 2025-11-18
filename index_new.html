@@ -255,7 +255,7 @@
     top: 6vh;
     right: 4vw;
     width: 22vw;
-    max-width: 420px;
+    /* max-width: 420px; */
     min-width: 260px;
     height: calc(100vh - 12vh);
     z-index: 30;
@@ -402,11 +402,23 @@
 
 
   #chat-container-right {
+      position: static;
+      top: 6vh;
+      left: 4vw;
+      width: 21.5vw;
+      /* max-width: 420px; */
+      min-width: 260px;
+      height: calc(100vh - 12vh);
+      z-index: 30;
+      pointer-events: auto;
       /* display: flex; */
       flex-direction: column;
-      /* height: auto; */
+      gap: 12px;
+      box-sizing: border-box;
+      background: transparent;
       overflow-y: auto;
       overscroll-behavior: contain;
+      
       flex-grow: 1; /* 占据所有可用空间 */
       min-height: 0; /* 防止 flex 溢出 */
   }
@@ -693,7 +705,7 @@
   } */
   .message {
     line-height: 1.5;
-    max-width: 90%;
+    /* max-width: 90%; */
     font-family: 'Times New Roman', Times, serif;
     color: var(--colorBody);
     word-wrap: break-word;
@@ -703,15 +715,15 @@
     /* background: rgba(31, 41, 55, 0.95); */
     /* border: 2px solid #3b82f6; */ /* 待定 */
     border-radius: 18px;
-    padding: 15px;
+    padding: 12px;
     box-shadow: 
-        0 8px 32px rgba(59, 130, 246, 0.3),
-        0 0 20px rgba(59, 130, 246, 0.2);
-    backdrop-filter: blur(15px);
+        0 8px 32px rgb(109 147 207 / 30%), 
+        0 0 20px rgb(82 213 208 / 20%);
+    backdrop-filter: blur(6px);
     pointer-events: auto;
-    animation: slideIn 0.5s ease-out;
+    animation: slideIn 0.9s ease-out; /* ? */
     position: relative;
-    margin-bottom: 10px;
+    margin-bottom: 12px;
   }
 
   .message::before {
@@ -754,12 +766,18 @@
   
 
    /* 用户消息气泡 (右侧) */
-  .user-message {
-    position: relative; /* 让子元素的 absolute 相对它定位 */
+  .user, .user-message {
+    /* max-width: 90%; */
+    /* position: relative;  */
+    /* 让子元素的 absolute 相对它定位 */
+    /* align-items: center; */
+    width: 84%;
+    left: 15px;
     background-color:  var(--user-bubble-bg); /* rgba(144, 231, 250, 0.2); */
     color: var(--colorUserText);
-    margin-left: auto;
-    text-align: left; /* 气泡内文本左对齐 */
+    /* margin-left: auto; */
+    /* text-align: left; */
+    /* 气泡内文本左对齐 */
     /* border-bottom-right-radius: 0;  */
     /* 尾巴连接处的圆角变直角 */
   }
@@ -4076,7 +4094,7 @@ function addMessage(user = false) {
 
   message.classed("message", true)
     .classed("user", user);
-    // .classed("blink", !user);
+  // message.classed("user-message", user);
 
   // 创建一个 <p> 段落作为消息第一行（后续 addText 会往这个 <p> 的 .message-content 写入）
   const p = message.node().appendChild(document.createElement('p'));
