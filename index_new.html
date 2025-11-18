@@ -142,6 +142,54 @@
     display: block;
   }
 
+  /*record样式*/
+  #record {
+    transition: all 0.2s ease;
+    cursor: pointer;
+  }
+  #record:hover {
+    filter: drop-shadow(0 0 8px rgba(0, 153, 255, 0.75)) brightness(1.2);
+    transform: scale(1.05);
+  }
+  /* selected 需要覆盖 hover，所以这段必须最后写 */
+  #record.selected,
+  #record.selected:hover {
+    filter: drop-shadow(0 0 12px rgba(0, 153, 255, 0.9)) brightness(1.4);
+    transform: scale(1.1);
+  }
+
+  /*interruption & send patterns*/
+  #interruption {
+    transition: all 0.2s ease;
+    cursor: pointer;
+  }
+  #interruption:hover {
+    filter: drop-shadow(0 0 8px rgba(0, 153, 255, 0.75)) brightness(1.2);
+    transform: scale(1.05);
+  }
+  /* selected 需要覆盖 hover，所以这段必须最后写 */
+  #interruption.selected,
+  #interruption.selected:hover {
+    filter: drop-shadow(0 0 12px rgba(0, 153, 255, 0.9)) brightness(1.4);
+    transform: scale(1.1);
+  }
+
+  #selectall {
+    transition: all 0.2s ease;
+    cursor: pointer;
+  }
+  #selectall:hover {
+    filter: drop-shadow(0 0 8px rgba(0, 153, 255, 0.75)) brightness(1.2);
+    transform: scale(1.05);
+  }
+  /* selected 需要覆盖 hover，所以这段必须最后写 */
+  #selectall.selected,
+  #selectall.selected:hover {
+    filter: drop-shadow(0 0 12px rgba(0, 153, 255, 0.9)) brightness(1.4);
+    transform: scale(1.1);
+  }
+
+  
   /* ===========================
   左侧聊天面板（悬浮） — 保留 id 名称
   =========================== */
