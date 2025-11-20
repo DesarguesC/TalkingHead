@@ -5,10 +5,12 @@ export const site = {
   avatars: {
     'XiaoyinYue': {
       // url: './avatars/brunette.glb',
-      // url: './avatars/Body_Face_All4.glb',
-      // url: './avatars/Police_Webgl_Rig_002.glb',
+      // url: './avatars/Body_Face_All4.glb', // 无'PP', 'sil'等viseme
+      // url: './avatars/Police_Webgl_Rig_002.glb', // 11111
       // url: './avatars/test.glb',
+
       url: './avatars/police_kz_Wbgl_rig_02.glb',
+      // url: './avatars/mixamo.glb', 
       default: './animations/Idle_01to04.glb', // 待机动作
       body: 'F',
       avatarMood: 'neutral',

@@ -2206,7 +2206,7 @@ class TalkingHead {
 
           default:
             for( let i=0,l=o.ms.length; i<l; i++ ) {
-              o.ms[i][o.is[i]] = o.applied;
+              o.ms[i][o.is[i]] = o.applied; // (mt, o)
             }
 
         }
@@ -3894,7 +3894,7 @@ class TalkingHead {
             // x.ts[i] = this.animClock + x.ts[i] + delay; // origin
             x.ts[i] = this.animClock + (x.ts[i] + delay) * (24000/44100); // modified
           }
-          this.animQueue.push(x);
+          this.animQueue.push(x); // check x.keys (x.vs, x.ts, x.?)
         });
       }
 

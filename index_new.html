@@ -2781,8 +2781,8 @@ function openaiBuildMessage( extra_system_prompt = "") {
       msgs.push( { n: n, role: x.role, content: n.value } );
     }
     if(x.role === "system") {
-      // n.value = condition + "仅返回不超过100字的中文, 禁用markdown格式, 禁止分点作答." + extra_system_prompt; // 约定只有中文且无markdoswn
-      n.value = condition + "禁用markdown格式, 禁止分点作答." + extra_system_prompt;
+      n.value = condition + "仅返回不超过100字的中文, 禁用markdown格式, 禁止分点作答." + extra_system_prompt; // 约定只有中文且无markdoswn
+      // n.value = condition + "禁用markdown格式, 禁止分点作答." + extra_system_prompt;
       // TODO: 在此添加约束（如有需要）
     }
   });
