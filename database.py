@@ -43,6 +43,48 @@ def receive_log():
             "message": f"服务器错误: {str(e)}"
         }), 500
 
+@app.route('/wx/log/sysoper/writeOperLog', methods=['POST'])
+def receive_log():
+    """接收并存储日志数据"""
+    try:
+        # 获取请求数据
+        data = request.json
+        
+        # 验证必需字段
+        # required_fields = ['ukey', 'user_ip', 'time', 'type', 'content', 'status', 'conv_id']
+        # -> 放在reqParam中
+        required_fields = [
+            'token', 'operPath', 'operDesc', 'serviceID',
+            'serviceName', 'reqParams', 'result', 'success',
+            'errorCode', 'errorDesc'
+        ]
+        for field in required_fields:
+            if field not in data:
+                return jsonify({
+                    "status": "error",
+                    "message": f"缺少必需字段: {field}"
+                }), 400
+        
+        # 添加接收时间戳
+        data['received_at'] = datetime.now().isoformat()
+        
+        # 存储数据（模拟数据库写入）
+        log_storage.append(data)
+        
+        print(f"接收到日志数据: {data}")
+        
+        return jsonify({
+            "status": "success",
+            "message": "日志记录成功",
+            "log_id": len(log_storage)  # 模拟记录ID
+        })
+        
+    except Exception as e:
+        return jsonify({
+            "status": "error",
+            "message": f"服务器错误: {str(e)}"
+        }), 500
+
 @app.route('/database/api/read')
 def get_logs():
     """获取所有日志记录（用于调试）"""
@@ -64,5 +106,5 @@ def clear_logs():
     })
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000, debug=True)
+    app.run(host='0.0.0.0', port=5001, debug=True)
 

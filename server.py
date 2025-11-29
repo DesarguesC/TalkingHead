@@ -4,7 +4,7 @@ from flask_cors import CORS
 from flask_socketio import SocketIO
 from logging.handlers import RotatingFileHandler
 import requests
-import logging
+import logging, inspect
 import socket
 import threading
 import time, pdb, os, ssl
@@ -169,6 +169,13 @@ STATUS_MAP = {
     "failed": "请求失败",  # used
     "denied": "拒绝访问",
     "pending": "进行中",
+}
+ErrorMap = {
+    "200": "成功，Token 有效",
+    "224": "系统异常",
+    "225": "服务器忙",
+    "226": "Token无效",
+    "227": "接口未授权",
 }
 
 
@@ -459,15 +466,72 @@ def log_ukey_access(ukey, user_ip, operation_time, operation_type, operation_con
                 },
             timeout=5  # 5秒超时
         )
-        
+        genuine_ukey_access(ukey, user_ip, operation_time, operation_type, operation_content, operation_status, conv_id)
+
         if response.status_code == 200:
-            app.logger.info(f"数据库写入成功 - ukey:{ukey}")
+            app.logger.info(f"虚假数据库写入成功 - ukey:{ukey}")
         else:
             app.logger.error(f"数据库写入失败 - 状态码:{response.status_code} | log_data: {log_data}")
             
     except requests.exceptions.RequestException as e:
         app.logger.error(f"数据库请求异常 - ukey:{ukey} - 错误:{str(e)}")
     
+
+def genuine_ukey_access(ukey, user_ip, operation_time, operation_type, operation_content, operation_status, conv_id, errCode=None):
+    """记录ukey访问日志到文件和数据库"""
+    # conv_id = get_conversation_id()
+    # 格式化日志信息 | TODO: 替换key为数据库中的字段
+    reqParams = {
+        "ukey": ukey,
+        "user_ip": user_ip,
+        "time": operation_time,
+        "type": operation_type,
+        "content": operation_content,
+        "status": operation_status,
+        "conv_id": conv_id
+    }
+    LOG_DATA = {
+        "token": ukey,
+        "openPath": inspect.getsourcefile(
+            set_sid_if_needed if operation_content == 'login' else yuexiaoyin_chat
+        ),
+        "operDesc": operation_type,
+        "serviceID": "12345",       # TODO: 替换
+        "serviceName": "数字人",     # TODO: 替换
+        "reqParams": reqParams,
+        "result": operation_status,
+        "success": operation_status == STATUS_MAP['success'],
+        "errorCode": errCode,       # TODO: 替换
+        "errorDesc": ErrorMap[str(errCode)],     # TODO: 替换
+    }
+    
+    # 1. 写入本地日志文件
+    log_message = f"[ operation_time ] ukey_access | ukey: {ukey} | user_ip: {user_ip} | 操作类型: {operation_type} | 操作内容: {operation_content} | 操作结果: {operation_status} | 对话编号: {conv_id}"  # DEBUG
+    print(f'LOG: {log_message}')
+    app.logger.info(log_message)
+    
+    # 2. 发送到数据库服务器
+    try:
+        response = requests.post(
+            f'{DATABASE_SERVER}/database/api/write', # TODO: 路由未知，需要替换
+            json=LOG_DATA,
+            headers={
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer ', # TODO: 可能还有一个token
+                },
+            timeout=5  # 5秒超时
+        )
+        
+        if response.status_code == 200:
+            app.logger.info(f"数据库写入成功 - ukey:{ukey}")
+        else:
+            app.logger.error(f"数据库写入失败 - 状态码:{response.status_code} | reqParams: {reqParams}")
+            
+    except requests.exceptions.RequestException as e:
+        LOG_DATA["errorDesc"] = str(e)
+
+        app.logger.error(f"数据库请求异常 - ukey:{ukey} - 错误:{str(e)}")
+
 
 # 服务静态文件（index_new.html 等）
 @app.route('/')
