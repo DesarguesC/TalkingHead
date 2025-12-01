@@ -44,7 +44,7 @@ def receive_log():
         }), 500
 
 @app.route('/wx/log/sysoper/writeOperLog', methods=['POST'])
-def receive_log():
+def receive_log_genuine():
     """接收并存储日志数据"""
     try:
         # 获取请求数据
