@@ -1,5 +1,12 @@
 # pip install flask_cors flask_socketio
-from flask import Flask, send_from_directory, request, jsonify, make_response
+from flask import (
+    Flask, 
+    send_from_directory, 
+    request, 
+    jsonify, 
+    make_response, 
+    render_template_string
+)
 from flask_cors import CORS
 from flask_socketio import SocketIO
 from logging.handlers import RotatingFileHandler
@@ -156,7 +163,8 @@ Yuexiaoyin_SERVER = "https://api.dify.ai"
 # 需要用本机上的方法，整机测试时需将实验室服务器挂入子网中访问 (模拟后续使用内网API访问)
 WHISPER_SERVER = "http://127.0.0.1:7002"
 GTTS_SERVER = "http://127.0.0.1:7010"
-DATABASE_SERVER = "http://127.0.0.1:5000" # TODO: 替换为真实地址
+DATABASE_SERVER = "http://127.0.0.1:5001" # TODO: 替换为真实地址
+TokenVERIFY_SERVER = "http://127.0.0.1:5002" # TODO: 替换为真实地址
 
 
 # 状态字典，可以根据具体需要直接更新
@@ -176,7 +184,85 @@ ErrorMap = {
     "225": "服务器忙",
     "226": "Token无效",
     "227": "接口未授权",
+    "500": "请求失败或服务器错误",
+    "503": "网络连接错误",
+    "none": "无错误发现",
 }
+
+def get_failure_html(code, message):
+    return """<!doctype html>
+        <html lang="zh-CN">
+        <head>
+            <meta charset="utf-8">
+            <meta name="viewport" content="width=device-width,initial-scale=1">
+            <title>{format_code} || {format_message}</title>
+            <style>
+                body {{
+                    font-family: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial;
+                    background: #f7f7f7;
+                    margin: 0;
+                    padding: 40px;
+                    text-align: center;
+                }}
+                .box {{
+                    background: #fff;
+                    max-width: 500px;
+                    margin: 0 auto;
+                    padding: 30px 28px;
+                    border-radius: 10px;
+                    box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+                }}
+                h1 {{
+                    margin-top: 0;
+                    font-size: 32px;
+                    color: #d9822b;
+                }}
+                p {{
+                    font-size: 16px;
+                    color: #444;
+                    line-height: 1.6;
+                }}
+                .code {{
+                    font-size: 48px;
+                    font-weight: bold;
+                    color: #c76b1a;
+                }}
+                a.btn {{
+                    display: inline-block;
+                    margin-top: 20px;
+                    padding: 10px 18px;
+                    text-decoration: none;
+                    border: 1px solid #d9822b;
+                    color: #d9822b;
+                    border-radius: 6px;
+                }}
+                a.btn:hover {{
+                    background: #d9822b;
+                    color: #fff;
+                }}
+            </style>
+        </head>
+        <body>
+
+        <div class="box">
+            <div class="code">227</div>
+            <h1>特殊状态提示</h1>
+            <p>
+                当前请求返回了异常状态码 <strong>{codeeee}</strong>。<br>
+                意味着需要进一步操作或等待处理完成。
+            </p>
+            <p>
+                如果这是意外情况，请稍后重试或联系管理员。
+            </p>
+
+            <a class="btn" href="/">返回首页</a>
+        </div>
+
+        </body>
+        </html>
+        """.format(format_code=code, format_message=message, codeeee=code)
+# TODO: 返回首页处的href="/"修改为重定向前的路径
+
 
 
 # ===== WebSocket事件 =====
@@ -427,7 +513,8 @@ def setup_logging():
 
 
 # 直接写入数据库
-def log_ukey_access(ukey, user_ip, operation_time, operation_type, operation_content, operation_status, conv_id):
+def log_ukey_access(ukey, user_ip, operation_time, operation_type, operation_content, 
+                    operation_status, conv_id, errCode=None, errMsg=None):
     """记录ukey访问日志到文件和数据库"""
     # conv_id = get_conversation_id()
     # 格式化日志信息 | TODO: 替换key为数据库中的字段
@@ -457,27 +544,29 @@ def log_ukey_access(ukey, user_ip, operation_time, operation_type, operation_con
     
     # 2. 发送到数据库服务器
     try:
-        response = requests.post(
-            f'{DATABASE_SERVER}/database/api/write', # TODO: 路由未知，需要替换
-            json=log_data,
-            headers={
-                'Content-Type': 'application/json',
-                'Authorization': 'Bearer ', # TODO: 可能还有一个token
-                },
-            timeout=5  # 5秒超时
-        )
-        genuine_ukey_access(ukey, user_ip, operation_time, operation_type, operation_content, operation_status, conv_id)
+        # response = requests.post(
+        #     f'{DATABASE_SERVER}/database/api/write', # TODO: 路由未知，需要替换
+        #     json=log_data,
+        #     headers={
+        #         'Content-Type': 'application/json',
+        #         'Authorization': 'Bearer ', # TODO: 可能还有一个token
+        #         },
+        #     timeout=5  # 5秒超时
+        # )
+        genuine_ukey_access(ukey, user_ip, operation_time, operation_type, operation_content, 
+                            operation_status, conv_id, errCode=errCode, errMsg=errMsg)
 
-        if response.status_code == 200:
-            app.logger.info(f"虚假数据库写入成功 - ukey:{ukey}")
-        else:
-            app.logger.error(f"数据库写入失败 - 状态码:{response.status_code} | log_data: {log_data}")
+        # if response.status_code == 200:
+        #     app.logger.info(f"虚假数据库写入成功 - ukey:{ukey}")
+        # else:
+        #     app.logger.error(f"数据库写入失败 - 状态码:{response.status_code} | log_data: {log_data}")
             
     except requests.exceptions.RequestException as e:
         app.logger.error(f"数据库请求异常 - ukey:{ukey} - 错误:{str(e)}")
     
 
-def genuine_ukey_access(ukey, user_ip, operation_time, operation_type, operation_content, operation_status, conv_id, errCode=None):
+def genuine_ukey_access(ukey, user_ip, operation_time, operation_type, operation_content, 
+                        operation_status, conv_id, errCode=None, errMsg=None):
     """记录ukey访问日志到文件和数据库"""
     # conv_id = get_conversation_id()
     # 格式化日志信息 | TODO: 替换key为数据库中的字段
@@ -492,7 +581,7 @@ def genuine_ukey_access(ukey, user_ip, operation_time, operation_type, operation
     }
     LOG_DATA = {
         "token": ukey,
-        "openPath": inspect.getsourcefile(
+        "operPath": inspect.getsourcefile(
             set_sid_if_needed if operation_content == 'login' else yuexiaoyin_chat
         ),
         "operDesc": operation_type,
@@ -502,18 +591,20 @@ def genuine_ukey_access(ukey, user_ip, operation_time, operation_type, operation
         "result": operation_status,
         "success": operation_status == STATUS_MAP['success'],
         "errorCode": errCode,       # TODO: 替换
-        "errorDesc": ErrorMap[str(errCode)],     # TODO: 替换
+        "errorDesc": ErrorMap.get(str(errCode), ErrorMap["500"]) if errMsg is None else errMsg,     # TODO: 替换
     }
     
     # 1. 写入本地日志文件
     log_message = f"[ operation_time ] ukey_access | ukey: {ukey} | user_ip: {user_ip} | 操作类型: {operation_type} | 操作内容: {operation_content} | 操作结果: {operation_status} | 对话编号: {conv_id}"  # DEBUG
     print(f'LOG: {log_message}')
     app.logger.info(log_message)
+    app.logger.info(LOG_DATA)
     
     # 2. 发送到数据库服务器
     try:
         response = requests.post(
-            f'{DATABASE_SERVER}/database/api/write', # TODO: 路由未知，需要替换
+            # f'{DATABASE_SERVER}/database/api/write', # TODO: 路由未知，需要替换
+            f'{DATABASE_SERVER}/wx/log/sysoper/writeOperLog',
             json=LOG_DATA,
             headers={
                 'Content-Type': 'application/json',
@@ -534,10 +625,11 @@ def genuine_ukey_access(ukey, user_ip, operation_time, operation_type, operation
 
 
 # 服务静态文件（index_new.html 等）
+# TODO: 部署时删除此路由
 @app.route('/')
 def serve_index():
     ukey, user_ip, current_time = get_log_string()
-    log_ukey_access(ukey, user_ip, current_time, TYPE_MAP['login'], "", STATUS_MAP['success'], request.cookies.get("conv_id", "?"))
+    log_ukey_access(ukey, user_ip, current_time, TYPE_MAP['login'], "", STATUS_MAP['success'], request.cookies.get("conv_id", "?"), errCode="none")
     return send_from_directory('.', 'index_new.html')
 
 # 服务其他静态文件（js, css, images 等）
@@ -546,6 +638,11 @@ def serve_static(path):
     if path == 'monitor':
         return monitor_page()
     return send_from_directory('.', path)
+
+@app.route('/show225')
+def show_225():
+    """显示225错误页面（仅用于测试）"""
+    return render_template_string(get_failure_html("225", "服务器繁忙")), 503
 
 # 解析ukey参数
 @app.route('/ukey_access') # TODO: 替换为真实路由
@@ -565,9 +662,25 @@ def ukey_access_handler():
     
     # 获取当前时间（格式：yy-mm-dd hh-mm-ss）
     current_time = datetime.now().strftime("%y-%m-%d %H-%M-%S")
-    
+    request = requests.post(
+        f'{TokenVERIFY_SERVER}/wx/sys/permit/verifyToken',
+        json={"token": ukey},
+        headers={
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer ',
+        }
+    )
+    if request.status_code != 200:
+        # 记录失败日志
+        errCode = request.json.get("code", "404")
+        errMsg = request.json.get("msg", "Token无效且未找到具体返回信息")
+        log_ukey_access(ukey, user_ip, current_time, TYPE_MAP['login'], "", STATUS_MAP['denied'], 
+                        request.cookies.get("conv_id", "?"), errCode=str(errCode), errMsg=errMsg)
+        return render_template_string(get_failure_html(errCode, errMsg)), 403
+
+   
     # 记录日志
-    log_ukey_access(ukey, user_ip, current_time, TYPE_MAP['login'], "", STATUS_MAP['success'], request.cookies.get("conv_id", "?"))
+    log_ukey_access(ukey, user_ip, current_time, TYPE_MAP['login'], "", STATUS_MAP['success'], request.cookies.get("conv_id", "?"), errCode="200")
     return send_from_directory('.', 'index_new.html')
     
     # # 返回成功响应
@@ -732,7 +845,7 @@ def yuexiaoyin_chat():
         
         # 检查是否为流式请求
         is_stream = request.json.get('stream', False)
-        
+        log_ukey_access(ukey, user_ip, current_time, TYPE_MAP['query'], query, STATUS_MAP['success'], request.cookies.get("conv_id", "?"), errCode="200")
         # 转发请求到 Llama 服务器
         response = requests.post(
             f"{Yuexiaoyin_SERVER}/v1/chat-messages", # TODO: 替换为 Yuexiaoyin_SERVER，以及后面的路由需要替换
@@ -746,7 +859,7 @@ def yuexiaoyin_chat():
         
         # 记录响应信息
         logger.info(f"Response status code: {response.status_code}")
-        log_ukey_access(ukey, user_ip, current_time, TYPE_MAP['query'], query, STATUS_MAP['success'], request.cookies.get("conv_id", "?"))
+        
 
         
         # 如果是流式请求，直接流式返回响应
@@ -767,7 +880,7 @@ def yuexiaoyin_chat():
         error_msg = f"Connection error: Could not connect to {LLAMA_SERVER}"
         logger.error(error_msg)
         logger.error(str(e))
-        log_ukey_access(ukey, user_ip, current_time, TYPE_MAP['query'], query, STATUS_MAP['failed'] + f' | 错误信息 [{error_msg}]', request.cookies.get("conv_id", "?"))
+        log_ukey_access(ukey, user_ip, current_time, TYPE_MAP['query'], query, STATUS_MAP['failed'] + f' | 错误信息 [{error_msg}]', request.cookies.get("conv_id", "?"), errCode="503", errMsg=error_msg)
         return jsonify({
             "error": "Connection Error",
             "detail": error_msg,
@@ -777,7 +890,7 @@ def yuexiaoyin_chat():
     except requests.exceptions.RequestException as e:
         error_msg = f"Request failed: {str(e)}"
         logger.error(error_msg)
-        log_ukey_access(ukey, user_ip, current_time, TYPE_MAP['query'], query, STATUS_MAP['failed'] + f' | 错误信息 [{error_msg}]', request.cookies.get("conv_id", "?"))
+        log_ukey_access(ukey, user_ip, current_time, TYPE_MAP['query'], query, STATUS_MAP['failed'] + f' | 错误信息 [{error_msg}]', request.cookies.get("conv_id", "?"), errCode="500", errMsg=error_msg)
         return jsonify({
             "error": "Request Failed",
             "detail": error_msg,
@@ -785,7 +898,7 @@ def yuexiaoyin_chat():
         }), 500
         
     except Exception as e:
-        log_ukey_access(ukey, user_ip, current_time, TYPE_MAP['query'], query, STATUS_MAP['failed'] + f' | 错误信息 [{error_msg}]', request.cookies.get("conv_id", "?"))
+        log_ukey_access(ukey, user_ip, current_time, TYPE_MAP['query'], query, STATUS_MAP['failed'] + f' | 错误信息 [{error_msg}]', request.cookies.get("conv_id", "?"), errCode="500", errMsg=error_msg)
         error_msg = f"Unexpected error: {str(e)}"
         logger.error(error_msg)
         return jsonify({

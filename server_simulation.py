@@ -41,6 +41,10 @@ def handle_request():
         return e
         return jsonify({"code": 224, "msg": "系统异常", "error": str(e)}), 500
 
+@app.route("/wx/225", methods=["POST"])
+def show_225():
+    return jsonify({"code": 225, "msg": "服务器繁忙"}), 503
+
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5002, debug=True)
