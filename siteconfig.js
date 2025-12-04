@@ -8,8 +8,8 @@ export const site = {
       // url: './avatars/Body_Face_All4.glb', // 无'PP', 'sil'等viseme
       // url: './avatars/Police_Webgl_Rig_002.glb', // 11111
       // url: './avatars/test.glb',
-      url: '../new_avatar/police_kz_Wbgl_rig_02_111_20251202.glb',
-      // url: './avatars/police_kz_Wbgl_rig_02.glb',
+      // url: '../new_avatar/police_kz_Wbgl_rig_02_111_20251202.glb',
+      url: './avatars/police_kz_Wbgl_rig_02.glb',
       // url: './avatars/mixamo.glb', 
       default: './animations/Idle_01to04.glb', // 待机动作
       body: 'F',
