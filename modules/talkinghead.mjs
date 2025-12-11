@@ -553,13 +553,13 @@ class TalkingHead {
       // },
       // 'happy' : 
       'neutral': {
-        baseline: { mouthSmile: 0.4, }, // origin: 0.2
+        baseline: { mouthSmile: 0.0, }, // origin: 0.2
         speech: { deltaRate: 0, deltaPitch: 0.1, deltaVolume: 0 },
         anims: [
           { name: 'breathing', delay: 1500, dt: [ 1200,500,1000 ], vs: { chestInhale: [0.5 * this.breath_factor,0.5 * this.breath_factor,0] } },
           this.animTemplateEyes,
           this.animTemplateBlink,
-          { name: 'mouth', delay: [1000,5000], dt: [ [100,500],[100,5000,2] ], vs : { mouthLeft: [[0,0.3,2]], mouthSmile: [[0,0.2,3]], mouthRollLower: [[0,0.3,2]], mouthRollUpper: [[0,0.3,2]], mouthStretchLeft: [[0,0.3]], mouthStretchRight: [[0,0.3]], mouthPucker: [[0,0.3]] } },
+          { name: 'mouth', delay: [1000,5000], dt: [ [100,500],[100,5000,2] ], vs : { mouthLeft: [[0,0.3,2]],  mouthRollLower: [[0,0.3,2]], mouthRollUpper: [[0,0.3,2]], mouthStretchLeft: [[0,0.3]], mouthStretchRight: [[0,0.3]], mouthPucker: [[0,0.3]] } }, // mouthSmile: [[0,0.2,3]],
           { name: 'misc', delay: [100,5000], dt: [ [100,500],[1000,5000,2] ], vs : { eyeSquintLeft: [[0,0.3,2]], eyeSquintRight: [[0,0.3,2]], browInnerUp: [[0,0.3,2]], browOuterUpLeft: [[0,0.3,2]], browOuterUpRight: [[0,0.3,2]] } }
         ]
       },
@@ -773,9 +773,10 @@ class TalkingHead {
     this.LastTime = 0;
     this.animInterval = 0; // s
 
-    this.duration_factor = 0.25; // 句子间隔
-    this.visemeDurationScale = 0.3; // 视素时长
-    this.visemeTimeScale = 1.0; // 视素时间缩放
+    this.duration_factor = 0.7; // 句子间隔
+    this.visemeDurationScale = 3.0; // 视素间停顿时长
+    this.visemeTimeScale = 1.5; // 视素本身的时间缩放
+    // 保持比例即可，原则上稍大，可以自动插值
 
     this.word_per_second = 2.7; // 根据当前语速设置，向下取
     this.EvaluateTime = 999;
@@ -3595,13 +3596,13 @@ class TalkingHead {
         //     this.speechQueue.push( { emoji: emoji } );
         //   }
         // }
-        this.speechQueue.push( { break: 80 * this.duration_factor } );
+        this.speechQueue.push( { break: 100 * this.duration_factor } );
 
       }
 
     }
 
-    this.speechQueue.push( { break: 120 * this.duration_factor } );
+    this.speechQueue.push( { break: 200 * this.duration_factor } );
 
     // Start speaking (if not already)
     this.startSpeaking();
@@ -3733,7 +3734,7 @@ class TalkingHead {
       for( let i=0; i<r.words.length; i++ ) {
         const word = r.words[i];
         const time = r.wtimes[i];
-        let duration = r.wdurations[i] * ( this.visemeDurationScale ?? 1.0 );
+        let duration = r.wdurations[i] * this.visemeDurationScale;
 
         if ( word.length ) {
 
@@ -3782,7 +3783,7 @@ class TalkingHead {
         for( let i=0; i<r.visemes.length; i++ ) {
           const viseme = r.visemes[i];
           const time = r.vtimes[i];
-          const duration = r.vdurations[i] * ( this.visemeDurationScale ?? 1.0 );
+          const duration = r.vdurations[i] * this.visemeDurationScale;
           lipsyncAnim.push( {
             template: { name: 'viseme' },
             ts: [ time - 2 * duration/3, time + duration/2, time + duration + duration/2 ],
@@ -4064,7 +4065,7 @@ class TalkingHead {
               const timepoint = timepoints[x.mark];
               if ( timepoint ) {
                 for(let i=0; i<x.ts.length; i++) {
-                  x.ts[i] = timepoint.time + (x.ts[i] * timepoint.duration * (this.visemeTimeScale||1.0)) + this.opt.ttsTrimStart;
+                  x.ts[i] = timepoint.time + (x.ts[i] * timepoint.duration * this.visemeTimeScale) + this.opt.ttsTrimStart;
                 }
               }
             });

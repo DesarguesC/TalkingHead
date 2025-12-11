@@ -341,39 +341,124 @@ class LipsyncZh {
       }
     });
 
-    this.duration_factor = 0.2; // 根据不同语音调整
     // Viseme durations in relative unit (1=average)
     // TODO: Check for statistics for English
+    // this.visemeDurations = {
+    //   'aa': 0.95, 'E': 0.90, 'I': 0.92, 'O': 0.96, 'U': 0.95, 
+    //   'PP': 1.08, 'SS': 1.23, 'TH': 1, 'DD': 1.05, 'FF': 1.00,
+    //   'kk': 1.21, 'nn': 0.88, 'RR': 0.88, 'sil': 1,
+      
+    //   // 新增中文专用参数
+    //   'a': 0.82,    // 短于英文aa
+    //   'y': 0.78,    // ü音
+    //   'zh': 1.05,   // 翘舌音延长
+    //   'ch': 1.08,
+    //   'sh': 1.06,
+    //   'j': 0.95,    // 舌面音
+    //   'q': 0.97,
+    //   'x': 0.93
+    // };
     this.visemeDurations = {
-      'aa': 0.95, 'E': 0.90, 'I': 0.92, 'O': 0.96, 'U': 0.95, 
-      'PP': 1.08, 'SS': 1.23, 'TH': 1, 'DD': 1.05, 'FF': 1.00,
-      'kk': 1.21, 'nn': 0.88, 'RR': 0.88, 'sil': 1,
-      
-      // 新增中文专用参数
-      'a': 0.82,    // 短于英文aa
-      'y': 0.78,    // ü音
-      'zh': 1.05,   // 翘舌音延长
-      'ch': 1.08,
-      'sh': 1.06,
-      'j': 0.95,    // 舌面音
-      'q': 0.97,
-      'x': 0.93
+        // === 核心元音（中文元音通常比英文短促） ===
+        'aa': 0.75,  // 中文"a"比英文"aa"短 例如：妈(ma)
+        'E': 0.70,   // 中文"e" 例如：么(me)
+        'I': 0.65,   // 中文"i" 例如：米(mi)
+        'O': 0.72,   // 中文"o" 例如：模(mo)
+        'U': 0.68,   // 中文"u" 例如：木(mu)
+        
+        // === 辅音 ===
+        // 唇音
+        'PP': 0.40,  // B/P/M - 双唇音较短
+        'FF': 0.45,  // F - 唇齿音
+        
+        // 舌尖音
+        'DD': 0.38,  // D/T
+        'nn': 0.42,  // N - 鼻音稍长
+        'll': 0.35,  // L - 边音
+        
+        // 擦音/塞擦音（中文这类音较长）
+        'SS': 0.50,  // S/Z - 舌尖前擦音
+        'TH': 0.55,  // C - 送气擦音最长
+        'SH': 0.52,  // SH/X - 舌面/舌尖后擦音
+        'CH': 0.48,  // ZH/CH/J/Q - 塞擦音中等长度
+        
+        // 舌根音
+        'kk': 0.42,  // G/K/H
+        
+        // 卷舌音
+        'RR': 0.50,  // R/ER - 卷舌音较长
+        
+        // === 特殊 ===
+        'sil': 0.30, // 静音帧
+        
+        // === 复合音素（用于精细控制）===
+        'ia': 0.85,  // 介音+主要元音
+        'ua': 0.87,
+        'ie': 0.82,
+        'uo': 0.84,
+        've': 0.83,  // üe
+        
+        // 鼻韵母
+        'an': 0.95,  // 前鼻音韵母
+        'en': 0.92,
+        'in': 0.90,
+        'ang': 1.00, // 后鼻音韵母更长
+        'eng': 0.98,
+        'ing': 0.95,
     };
-
     // Pauses in relative units (1=average)
-    this.specialDurations = { 
-      ' ': 0.8,    // 缩短音节间隔
-      '，': 1.5,   // 中文逗号
-      '。': 2.2,   // 中文句号
-      '-': 0.3,      // 连字符缩短
-      '！': 2.,
-      '？': 2.,
-      '：': 2.,
-      '；': 1.8,
-      '……': 2.5,
-      '、': 1.5,
+    // this.specialDurations = { 
+    //   ' ': 0.8,    // 缩短音节间隔
+    //   '，': 1.5,   // 中文逗号
+    //   '。': 2.2,   // 中文句号
+    //   '-': 0.3,      // 连字符缩短
+    //   '！': 2.,
+    //   '？': 2.,
+    //   '：': 2.,
+    //   '；': 1.8,
+    //   '……': 2.5,
+    //   '、': 1.5,
       
-    };
+    // };
+    this.specialDurations = { 
+      // 小停顿
+      '、': 1.2,    // 顿号 - 最小停顿
+      ',': 1.3,     // 逗号（中英文）
+      '，': 1.3,    // 中文逗号
+      
+      // 中停顿
+      ';': 1.8,     // 分号
+      '；': 1.8,    // 中文分号
+      ':': 1.6,     // 冒号
+      '：': 1.6,    // 中文冒号
+      
+      // 大停顿
+      '.': 2.2,     // 句号
+      '。': 2.2,    // 中文句号
+      '!': 2.5,     // 感叹号
+      '！': 2.5,    // 中文感叹号
+      '?': 2.3,     // 问号
+      '？': 2.3,    // 中文问号
+      
+      // 特殊停顿
+      '…': 2.0,     // 省略号（单个字符）
+      '……': 2.5,    // 中文省略号（完整）
+      '——': 2.8,    // 破折号 - 最长停顿
+      '-': 0.5,     // 连字符 - 缩短间隔
+      ' ': 0.6,     // 空格 - 比音节间隔短
+      
+      // 段落标记
+      '\n': 3.0,    // 换行 - 段落停顿
+      '\r\n': 3.0,
+      
+      // 引号类（轻微停顿）
+      '"': 0.8,
+      "'": 0.8,
+      '「': 0.8,
+      '」': 0.8,
+      '『': 0.8,
+      '』': 0.8
+  };
 
     // English number words
     // this.digits = ['oh', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine'];
@@ -555,7 +640,7 @@ class LipsyncZh {
         type: punc,
         originalIndex: originalIndex,
         cleanIndex: cleanIndex > 0 ? cleanIndex - 1 : 0, // 对应的清理后位置
-        duration: (this.specialDurations[punc] || 1.0) * Math.min(this.duration_factor * 2, 1) // 使用已有的持续时间配置
+        duration: (this.specialDurations[punc] || 1.0) // 使用已有的持续时间配置
       });
     }
     
@@ -592,17 +677,22 @@ class LipsyncZh {
     
     while(o.i < Initials.length) {
       let c = Initials[o.i].toUpperCase();
-
-      let viseme = this.CH_INITIALS[c];
-      let d = (this.visemeDurations[viseme] || 1) * this.duration_factor; // * 0.7 ?
+      let viseme = this.CH_INITIALS[c] || '';
+      let d = viseme==='' ? 0 : (
+        viseme.includes(' ') ? viseme.split(' ').map(x => this.visemeDurations[x]).reduce((a,b)=>a+b,0) : 
+        (this.visemeDurations[viseme] || 0.7)
+      );
       o.visemes.push(viseme);
       o.times.push(t);
       o.durations.push(d);
       t += d;
 
       c = Finals[o.i].toUpperCase();
-      viseme = this.CH_FINALS[c];
-      d = (this.visemeDurations[viseme] || 1) * this.duration_factor;
+      viseme = this.CH_FINALS[c] || '';
+      d = viseme==='' ? 0 : (
+        viseme.includes(' ') ? viseme.split(' ').map(x => this.visemeDurations[x]).reduce((a,b)=>a+b,0) : 
+        (this.visemeDurations[viseme] || 0.7)
+      );
       o.visemes.push(viseme);
       o.times.push(t);
       o.durations.push(d);
@@ -612,7 +702,7 @@ class LipsyncZh {
       while(punc_id < Index.punctuations.length) {
         if(Index.punctuations[punc_id].originalIndex === o.i+temp) {
           temp++;
-          t += (this.specialDurations[Index.punctuations[punc_id].type] || 1) * Math.min(this.duration_factor * 2, 1);
+          t += (this.specialDurations[Index.punctuations[punc_id].type] || 1) ;
           break;
         }
         punc_id++;
@@ -626,11 +716,11 @@ class LipsyncZh {
   applyVisemes(o, t, visemes) {
     visemes.forEach(viseme => {
       if (o.visemes.length && o.visemes[o.visemes.length - 1] === viseme) {
-        const d = 0.7 * (this.visemeDurations[viseme] || 1) * this.duration_factor;
+        const d = 0.7 * (this.visemeDurations[viseme] || 1);
         o.durations[o.durations.length - 1] += d;
         t += d;
       } else {
-        const d = (this.visemeDurations[viseme] || 1) * this.duration_factor;
+        const d = (this.visemeDurations[viseme] || 1);
         o.visemes.push(viseme);
         o.times.push(t);
         o.durations.push(d);
@@ -660,11 +750,11 @@ class LipsyncZh {
           if (matches) {
             rule.visemes.forEach(viseme => {
               if (o.visemes.length && o.visemes[o.visemes.length - 1] === viseme) {
-                const d = 0.7 * (this.visemeDurations[viseme] || 1) * this.duration_factor;
+                const d = 0.7 * (this.visemeDurations[viseme] || 1) ;
                 o.durations[o.durations.length - 1] += d;
                 t += d;
               } else {
-                const d = (this.visemeDurations[viseme] || 1) * this.duration_factor;
+                const d = (this.visemeDurations[viseme] || 1);
                 o.visemes.push(viseme);
                 o.times.push(t);
                 o.durations.push(d);
@@ -677,7 +767,7 @@ class LipsyncZh {
         }
       } else {
         o.i++;
-        t += (this.specialDurations[c] || 0) * Math.min(this.duration_factor * 2, 1);
+        t += (this.specialDurations[c] || 0);
       }
     }
 
