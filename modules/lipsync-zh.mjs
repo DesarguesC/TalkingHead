@@ -180,66 +180,101 @@ class LipsyncZh {
       ],
     };
     this.CH_INITIALS = {
-        "ZH": "SS",
-        "CH": "SS",
-        "SH": "SS",
-        "B": "PP",
-        "P": "PP",
-        "M": "PP",
-        "F": "FF",
-        "D": "DD",
-        "T": "DD",
-        "N": "nn",
-        "L": "nn",
-        "G": "kk",
-        "K": "kk",
-        "H": "kk",
-        "J": "CH",    // 更接近 ch
-        "Q": "CH",    // 更接近 ch
-        "X": "SS",    // x 近似 sh
-        "R": "RR",
-        "Z": "SS",
-        "C": "SS",
-        "S": "SS",
-        "Y": "",      // 作为零声母时处理
-        "W": ""
+        // 唇音
+        "B": "PP",  // 双唇不送气清塞音
+        "P": "PP",  // 双唇送气清塞音 - 与B口型相似，仅气流强弱
+        "M": "PP",  // 双唇鼻音
+        
+        // 唇齿音
+        "F": "FF",  // 唇齿清擦音
+        
+        // 舌尖前音
+        "Z": "SS",  // 舌尖前不送气清塞擦音
+        "C": "TH",  // 舌尖前送气清塞擦音 - 用TH模拟送气摩擦
+        "S": "TH",  // 舌尖前清擦音
+        
+        // 舌尖中音
+        "D": "DD",  // 舌尖中不送气清塞音
+        "T": "DD",  // 舌尖中送气清塞音
+        "N": "nn",  // 舌尖中鼻音
+        "L": "ll",  // 舌尖中边音 - 使用单独的边音视素
+        
+        // 舌尖后音（卷舌音）
+        "ZH": "CH", // 舌尖后不送气清塞擦音 - 用CH更准确
+        "CH": "CH", // 舌尖后送气清塞擦音
+        "SH": "SH", // 舌尖后清擦音 - 保持SH
+        "R": "RR",  // 舌尖后浊擦音 - 用RR模拟卷舌
+        
+        // 舌面音
+        "J": "CH",  // 舌面前不送气清塞擦音 - 接近CH
+        "Q": "CH",  // 舌面前送气清塞擦音
+        "X": "SH",  // 舌面前清擦音 - 用SH更准确
+        
+        // 舌根音
+        "G": "kk",  // 舌根不送气清塞音
+        "K": "kk",  // 舌根送气清塞音
+        "H": "CH",  // 舌根清擦音 - 用CH模拟喉部摩擦
+        
+        // 零声母
+        "Y": "I",   // 作为声母时接近I的口型
+        "W": "U"    // 作为声母时接近U的口型
     };
       
-      this.CH_FINALS = {
-        "IANG": "I aa nn",
-        "UANG": "U aa nn",
-        "IONG": "I O nn",
-        "IAO": "I aa O",
-        "IAN": "I aa nn",
-        "UAN": "U aa nn",
-        "ANG": "aa nn",
-        "ENG": "E nn",
-        "ING": "I nn",
-        "ONG": "O nn",
-        "AI": "aa I",
-        "EI": "E I",
-        "AO": "aa O",
-        "OU": "O U",
-        "ER": "E RR",
-        "IA": "I aa",
-        "IE": "I E",
-        "IU": "I U",
-        "UI": "U I",
-        "UA": "U aa",
-        "UO": "U O",
-        "VE": "I",     // ü -> I
-        "UE": "I E",   // üe -> I E
+    this.CH_FINALS = {
+        // 单韵母
         "A": "aa",
         "O": "O",
         "E": "E",
         "I": "I",
         "U": "U",
-        "V": "I",      // ü -> I
+        "V": "I",      // ü - 口型介于I和U之间
+        
+        // 复韵母（前响）
+        "AI": "aa I",
+        "EI": "E I",
+        "AO": "aa O",
+        "OU": "O U",
+        
+        // 复韵母（中响）
+        "IAO": "I aa O",
+        "IOU": "I O U", // iou简写为iu
+        "UAI": "U aa I",
+        "UEI": "U E I", // uei简写为ui
+        
+        // 复韵母（后响）
+        "IA": "I aa",
+        "IE": "I E",
+        "UA": "U aa",
+        "UO": "U O",
+        "VE": "I E",    // üe
+        
+        // 鼻韵母（前鼻音）
         "AN": "aa nn",
         "EN": "E nn",
         "IN": "I nn",
-        "UN": "U nn"   // 可能需要额外区分 JUN=I nn
-      };
+        "UN": "U nn",   // uen简写
+        "VN": "I nn",   // ün
+        
+        // 鼻韵母（后鼻音）
+        "ANG": "aa nn",
+        "ENG": "E nn",
+        "ING": "I nn",
+        "ONG": "O nn",
+        
+        // 带介音的鼻韵母
+        "IAN": "I aa nn",
+        "UAN": "U aa nn",
+        "UEN": "U E nn", // 完整形式
+        "VAN": "I aa nn", // üan
+        "IANG": "I aa nn",
+        "UANG": "U aa nn",
+        "IONG": "I O nn", // üeng的变体
+        
+        // 特殊韵母
+        "ER": "E RR",
+        "-I": "SS",     // 舌尖韵母（zi/ci/si）
+        "-I2": "RR"     // 舌尖韵母（zhi/chi/shi/ri）
+    };
 
     const ops = {
       '#': '[AEIOUY]+', // One or more vowels AEIOUY
