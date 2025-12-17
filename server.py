@@ -644,8 +644,8 @@ def show_225():
     """显示225错误页面（仅用于测试）"""
     return render_template_string(get_failure_html("225", "服务器繁忙")), 503
 
-# 解析ukey参数
-@app.route('/ukey_access') # TODO: 替换为真实路由
+# 解析ukey参数 | [无需验证·已废弃的接口]
+@app.route('/ukey_access_298o3yurhaufb') # TODO: 替换为真实路由
 def ukey_access_handler():
     """处理带有ukey参数的访问请求"""
     # 获取ukey参数
