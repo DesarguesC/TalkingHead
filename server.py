@@ -518,7 +518,7 @@ def log_ukey_access(ukey, user_ip, operation_time, operation_type, operation_con
     log_data = {
         "ukey": ukey,
         "user_ip": user_ip,
-        "time": operation_time,
+        "received_at": operation_time,
         "type": operation_type,
         "content": operation_content,
         "status": operation_status,
@@ -571,7 +571,7 @@ def genuine_ukey_access(ukey, user_ip, operation_time, operation_type, operation
     reqParams = {
         "ukey": ukey,
         "user_ip": user_ip,
-        "time": operation_time,
+        "received_at": operation_time,
         "type": operation_type,
         "content": operation_content,
         "status": operation_status,
@@ -583,7 +583,7 @@ def genuine_ukey_access(ukey, user_ip, operation_time, operation_type, operation
             set_sid_if_needed if operation_content == 'login' else yuexiaoyin_chat
         ),
         "operDesc": operation_type,
-        "serviceID": "12345",       # TODO: 替换
+        "serviceID": "DigitizedHuman",       # TODO: 替换
         "serviceName": "数字人",     # TODO: 替换
         "reqParams": reqParams,
         "result": operation_status,
@@ -714,7 +714,7 @@ def ukey_access_handler():
     #     "data": {
     #         "ukey": ukey,
     #         "user_ip": user_ip,
-    #         "time": current_time
+    #         "received_at": current_time
     #     }
     # })
 
@@ -869,6 +869,28 @@ def yuexiaoyin_chat():
         
         # 检查是否为流式请求
         is_stream = request.json.get('stream', False)
+        
+        # 权限核验
+        auth_request = requests.post(
+            f'{TokenAuthorize_SERVER}/wx/sys/permit/verifyToken',
+            json={"token": ukey, "restUri": "0002"},
+            headers={
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer ',
+            }
+        )
+        data = auth_request.json.get("data", -1)
+        if data == -1:
+            return render_template_string(get_failure_html(227, "接口未授权")), 227
+        elif auth_request.status_code != 200:
+            # 记录失败日志
+            errCode = auth_request.json.get("code", 224)
+            errMsg = auth_request.json.get("msg", "未授权或系统异常")
+            conv_id = "未授权的对话" # 未授权
+            log_ukey_access(ukey, user_ip, current_time, TYPE_MAP['login'], "", STATUS_MAP['denied'], 
+                            conv_id, errCode=errCode, errMsg=errMsg)
+            return render_template_string(get_failure_html(errCode, errMsg)), 224
+
         code = log_ukey_access(ukey, user_ip, current_time, TYPE_MAP['query'], query, STATUS_MAP['success'], request.cookies.get("conv_id", "?"), errCode=200)
         # 转发请求到 Llama 服务器
         if code == 200:
