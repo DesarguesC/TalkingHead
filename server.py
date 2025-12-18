@@ -163,8 +163,10 @@ Yuexiaoyin_SERVER = "https://api.dify.ai"
 # 需要用本机上的方法，整机测试时需将实验室服务器挂入子网中访问 (模拟后续使用内网API访问)
 WHISPER_SERVER = "http://127.0.0.1:7002"
 GTTS_SERVER = "http://127.0.0.1:7010"
+
 DATABASE_SERVER = "http://127.0.0.1:5001" # TODO: 替换为真实地址
-TokenVERIFY_SERVER = "http://127.0.0.1:5002" # TODO: 替换为真实地址
+TokenAuthorize_SERVER = "http://127.0.0.2:5001" # TODO: 替换为真实地址
+TokenVERIFY_SERVER = "http://127.0.0.1:5001" # TODO: 替换为真实地址
 
 
 # 状态字典，可以根据具体需要直接更新
@@ -263,8 +265,6 @@ def get_failure_html(code, message):
         """.format(format_code=code, format_message=message, codeeee=code)
 # TODO: 返回首页处的href="/"修改为重定向前的路径
 
-
-
 # ===== WebSocket事件 =====
 @socketio.on('connect')
 def ws_connect():
@@ -299,7 +299,6 @@ def ws_disconnect():
                     "last_activity": now
                 }
                 logger.info(f"等待用户 {next_sid} 进入网站")
-
 
 UE_Socket_Host = '0.0.0.0'  # 本地地址
 UE_Socket_Port = 4000         # 目标端口
@@ -480,7 +479,6 @@ def get_client_ip():
         ip = request.remote_addr
     return ip
 
-
 def get_log_string():
     ukey = request.args.get('ukey')
     if not ukey:
@@ -510,7 +508,6 @@ def setup_logging():
     # 添加到app的logger
     app.logger.addHandler(file_handler)
     app.logger.setLevel(logging.INFO)
-
 
 # 直接写入数据库
 def log_ukey_access(ukey, user_ip, operation_time, operation_type, operation_content, 
@@ -553,18 +550,19 @@ def log_ukey_access(ukey, user_ip, operation_time, operation_type, operation_con
         #         },
         #     timeout=5  # 5秒超时
         # )
-        genuine_ukey_access(ukey, user_ip, operation_time, operation_type, operation_content, 
+        code = genuine_ukey_access(ukey, user_ip, operation_time, operation_type, operation_content, 
                             operation_status, conv_id, errCode=errCode, errMsg=errMsg)
 
         # if response.status_code == 200:
         #     app.logger.info(f"虚假数据库写入成功 - ukey:{ukey}")
         # else:
         #     app.logger.error(f"数据库写入失败 - 状态码:{response.status_code} | log_data: {log_data}")
+        return code if code is not None else 224
             
     except requests.exceptions.RequestException as e:
         app.logger.error(f"数据库请求异常 - ukey:{ukey} - 错误:{str(e)}")
+        return 224
     
-
 def genuine_ukey_access(ukey, user_ip, operation_time, operation_type, operation_content, 
                         operation_status, conv_id, errCode=None, errMsg=None):
     """记录ukey访问日志到文件和数据库"""
@@ -615,17 +613,22 @@ def genuine_ukey_access(ukey, user_ip, operation_time, operation_type, operation
         
         if response.status_code == 200:
             app.logger.info(f"数据库写入成功 - ukey:{ukey}")
+            return 200
         else:
             app.logger.error(f"数据库写入失败 - 状态码:{response.status_code} | reqParams: {reqParams}")
-            
+            return response.status_code
+        
     except requests.exceptions.RequestException as e:
         LOG_DATA["errorDesc"] = str(e)
 
         app.logger.error(f"数据库请求异常 - ukey:{ukey} - 错误:{str(e)}")
+    
+        return 224
 
 
 # 服务静态文件（index_new.html 等）
-# TODO: 部署时删除此路由
+# TODO: 部署时删除此路由 | 此处无权限校验
+# [IMPORTANT]
 @app.route('/')
 def serve_index():
     ukey, user_ip, current_time = get_log_string()
@@ -633,19 +636,21 @@ def serve_index():
     return send_from_directory('.', 'index_new.html')
 
 # 服务其他静态文件（js, css, images 等）
-@app.route('/<path:path>')
-def serve_static(path):
-    if path == 'monitor':
-        return monitor_page()
-    return send_from_directory('.', path)
+# @app.route('/<path:path>')
+# def serve_static(path):
+#     if path == 'monitor':
+#         return monitor_page()
+#     return send_from_directory('.', path)
 
+# TODO: 部署时删除此路由
+# [IMPORTANT]
 @app.route('/show225')
 def show_225():
     """显示225错误页面（仅用于测试）"""
     return render_template_string(get_failure_html("225", "服务器繁忙")), 503
 
 # 解析ukey参数 | [无需验证·已废弃的接口]
-@app.route('/ukey_access_298o3yurhaufb') # TODO: 替换为真实路由
+@app.route('/ukey_access') # TODO: 替换为真实路由
 def ukey_access_handler():
     """处理带有ukey参数的访问请求"""
     # 获取ukey参数
@@ -656,13 +661,15 @@ def ukey_access_handler():
             "status": "error",
             "message": "缺少ukey参数"
         }), 400
-    
+
+
     # 获取用户IP
     user_ip = get_client_ip()
     
     # 获取当前时间（格式：yy-mm-dd hh-mm-ss）
     current_time = datetime.now().strftime("%y-%m-%d %H-%M-%S")
-    request = requests.post(
+    # token合法性检验
+    token_request = requests.post(
         f'{TokenVERIFY_SERVER}/wx/sys/permit/verifyToken',
         json={"token": ukey},
         headers={
@@ -670,17 +677,34 @@ def ukey_access_handler():
             'Authorization': 'Bearer ',
         }
     )
-    if request.status_code != 200:
+    if token_request.status_code != 200:
         # 记录失败日志
-        errCode = request.json.get("code", "404")
-        errMsg = request.json.get("msg", "Token无效且未找到具体返回信息")
+        errCode = token_request.json.get("code", 224)
+        errMsg = token_request.json.get("msg", "Token无效或系统异常")
         log_ukey_access(ukey, user_ip, current_time, TYPE_MAP['login'], "", STATUS_MAP['denied'], 
-                        request.cookies.get("conv_id", "?"), errCode=str(errCode), errMsg=errMsg)
-        return render_template_string(get_failure_html(errCode, errMsg)), 403
+                        token_request.cookies.get("conv_id", "?"), errCode=str(errCode), errMsg=errMsg)
+        return render_template_string(get_failure_html(errCode, errMsg)), 224
+
+    # 权限核验
+    auth_request = requests.post(
+        f'{TokenAuthorize_SERVER}/wx/sys/permit/verifyToken',
+        json={"token": ukey, "restUri": "0001"},
+        headers={
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer ',
+        }
+    )
+    if auth_request.status_code != 200 or auth_request.json.get("data", -1) == -1:
+        # 记录失败日志
+        errCode = token_request.json.get("code", 224)
+        errMsg = token_request.json.get("msg", "未授权或系统异常")
+        log_ukey_access(ukey, user_ip, current_time, TYPE_MAP['login'], "", STATUS_MAP['denied'], 
+                        token_request.cookies.get("conv_id", "?"), errCode=errCode, errMsg=errMsg)
+        return render_template_string(get_failure_html(errCode, errMsg)), 224
 
    
     # 记录日志
-    log_ukey_access(ukey, user_ip, current_time, TYPE_MAP['login'], "", STATUS_MAP['success'], request.cookies.get("conv_id", "?"), errCode="200")
+    log_ukey_access(ukey, user_ip, current_time, TYPE_MAP['login'], "", STATUS_MAP['success'], token_request.cookies.get("conv_id", "?"), errCode=200)
     return send_from_directory('.', 'index_new.html')
     
     # # 返回成功响应
@@ -694,6 +718,8 @@ def ukey_access_handler():
     #     }
     # })
 
+# TODO: 部署时删除此路由
+# [IMPORTANT]
 @app.route('/logs/recent')
 def show_recent_logs():
     """显示最近的日志记录（仅用于调试）"""
@@ -703,7 +729,6 @@ def show_recent_logs():
         return "<pre>" + "".join(lines) + "</pre>"
     except FileNotFoundError:
         return "日志文件不存在"
-
 
 
 # 转发 llama 请求到指定服务器
@@ -771,7 +796,6 @@ def llama_chat():
             "detail": error_msg,
             "exception": str(e)
         }), 500
-
 
 """
 llamaChatCompletionsProxy [javascript fetch]
@@ -845,36 +869,39 @@ def yuexiaoyin_chat():
         
         # 检查是否为流式请求
         is_stream = request.json.get('stream', False)
-        log_ukey_access(ukey, user_ip, current_time, TYPE_MAP['query'], query, STATUS_MAP['success'], request.cookies.get("conv_id", "?"), errCode="200")
+        code = log_ukey_access(ukey, user_ip, current_time, TYPE_MAP['query'], query, STATUS_MAP['success'], request.cookies.get("conv_id", "?"), errCode=200)
         # 转发请求到 Llama 服务器
-        response = requests.post(
-            f"{Yuexiaoyin_SERVER}/v1/chat-messages", # TODO: 替换为 Yuexiaoyin_SERVER，以及后面的路由需要替换
-            json=new_request.json,
-            headers={
-                'Content-Type': 'application/json',
-                'Authorization': f"Bearer {get_apikey()}"
-            },
-            stream=is_stream  # 设置流式传输
-        )
-        
-        # 记录响应信息
-        logger.info(f"Response status code: {response.status_code}")
+        if code == 200:
+            response = requests.post(
+                f"{Yuexiaoyin_SERVER}/v1/chat-messages", # TODO: 替换为 Yuexiaoyin_SERVER，以及后面的路由需要替换
+                json=new_request.json,
+                headers={
+                    'Content-Type': 'application/json',
+                    'Authorization': f"Bearer {get_apikey()}"
+                },
+                stream=is_stream  # 设置流式传输
+            )
+            
+            # 记录响应信息
+            logger.info(f"Response status code: {response.status_code}")
         
 
         
-        # 如果是流式请求，直接流式返回响应
-        if is_stream:
-            def generate():
-                for chunk in response.iter_lines():
-                    if chunk:
-                        # logger.info(f"Response chunk: {chunk.decode('utf-8')}")
-                        yield chunk + b'\n\n'
-            
-            return generate(), response.status_code, {'Content-Type': 'text/event-stream'}
+            # 如果是流式请求，直接流式返回响应
+            if is_stream:
+                def generate():
+                    for chunk in response.iter_lines():
+                        if chunk:
+                            # logger.info(f"Response chunk: {chunk.decode('utf-8')}")
+                            yield chunk + b'\n\n'
+                
+                return generate(), response.status_code, {'Content-Type': 'text/event-stream'}
+            else:
+                # 非流式请求，返回完整的 JSON 响应
+                logger.info(f"Response content: {response.text}")
+                return response.json(), response.status_code
         else:
-            # 非流式请求，返回完整的 JSON 响应
-            logger.info(f"Response content: {response.text}")
-            return response.json(), response.status_code
+            raise Exception("Logging ukey access failed")
         
     except requests.exceptions.ConnectionError as e:
         error_msg = f"Connection error: Could not connect to {LLAMA_SERVER}"
@@ -1080,6 +1107,8 @@ def run_periodic_logging():
         time.sleep(10)
 
 # 查看 session log
+# TODO: 部署时删除此路由
+# [IMPORTANT]
 @app.route('/monitor')
 def monitor_page():
     """
