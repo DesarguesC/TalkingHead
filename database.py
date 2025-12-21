@@ -4,7 +4,7 @@ from datetime import datetime
 
 app = Flask(__name__)
 
-def GenuinToken(token):
+def isGenuinToken(token):
     return ('123456' not in token.lower())
 
 def TokenHasAuthorized(token, restUri):
@@ -21,7 +21,7 @@ def authorization_verify():
     try:
         data = request.json
         if 'restUri' not in data:
-            if GenuinToken(data.get('token','')):
+            if isGenuinToken(data.get('token','')):
                 return jsonify({
                     "code": 200,
                     "message": "Token合法",
@@ -51,6 +51,7 @@ def authorization_verify():
             }), 227
             
     except Exception as e:
+        print(f'Line - 54: ERR - {e}')
         return jsonify({
             "code": 224,
             "message": f"服务器错误: {str(e)}",
@@ -74,6 +75,7 @@ def receive_log_genuine():
         ]
         for field in required_fields:
             if field not in data:
+                print(f'Line - 78: ERR - {field} missing in data')
                 return jsonify({
                     "status": "error",
                     "message": f"缺少必需字段: {field}"
@@ -87,7 +89,8 @@ def receive_log_genuine():
         
         print(f"接收到日志数据: {data}")
 
-        if GenuinToken(data.get('token','')): # 模拟为有效token
+        if not isGenuinToken(data.get('token','')): # 模拟为有效token
+            print(f'Line - 97: ERR - Token不合法')
             return jsonify({
                 "code": 200,
                 "message": "Token不合法"
