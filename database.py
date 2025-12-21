@@ -21,16 +21,17 @@ def authorization_verify():
     try:
         data = request.json
         if 'restUri' not in data:
-            if isGenuinToken(data.get('token','')):
-                return jsonify({
-                    "code": 200,
-                    "message": "Token合法",
-                }), 200
-            else:
+            if  not isGenuinToken(data.get('token','')):
                 return jsonify({
                     "code": 226,
-                    "message": "Token不合法",
+                    "message": "Token无效",
                 }), 226
+            
+            return jsonify({
+                "code": 200,
+                "message": "成功,Token有效",
+            }), 200
+            
             
 
 
@@ -77,8 +78,8 @@ def receive_log_genuine():
             if field not in data:
                 print(f'Line - 78: ERR - {field} missing in data')
                 return jsonify({
-                    "status": "error",
-                    "message": f"缺少必需字段: {field}"
+                    "code": 224,
+                    "message": f"系统异常 - 缺少必需字段: {field}"
                 }), 224
         
         # 添加接收时间戳
@@ -90,24 +91,23 @@ def receive_log_genuine():
         print(f"接收到日志数据: {data}")
 
         if not isGenuinToken(data.get('token','')): # 模拟为有效token
-            print(f'Line - 97: ERR - Token不合法')
+            print(f'Line - 93: ERR - Token无效')
             return jsonify({
-                "code": 200,
-                "message": "Token不合法"
-            }), 224
+                "code": 226,
+                "message": "Token无效"
+            }), 226
 
         
         return jsonify({
-            "status": "success",
-            "message": "日志记录成功",
-            "log_id": len(log_storage)  # 模拟记录ID
-        })
+            "code": 200,
+            "message": "成功,Token有效"
+        }), 200
         
     except Exception as e:
         return jsonify({
-            "status": "error",
-            "message": f"服务器错误: {str(e)}"
-        }), 500
+            "code": 224,
+            "message": f"系统异常或服务器忙: {str(e)}"
+        }), 224
 
 
 
