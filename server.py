@@ -89,7 +89,7 @@ UE_Animate = False
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-app = Flask(__name__)
+app = Flask(__name__, static_folder='./', static_url_path='/')
 CORS(app)  # 启用跨域支持
 
 socketio = SocketIO(app, cors_allowed_origins="*")  # WebSocket支持
@@ -192,6 +192,8 @@ ErrorMap = {
 }
 
 def get_failure_html(code, message):
+    code = str(code)
+    message = str(message)
     return """<!doctype html>
         <html lang="zh-CN">
         <head>
@@ -247,8 +249,8 @@ def get_failure_html(code, message):
         <body>
 
         <div class="box">
-            <div class="code">227</div>
-            <h1>特殊状态提示</h1>
+            <div class="code">{xxx_code}</div>
+            <h1>{err_message}</h1>
             <p>
                 当前请求返回了异常状态码 <strong>{codeeee}</strong>。<br>
                 意味着需要进一步操作或等待处理完成。
@@ -262,7 +264,7 @@ def get_failure_html(code, message):
 
         </body>
         </html>
-        """.format(format_code=code, format_message=message, codeeee=code)
+        """.format(format_code=code, format_message=message, xxx_code=code, err_message=message, codeeee=code)
 # TODO: 返回首页处的href="/"修改为重定向前的路径
 
 # ===== WebSocket事件 =====
@@ -396,7 +398,7 @@ def animation():
 # @app.route('/app/jwt/get', methods=['POST'])
 def get_jwt():
     try:
-        filePath = request.json.get('filePath', None)
+        filePath = request.json().get('filePath', None)
         env_key = os.environ.get('USE_APIKEY')
         if env_key:            
             # 创建jwtGet所需的json返回
@@ -458,6 +460,7 @@ def get_apikey(filePath='./key.csv'):
             logger.info(f"Reading JWT from file: {filePath}")
             if os.path.exists(filePath):
                 if filePath.endswith('.csv'): 
+                    import pandas
                     file_key = pandas.read_csv(filePath)['key'][0]
                 else: # txt, etc.
                     with open(filePath, 'r') as f:
@@ -629,7 +632,7 @@ def genuine_ukey_access(ukey, user_ip, operation_time, operation_type, operation
 # 服务静态文件（index_new.html 等）
 # TODO: 部署时删除此路由 | 此处无权限校验
 # [IMPORTANT]
-@app.route('/')
+# @app.route('/')
 def serve_index():
     ukey, user_ip, current_time = get_log_string()
     log_ukey_access(ukey, user_ip, current_time, TYPE_MAP['login'], "", STATUS_MAP['success'], request.cookies.get("conv_id", "?"), errCode="none")
@@ -644,13 +647,35 @@ def serve_index():
 
 # TODO: 部署时删除此路由
 # [IMPORTANT]
-@app.route('/show225')
+# @app.route('/show224')
+def show_224():
+    return render_template_string(get_failure_html("224", "系统异常")), 224
+# @app.route('/show225')
 def show_225():
     """显示225错误页面（仅用于测试）"""
-    return render_template_string(get_failure_html("225", "服务器繁忙")), 503
+    return render_template_string(get_failure_html("225", "服务器繁忙")), 225
+# @app.route('/show226')
+def show_226():
+    return render_template_string(get_failure_html("226", "Token无效")), 226
+# @app.route('/show227')
+def show_227():
+    return render_template_string(get_failure_html("227", "接口未授权")), 227
+
+def show_err_page(code):
+    return show_224() if code == 224 else (
+        show_225() if code == 225 else (
+            show_226() if code == 226 else (
+                show_227() if code == 227 else (
+                    render_template_string(get_failure_html(str(code), "未知错误")), code
+                )
+            )
+        )
+    )
+
 
 # 解析ukey参数 | [无需验证·已废弃的接口]
-@app.route('/ukey_access') # TODO: 替换为真实路由
+# @app.route('/ukey_access') # TODO: 替换为真实路由
+@app.route('/')
 def ukey_access_handler():
     """处理带有ukey参数的访问请求"""
     # 获取ukey参数
@@ -677,13 +702,15 @@ def ukey_access_handler():
             'Authorization': 'Bearer ',
         }
     )
+    logger.info(f"Token 验证响应: {token_request.status_code} | 内容: {token_request.text}")
     if token_request.status_code != 200:
         # 记录失败日志
-        errCode = token_request.json.get("code", 224)
-        errMsg = token_request.json.get("msg", "Token无效或系统异常")
+        errCode = token_request.json().get("code", 224)
+        errMsg = token_request.json().get("message", "Token无效或系统异常")
         log_ukey_access(ukey, user_ip, current_time, TYPE_MAP['login'], "", STATUS_MAP['denied'], 
                         token_request.cookies.get("conv_id", "?"), errCode=str(errCode), errMsg=errMsg)
-        return render_template_string(get_failure_html(errCode, errMsg)), 224
+        return show_err_page(token_request.status_code)
+        # render_template_string(get_failure_html(errCode, errMsg)), 224
 
     # 权限核验
     auth_request = requests.post(
@@ -694,18 +721,20 @@ def ukey_access_handler():
             'Authorization': 'Bearer ',
         }
     )
-    if auth_request.status_code != 200 or auth_request.json.get("data", -1) == -1:
+    logger.info(f"Token 授权响应: {auth_request.status_code} | 内容: {auth_request.text}")
+    if auth_request.status_code != 200 or auth_request.json().get("data", -1) == -1:
         # 记录失败日志
-        errCode = token_request.json.get("code", 224)
-        errMsg = token_request.json.get("msg", "未授权或系统异常")
+        errCode = auth_request.json().get("code", 224)
+        errMsg = auth_request.json().get("msg", "未授权或系统异常")
         log_ukey_access(ukey, user_ip, current_time, TYPE_MAP['login'], "", STATUS_MAP['denied'], 
                         token_request.cookies.get("conv_id", "?"), errCode=errCode, errMsg=errMsg)
-        return render_template_string(get_failure_html(errCode, errMsg)), 224
+        return show_err_page(auth_request.status_code)
+        # render_template_string(get_failure_html(errCode, errMsg)), 224
 
    
     # 记录日志
     log_ukey_access(ukey, user_ip, current_time, TYPE_MAP['login'], "", STATUS_MAP['success'], token_request.cookies.get("conv_id", "?"), errCode=200)
-    return send_from_directory('.', 'index_new.html')
+    return send_from_directory('./', 'index_new.html')
     
     # # 返回成功响应
     # return jsonify({
@@ -879,13 +908,13 @@ def yuexiaoyin_chat():
                 'Authorization': 'Bearer ',
             }
         )
-        data = auth_request.json.get("data", -1)
+        data = auth_request.json().get("data", -1)
         if data == -1:
             return render_template_string(get_failure_html(227, "接口未授权")), 227
         elif auth_request.status_code != 200:
             # 记录失败日志
-            errCode = auth_request.json.get("code", 224)
-            errMsg = auth_request.json.get("msg", "未授权或系统异常")
+            errCode = auth_request.json().get("code", 224)
+            errMsg = auth_request.json().get("msg", "未授权或系统异常")
             conv_id = "未授权的对话" # 未授权
             log_ukey_access(ukey, user_ip, current_time, TYPE_MAP['login'], "", STATUS_MAP['denied'], 
                             conv_id, errCode=errCode, errMsg=errMsg)
