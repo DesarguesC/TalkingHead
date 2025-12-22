@@ -9,7 +9,7 @@ def isGenuinToken(token):
 
 def TokenHasAuthorized(token, restUri):
     from random import randint
-    return (randint(0,10)>2)
+    return (randint(0,10)>1)
 
 # 模拟数据存储
 log_storage = []

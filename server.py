@@ -49,6 +49,23 @@ def get_or_create_session_id():
             request.sid = sid_from_cookie
     return request.sid
 
+
+
+def set_ukey(ukey):
+    # 无ukey则设置|有ukey但不同则更新|最终都返回当前ukey
+    if not hasattr(request, 'ukey'):
+        ukey_from_cookie = request.cookies.get("ukey")
+        if not ukey_from_cookie:
+            request.ukey = ukey
+        else:
+            if ukey_from_cookie != ukey and ukey != '':
+                request.ukey = ukey
+            else:
+                request.ukey = ukey_from_cookie
+    
+    return request.ukey
+        
+
 def get_conversation_id(session_id: str = None):
     if not hasattr(request, 'conv_id'):
         request.conv_id = request.cookies.get("conv_id", "?")
@@ -674,6 +691,7 @@ def show_err_page(code):
     )
 
 
+
 # 解析ukey参数 | [无需验证·已废弃的接口]
 # @app.route('/ukey_access') # TODO: 替换为真实路由
 @app.route('/')
@@ -681,7 +699,7 @@ def ukey_access_handler():
     """处理带有ukey参数的访问请求"""
     # 获取ukey参数
     ukey = request.args.get('ukey', '')
-    # TODO: 也从cookies中查找ukey参数？但若两者冲突时，更新cookies
+    
     
     # 自然会被deny
     # if not ukey:
@@ -716,7 +734,7 @@ def ukey_access_handler():
                         token_request.cookies.get("conv_id", "?"), errCode=str(errCode), errMsg=errMsg)
         return show_err_page(token_request.status_code)
         # render_template_string(get_failure_html(errCode, errMsg)), 224
-
+    
     # 权限核验
     auth_request = requests.post(
         f'{TokenAuthorize_SERVER}/wx/sys/permit/verifyToken',
@@ -735,11 +753,17 @@ def ukey_access_handler():
                         token_request.cookies.get("conv_id", "?"), errCode=errCode, errMsg=errMsg)
         return show_err_page(auth_request.status_code)
         # render_template_string(get_failure_html(errCode, errMsg)), 224
-
-   
+    
+    
     # 记录日志
     log_ukey_access(ukey, user_ip, current_time, TYPE_MAP['login'], "", STATUS_MAP['success'], token_request.cookies.get("conv_id", "?"), errCode=200)
-    return send_from_directory('./', 'index.html')
+    resp = make_response(send_from_directory('./', 'index.html'))
+    ukey = set_ukey(ukey)
+    logger.info(f'接收到的 ukey 参数: {ukey}')
+    resp.set_cookie('ukey', ukey, max_age=3600)  # 设置ukey cookie，1h有效期
+    resp.set_cookie('sid', get_or_create_session_id(), max_age=3600)  # 设置sid cookie，1h有效期
+    resp.set_cookie('conv_id', '', max_age=3600)  # 刚进入，需要清空conv_id cookie，1h有效期
+    return resp
     
     # # 返回成功响应
     # return jsonify({
@@ -883,12 +907,16 @@ def yuexiaoyin_chat():
     # 获取上下文ID，可能为空（""），如果已经返回过，js中会放在cookies里
     logger.info(f"所有cookies: {request.cookies}") # DEBUG
     logger.info(f"Extracted query: {query}") # DEBUG
+
+    user_cookies = request.ukey if hasattr(request, 'ukey') else request.cookies.get("ukey", "") # TODO: 获取user cookies中的ukey | 「对接点」
+
+
     new_request = jsonify({
         "inputs": {}, 
         "query": query,
         "response_mode": "streaming",
         "conversation_id": conv_id, # 后续放在request中
-        "user": "111", # TODO: user字段信息从哪里获取（session_id? ukey? ...） | 「对接点」
+        "user": f"{user_cookies}%{session_id}", # TODO: user字段信息从哪里获取（session_id? ukey? ...） | 「对接点」
         "files":[]
     })
     # TODO: inputs里面的role, content, name等结构体字段可能需要修改 | 「对接点」
