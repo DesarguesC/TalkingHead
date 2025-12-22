@@ -693,7 +693,7 @@ def show_err_page(code):
 
 
 # 解析ukey参数 | [无需验证·已废弃的接口]
-# @app.route('/ukey_access') # TODO: 替换为真实路由
+# @app.route('/ukey_access')
 @app.route('/')
 def ukey_access_handler():
     """处理带有ukey参数的访问请求"""
@@ -707,8 +707,6 @@ def ukey_access_handler():
     #         "status": "error",
     #         "message": "缺少ukey参数"
     #     }), 400
-
-    # TODO: 设置ukey于cookies中?
 
 
     # 获取用户IP
@@ -900,6 +898,7 @@ body [original]
 def yuexiaoyin_chat():
     # 请求结构转换
     ukey, user_ip, current_time = get_log_string()
+    # TODO: 如有报错，请考虑大模型的请求格式，此处按照行业标准实现，且在dify.com的伪装接口上测试无误
     query = request.json.get('messages', [{"content": ""}])[-1].get("content", "你好") # 只需要当前提问；单轮对话，无上下文
     session_id = get_or_create_session_id() # 此时必有id，直接获取
     conv_id = request.conv_id if hasattr(request, 'conv_id') else request.cookies.get("conv_id", "")
@@ -908,8 +907,7 @@ def yuexiaoyin_chat():
     logger.info(f"所有cookies: {request.cookies}") # DEBUG
     logger.info(f"Extracted query: {query}") # DEBUG
 
-    user_cookies = request.ukey if hasattr(request, 'ukey') else request.cookies.get("ukey", "") # TODO: 获取user cookies中的ukey | 「对接点」
-
+    user_cookies = request.ukey if hasattr(request, 'ukey') else request.cookies.get("ukey", "")
 
     new_request = jsonify({
         "inputs": {}, 
