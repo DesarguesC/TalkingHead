@@ -1,11 +1,12 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Talking Head</title>
+  <title>「粤晓隐」 AI 数字人</title>
 
   <meta charset="utf-8">
   <meta content="width=device-width, height=device-height, minimum-scale=1.0, maximum-scale=1.0, initial-scale=1.0, user-scalable=no, interactive-widget=resizes-content" name="viewport">
   <link rel="icon" type="image/jpg" href="favicon.jpg">
+  <!-- TODO: 可以替换这里的icon -->
 
 
 <style>
@@ -17,7 +18,8 @@
   /* Color themes */
   :root, .theme-dark {
       --colorBody: #88ccff;
-      --colorBackground: #2d2d2d; /* 1. 将背景设置为深灰色 | TODO: 可以在这里修改背景颜色 */ 
+      /* --colorBody: transparent; */
+      --colorBackground: #2d2d2d; /* 1. 将背景设置为深灰色 | 可以在这里修改背景颜色 */ 
       --colorPanel: rgba(25, 28, 36, 0.85); /* 调整面板颜色以适应新背景 */
       --colorBorderPassive: rgba(136,204,255,0.4);
       --colorBorderActive: rgba(168, 169, 226, 0.9);
@@ -25,9 +27,9 @@
       --colorSystemText: #d4adf8; /* 调整系统文本颜色以提高对比度 */
       --colorToolbarPassive: rgba(58, 1, 92, 0.9);
       --colorToolbarPassive2: #d4adf8;
-      --colorToolbarActive: #8314eb;
+      --colorToolbarActive: #81d2dd;
       --widthLabel: 5rem;
-      --colorGlow: rgba(94,96,206, 0.9);
+      --colorGlow: rgba(185, 194, 255, 0.9);
       /* 为气泡样式新增颜色变量 */
       --system-bubble-bg: rgba(131, 20, 235, 0.3);
       --user-bubble-bg: rgba(144, 231, 250, 0.2);
@@ -94,7 +96,9 @@
       width: 100%; height: 100vh;
       margin: 0; padding: 0;
       background-color: var(--colorBackground);
-      color: var(--colorBody);
+      /* color: var(--colorBody); */
+      color: transparent;
+      border-color: transparent;
       overflow: hidden;
       font-family: "SansRegular", sans-serif;
       line-height: 1.4rem;
@@ -107,7 +111,7 @@
       padding: 15px;
       box-sizing: border-box;
   }
-  .chat-container {
+  /* .chat-container {
       background-color: var(--colorPanel);
       border: 2px solid var(--colorBorderPassive);
       border-radius: 10px;
@@ -117,41 +121,328 @@
       overflow: hidden;
       padding: 15px;
       box-sizing: border-box;
-      flex: 0 0 85%; /* 占父容器的80% */
-      /* height: 100%; 确保填满网格单元 */
+      flex: 0 0 85%;
+  } */
+
+  #canvas-container {
+    position: fixed;
+    inset: 0;               /* top:0; right:0; bottom:0; left:0; */
+    width: 100vw;
+    height: 100vh;
+    z-index: 1;             /* canvas 在最底层 */
+    overflow: hidden;
+    border-color: transparent;
+    /* display: flex; */
+    align-items: center;
+    justify-content: center;
+  }
+  #canvas-container canvas,
+  #canvas-container > canvas {
+    width: 100%;
+    height: 100%;
+    display: block;
   }
 
-  #right-column-wrapper {
-      /* position: relative; */
-      display: flex;
-      flex-direction: column;
-      height: 100%;
-      padding: 5px;
-      /* border: 2px solid var(--colorBorderPassive); */
-      border: none;
-      flex-direction: column;
-      flex: 1;
-      overflow: hidden;
+  /*record样式*/
+  #record {
+    transition: all 0.2s ease;
+    cursor: pointer;
   }
-  /* 在聊天框和输入框之间增加间距 */
+  #record:hover {
+    filter: drop-shadow(0 0 8px rgba(0, 153, 255, 0.75)) brightness(1.2);
+    transform: scale(1.05);
+  }
+  /* selected 需要覆盖 hover，所以这段必须最后写 */
+  #record.selected,
+  #record.selected:hover {
+    filter: drop-shadow(0 0 12px rgba(0, 153, 255, 0.9)) brightness(1.4);
+    transform: scale(1.1);
+  }
 
+  /*interruption & send patterns*/
+  #interruption {
+    transition: all 0.2s ease;
+    cursor: pointer;
+  }
+  #interruption:hover {
+    filter: drop-shadow(0 0 8px rgba(0, 153, 255, 0.75)) brightness(1.2);
+    transform: scale(1.05);
+  }
+  /* selected 需要覆盖 hover，所以这段必须最后写 */
+  #interruption.selected,
+  #interruption.selected:hover {
+    filter: drop-shadow(0 0 12px rgba(0, 153, 255, 0.9)) brightness(1.4);
+    transform: scale(1.1);
+  }
+
+  #selectall {
+    transition: all 0.2s ease;
+    cursor: pointer;
+  }
+  #selectall:hover {
+    filter: drop-shadow(0 0 8px rgba(0, 153, 255, 0.75)) brightness(1.2);
+    transform: scale(1.05);
+  }
+  /* selected 需要覆盖 hover，所以这段必须最后写 */
+  #selectall.selected,
+  #selectall.selected:hover {
+    filter: drop-shadow(0 0 12px rgba(0, 153, 255, 0.9)) brightness(1.4);
+    transform: scale(1.1);
+  }
+
+  
+  /* ===========================
+  左侧聊天面板（悬浮） — 保留 id 名称
+  =========================== */
   #chat-container-left {
+    position: fixed;
+    top: 6vh;               /* 与顶部有间隙，视觉更靠近图片示例 */
+    left: 4vw;              /* 离左侧保留一些边距 */
+    width: 22vw;            /* 左侧宽度：约为屏幕 22%（可调整） */
+    max-width: 420px;
+    min-width: 260px;
+    height: calc(100vh - 12vh); /* 上下都有 margin，留出页面安全区 */
+    z-index: 30;            /* 高于 canvas */
+    pointer-events: auto;   /* 接收事件 */
     display: flex;
     flex-direction: column;
-    height: 100%;
-  }
-  #chat-container-left .messages-area {
-    flex-grow: 1;
-    min-height: 0;
+    gap: 12px;
+    box-sizing: border-box;
+    background: transparent; /* 面板背景由气泡决定，保持透明 */
     overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+  /* 滚动条整体 */
+  #chat-container-left::-webkit-scrollbar {
+    width: 10px;
+  }
+  /* 滚动条轨道（背景） */
+  #chat-container-left::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(8px); /* 毛玻璃效果 */
+    border-radius: 8px;
+  }
+  /* 滚动条滑块（thumb） */
+  #chat-container-left::-webkit-scrollbar-thumb {
+    background: rgba(0, 122, 255, 0.4); /* 低饱和蓝色玻璃质感 */
+    border-radius: 8px;
+    backdrop-filter: blur(4px);
+    border: 2px solid rgba(255, 255, 255, 0.2); /* 模拟玻璃亮边 */
+  }
+  /* 滑块 hover 效果 */
+  #chat-container-left::-webkit-scrollbar-thumb:hover {
+    background: rgba(0, 122, 255, 0.6);
   }
 
+  /* 左侧消息区（垂直堆叠气泡） */
+  #chat-container-left .messages-area {
+    flex: 1 1 auto;
+    min-height: 0;          /* 关键：允许内部滚动而不撑开父容器 */
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 22px;              /* 气泡之间距离 */
+    padding: 6px;
+    -webkit-overflow-scrolling: touch;
+  }
+
+
+
+  /* ===========================
+   右侧聊天面板（悬浮） — 保留 id 名称
+   =========================== */
+  #right-column-wrapper {
+    position: fixed;
+    top: 6vh;
+    right: 4vw;
+    width: 22vw;
+    /* max-width: 420px; */
+    min-width: 260px;
+    height: calc(100vh - 12vh);
+    z-index: 30;
+    display: flex;
+    flex-direction: column;
+    gap: 12px; /* additional */
+    box-sizing: border-box;
+    background: transparent;
+    border-color: transparent;
+    outline: none;
+    pointer-events: auto;
+    overflow: hidden;
+  }
+  /* 右侧上部：消息容器；下部：输入区（保持你现有 .chat-container/.bottom 结构） */
+  #right-column-wrapper .chat-container {
+    background: transparent;
+    border: none;
+    padding: 0;
+    flex: 1 1 auto;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  /* 右侧消息堆叠（靠右对齐） */
+  #right-column-wrapper .messages-area,
+  #right-column-wrapper .chat-container > .messages-area {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+    padding: 6px;
+    align-items: flex-end; /* 让气泡靠右对齐 */
+  }
+
+  /* 右侧底部输入区域（.bottom 内） */
+  #right-column-wrapper .bottom {
+    flex: 0 0 auto;
+    padding-top: 8px;
+    display: flex;
+    align-items: flex-end;
+    justify-content: flex-end;
+    min-height: 0;
+  }
+
+  /* ===========================
+   气泡样式（左右通用）
+   =========================== */
+  .chat-container {
+    max-width: 86%;
+    padding: 16px 18px;
+    border-radius: 18px;
+    line-height: 1.5;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.35);
+    font-size: 1.4rem;
+    /* color: rgba(0,0,0,0); */
+    word-break: break-word;
+    background: rgba(255,255,255,0.88); /* 默认浅色气泡（可被覆盖） */
+  }
+
+  /* 左侧气泡外观（偏白但略透明，文本为深色） */
+  #chat-container-left .chat-container {
+    background: rgba(246,249,253,0.95);
+    color: #0b2030;
+    border-radius: 20px;
+    align-self: flex-start;
+    box-shadow: 0 14px 30px rgba(5,25,45,0.35);
+  }
+
+  /* 右侧气泡外观（偏蓝色调） */
+  #right-column-wrapper .bubble,
+  #right-column-wrapper .messages-area .bubble {
+    background: linear-gradient(180deg, rgba(220,235,255,0.98), rgba(205,230,255,0.98));
+    color: #0a2438;
+    border-radius: 16px;
+    align-self: flex-end;
+    box-shadow: 0 10px 26px rgba(0,20,60,0.25);
+  }
+
+  /* 缩小型气泡（如最后一条、提示） */
+  .bubble.small {
+    padding: 10px 12px;
+    font-size: 1.4rem;
+    max-width: 70%;
+    opacity: 0.95;
+  }
+
+  /* ===========================
+    底部输入“大气泡”（右下角）
+    =========================== */
+  .input-bubble {
+    width: calc(100% - 8px);
+    max-width: 420px;
+    padding: 16px 18px;
+    border-radius: 22px;
+    background: rgba(255,255,255,0.95);
+    color: #0b2030;
+    box-shadow: 0 18px 40px rgba(0,10,30,0.25);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-left: auto;
+  }
+
+  /* 输入区中占位文本样式 */
+  .input-bubble .placeholder {
+    flex: 1 1 auto;
+    color: rgba(10,30,50,0.65);
+    font-size: 1.4rem;
+  }
+
+  /* 控件区（麦克风、暂停、发送） */
+  .input-bubble .controls {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .input-bubble .icon {
+    border: none;
+    background: rgba(0,0,0,0.04);
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: 0 6px 14px rgba(0,0,0,0.08);
+  }
+
+  .input-bubble .icon.send {
+    background: linear-gradient(90deg,#3fa7ff,#2d8ff3);
+    color: #fff;
+  }
+
+
+  
+
+
   #chat-container-right {
-      display: flex;
+      position: static;
+      top: 6vh;
+      left: 4vw;
+      width: 21.5vw;
+      /* max-width: 420px; */
+      min-width: 260px;
+      height: calc(100vh - 12vh);
+      z-index: 30;
+      pointer-events: auto;
+      /* display: flex; */
       flex-direction: column;
-      /* height: auto; */
+      gap: 12px;
+      box-sizing: border-box;
+      background: transparent;
+      overflow-y: auto;
+      overscroll-behavior: contain;
+      
       flex-grow: 1; /* 占据所有可用空间 */
       min-height: 0; /* 防止 flex 溢出 */
+  }
+  /* 滚动条整体 */
+  #chat-container-right::-webkit-scrollbar {
+    width: 10px;
+  }
+  /* 滚动条轨道（背景） */
+  #chat-container-right::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(8px); /* 毛玻璃效果 */
+    border-radius: 8px;
+  }
+  /* 滚动条滑块（thumb） */
+  #chat-container-right::-webkit-scrollbar-thumb {
+    background: rgba(0, 157, 255, 0.4); /* 低饱和蓝色玻璃质感 */
+    border-radius: 8px;
+    backdrop-filter: blur(4px);
+    border: 2px solid rgba(255, 255, 255, 0.201); /* 模拟玻璃亮边 */
+  }
+  /* 滑块 hover 效果 */
+  #chat-container-right::-webkit-scrollbar-thumb:hover {
+    background: rgba(0, 238, 255, 0.6);
   }
 
   .chat-container h3 {
@@ -232,8 +523,10 @@
   .column { flex: 1; display: flex; flex-direction: column; row-gap: 2px; }
   .page {
     flex-grow: 1; display: flex; flex-direction: column;
-    overflow-y: auto; overflow-x: hidden; min-height: 0; margin: 8px 0 8px 0;
-    padding-right: 16px;
+    overflow-y: auto; 
+    /* overflow-x: hidden;  */
+    min-height: 0; margin: 8px 0 8px 0;
+    /* padding-right: 16px; */
   }
   .rowWrap {
     display: flex; row-gap: 2px; column-gap: 8px; flex-wrap: wrap;
@@ -309,8 +602,10 @@
   }
   .border {
     position: absolute; top: 0; left: 0; bottom: 0; right: 0;
-    background: transparent; border-width: 3px; border-style: solid;
-    border-color: var(--colorBorderActive); pointer-events: none;
+    background: transparent; border-width: 3px; 
+    border-style: solid;
+    /* border-color: var(--colorBorderActive);  */
+    pointer-events: none;
     border-radius: inherit;
   }
   .glow { box-shadow: 0 0 25px 5px var(--colorGlow); }
@@ -353,7 +648,7 @@
   /* Loading */
   #loading {
     display: block; position: absolute; top: 6px; left: 6px; width: 300px;
-    height: 30px; pointer-events: none; font-size: 1rem;
+    height: 30px; pointer-events: none; font-size: 1.2rem;
     background-color: transparent;
   }
   #loading-back, #loading-top {
@@ -389,15 +684,17 @@
     position: absolute; margin: 4px;
     background-color: var(--colorPanel);
   }
-  #right .border { border-color: var(--colorBorderPassive); }
+  #right .border { 
+    border-color: var(--colorBorderPassive); 
+  }
   .session { display: none; width: 100%; }
   .session.selected { display: block; }
 
   /*Messages*/
   /* 聊天气泡基础样式 */
-  .message {
-    margin-bottom: 15px; /* 增加间距以容纳气泡尾巴 */
-    padding: 10px 15px; /* 2px 12px; */
+  /* .message {
+    margin-bottom: 15px;
+    padding: 10px 15px;
     border-radius: 10px;
     line-height: 1.5;
     max-width: 90%;
@@ -406,6 +703,37 @@
     opacity: 0;
     transform: translateY(10px);
     animation: fadeIn 0.5s forwards;
+  } */
+  .message {
+    line-height: 1.5;
+    /* max-width: 90%; */
+    font-family: 'Times New Roman', Times, serif;
+    color: var(--colorBody);
+    word-wrap: break-word;
+    /* opacity: 0; */
+    transform: translateY(10px);
+
+    /* background: rgba(31, 41, 55, 0.95); */
+    /* border: 2px solid #3b82f6; */ /* 待定 */
+    border-radius: 18px;
+    padding: 12px;
+    box-shadow: 
+        0 8px 32px rgb(109 147 207 / 30%), 
+        0 0 20px rgb(82 213 208 / 20%);
+    backdrop-filter: blur(6px);
+    pointer-events: auto;
+    animation: slideIn 0.9s ease-out; /* ? */
+    position: relative;
+    margin-bottom: 12px;
+  }
+
+  .message::before {
+    content: '';
+    position: absolute;
+    top: 20%;
+    width: 0;
+    height: 0;
+    border: 8px solid transparent;
   }
 
   @keyframes fadeIn {
@@ -418,10 +746,9 @@
 
   /* 系统消息气泡 (左侧) */
   .system-message {
-    background-color: var(--system-bubble-bg); /* rgba(131, 20, 235, 0.3); */
+    background-color: var(--system-bubble-bg); 
     color: var(--colorSystemText);
     margin-right: auto;
-    border-bottom-left-radius: 0; /* 尾巴连接处的圆角变直角 */
   }
   
   .system-message::after {
@@ -433,19 +760,29 @@
     height: 0;
     border-bottom: 15px solid var(--system-bubble-bg);
     border-left: 15px solid transparent;
+    border-right-color: #3b82f6;
+    /* border-left: none; */
+    transform: translateY(-50%);
   }
   
 
    /* 用户消息气泡 (右侧) */
-  .user-message {
-    position: relative; /* 让子元素的 absolute 相对它定位 */
+  .user, .user-message {
+    /* max-width: 90%; */
+    /* position: relative;  */
+    /* 让子元素的 absolute 相对它定位 */
+    /* align-items: center; */
+    width: 84%;
+    left: 15px;
     background-color:  var(--user-bubble-bg); /* rgba(144, 231, 250, 0.2); */
     color: var(--colorUserText);
-    margin-left: auto;
-    text-align: left; /* 气泡内文本左对齐 */
-    border-bottom-right-radius: 0; /* 尾巴连接处的圆角变直角 */
+    /* margin-left: auto; */
+    /* text-align: left; */
+    /* 气泡内文本左对齐 */
+    /* border-bottom-right-radius: 0;  */
+    /* 尾巴连接处的圆角变直角 */
   }
-  .user-message::after {
+  /* .user-message::after {
     content: '';
     position: absolute;
     right: -10px;
@@ -454,6 +791,20 @@
     height: 0;
     border-bottom: 15px solid var(--user-bubble-bg);
     border-right: 15px solid transparent;
+  } */
+  .user-message::before {
+    content: '';
+    position: absolute;
+    right: -10px;
+    bottom: 0;
+    width: 0;
+    height: 0;
+    /* border-bottom: 15px solid var(--user-bubble-bg); */
+    /* border-right: 15px solid transparent; */
+    /* right: -18px; */
+    border-left-color: #3b82f6;
+    border-right: none;
+    transform: translateY(-50%);
   }
 
   .user-message > .message.user {
@@ -608,14 +959,7 @@
     50% { opacity: 0; }
   }
   
-  #canvas-container {
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      height: 100%;
-      width: 100%;
-      grid-column: 2 / 3; /* 放置在网格的第二列 */
-  }
+  
 
 
   code { font-family: monospace; font-size: 1rem; }
@@ -691,7 +1035,8 @@
       font-family: "SansRegular";
       font-size: 1.4rem;
       line-height: 1.6rem;
-      resize: vertical;
+      /* resize: vertical; */
+      resize: none;
       outline: none;
       color: var(--colorUserText);
       pointer-events: auto;
@@ -796,43 +1141,33 @@
   #canvas-container.presence-vr #avatar { bottom: -8px; left: -400px; right: -400px; }
   #canvas-container.layout-full #avatar { top: 0; left: 0; bottom: 0; right: 45%; }
 
-  @media (max-width: 1200px) {
-    
-     body {
-      display: grid;
-      grid-template-columns: 4fr 19fr 4fr;     /* 左列 | 右列 */
-      grid-template-rows: auto 1fr auto;    /* 头 | 中 | 尾（举例）*/
-      min-height: 100vh;
-      gap: 10px;
+  @media (max-width: 900px) {
+    #chat-container-left, #right-column-wrapper {
+      width: 30vw;
+      max-width: 320px;
+      min-width: 220px;
     }
 
-    /* 右侧整列容器：放到第2列，并跨越所有行 */
-    #right-column-wrapper {
-      grid-column: 2 / 3;
-      grid-row: 1 / -1;           /* ★ 关键：跨越所有行，填满整列 */
-      align-self: stretch;        /* 保险：拉伸填满网格轨道 */
-      display: grid;              /* 右侧内部再做80/20分配更稳 */
-      grid-template-rows: 4fr 1fr;/* ★ 精准：上80% 下20% */
-      min-height: 0;              /* 防止内容把轨道撑爆 */
-      padding: 5px;
-      border: 2px solid var(--colorBorderPassive);
-      box-sizing: border-box;
-    }
-
-    /* 右侧内部：上80% */
-    #right-column-wrapper .chat-container {
-      min-height: 0;   /* 允许滚动而不是撑高 */
-      overflow: hidden;
-    }
-
-    /* 右侧内部：下20% */
-    #right-column-wrapper .bottom {
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-      box-sizing: border-box;
-    }
+    .bubble { font-size: 1.14rem; padding: 12px 14px; }
+    .input-bubble { padding: 12px 14px; max-width: 360px; }
   }
+
+  /* 当需要让面板“视觉覆盖但允许点击穿透 canvas”时：
+    给面板加上 .overlay-click-through（例如：<aside id="chat-container-left" class="overlay-click-through">）
+    并给需要交互的内部元素加上 .interactive（例如 .messages-area、button 等）。 */
+  .overlay-click-through {
+    pointer-events: none;
+  }
+  .overlay-click-through .interactive {
+    pointer-events: auto;
+  }
+
+/* ===========================
+   方便调试：可在开发时开启轮廓
+   ===========================
+#chat-container-left { outline: 1px dashed rgba(255,255,255,0.06); }
+#right-column-wrapper { outline: 1px dashed rgba(255,255,255,0.06); }
+*/
 
   /*控制浅色背景*/
   body {
@@ -1021,7 +1356,7 @@ const grokChatCompletionsProxy = "/grok/v1/chat/completions"; // Grok-beta
 const llamaChatCompletionsProxy = "/llama/v1/chat/completions"; // Local llama.cpp server proxy
 
 const Yue_Xiaoyin_ChatCompletionsProxy = "/yuexiaoyin/v1/chat/completions"; // outside API proxy
-// TODO: 接入时用这个代理替代llamaChatCompletionsProxy即可
+// 接入时用这个代理替代llamaChatCompletionsProxy【区分大小写搜索`PROXY = `即可】
 
 const UESocketProxy = "/socket:ue/animation";
 
@@ -1173,7 +1508,7 @@ const i18n = {
     'ai-ai2': 'AI response #2', 'Example1': 'Example-1', 'Example2': 'Example-2',
     'theme-wide': 'Widescreen', 'theme-43': '4:3', 'theme-landscape': 'Landscape',
     'theme-portrait': 'Portrait', 'voice-test': 'Speak', 'ai-stop': 'Stop',
-    'ai-user': 'User', 'input': '给 粤晓隐 发送消息', 'en': 'English', 'fi': 'Finnish',
+    'ai-user': 'User', 'input': '给 「粤晓隐」 发送消息', 'en': 'English', 'fi': 'Finnish',
     'ai-stopword': 'Word', 'ai-username': 'Name', 'LightAmbient': 'Ambient',
     'LightDirect': 'Direct', 'LightSpot': 'Spot', 'theme-full': "Fullscreen",
     'lt': 'Lithuanian', 'test-sentence': "Write your test sentence.",
@@ -1531,7 +1866,7 @@ async function microsoftProcessQueue() {
         microsoftSynthesizer = new window.SpeechSDK.SpeechSynthesizer(config,null);
 
         // Viseme conversion from Microsoft to Oculus
-        // TODO: Check this conversion again!
+        // Check this conversion again!
         const visemeMap = [
           "sil", 'aa', 'aa', 'O', 'E', // 0 - 4
           'E', 'I', 'U', 'O', 'aa', // 5 - 9
@@ -1699,7 +2034,6 @@ async function whisperLoadMP3(file) {
             const startSegment = async () => {
               // Look at the camera
               head.lookAtCamera(500); 
-              // TODO: 坐标系与walking.fbx等保持一致？目前直接加载两个模型的方向不同，没有相机的话可能是坐标系吧（talkinghead本身bug？）
               head.speakWithHands();
             };
             json.segments.forEach( x => {
@@ -2446,9 +2780,8 @@ function openaiBuildMessage( extra_system_prompt = "") {
       msgs.push( { n: n, role: x.role, content: n.value } );
     }
     if(x.role === "system") {
-      // n.value = condition + "仅返回不超过100字的中文, 禁用markdown格式, 禁止分点作答." + extra_system_prompt; // 约定只有中文且无markdoswn
-      n.value = condition + "禁用markdown格式, 禁止分点作答." + extra_system_prompt;
-      // TODO: 在此添加约束（如有需要）
+      n.value = condition + "仅返回不超过100字的中文, 禁用markdown格式, 禁止分点作答." + extra_system_prompt; // 约定只有中文且无markdoswn
+      // n.value = condition + "禁用markdown格式, 禁止分点作答." + extra_system_prompt;
     }
   });
 
@@ -2798,7 +3131,7 @@ async function openaiSendMessage(node,msgs) {
     } while( fn.id ); // Repeat, if this iteration was a function call
 
   } catch (error) {
-    if ( signal.aborted ) error = "aborted";
+    if ( signal.aborted ) error = "未知错误";
     console.error(error);
     addText( node, ' [' + error + ']');
   } finally {
@@ -2987,11 +3320,11 @@ async function grokSendMessage(node,msgs) {
 // Llama
 
 // Send messages to local LLama API and handle streamed response
-// TODO: 加入动作option，仿照openaiSendMessage
+// 加入动作option，仿照openaiSendMessage
 async function llamaSendMessage(node,msgs) {
 
-  // const PROXY = Yue_Xiaoyin_ChatCompletionsProxy;
-  const PROXY = llamaChatCompletionsProxy; // 部署时替换为Yue_Xiaoyin_ChatCompletionsProxy
+  const PROXY = Yue_Xiaoyin_ChatCompletionsProxy;
+  // const PROXY = llamaChatCompletionsProxy; // 部署时替换为Yue_Xiaoyin_ChatCompletionsProxy
 
   // Create a new AbortController instance
   aiController = new AbortController();
@@ -3034,7 +3367,7 @@ async function llamaSendMessage(node,msgs) {
       mode: "cors",
       headers: {
         "Content-Type": "application/json",
-        "Authorization": "Bearer " + await jwtGet() // TODO: apikey
+        "Authorization": "Bearer " + await jwtGet() // apikey
       },
       body: JSON.stringify(body),
       credentials: 'same-origin',
@@ -3077,7 +3410,7 @@ async function llamaSendMessage(node,msgs) {
             if ( conv_id != '' ) {
               document.cookie = "conv_id=" + conv_id + "; path=/";
             }
-            if ( data.startsWith("data: ") ) { // TODO: 这个字段也要改
+            if ( data.startsWith("data: ") ) {
               let line = data.substring(6).trim(); // buffer
               if ( line === '[DONE]' ) {
                 done = true;
@@ -3088,7 +3421,7 @@ async function llamaSendMessage(node,msgs) {
                   // line = "";
                 } catch(error) {
                   console.log("Error JSON parsing line: " + line);
-                  // throw new Error( "Error JSON parsing line: " + line ); // TODO6：这里会出现奇怪的parsing错误，需要解决
+                  // throw new Error( "Error JSON parsing line: " + line ); // TODO：这里偶尔会出现parsing错误
                 }
 
                 if ( obj && obj.error ) throw new Error( obj.error.message || ''+res.status );
@@ -3101,9 +3434,6 @@ async function llamaSendMessage(node,msgs) {
                   node.dataset.output += obj?.choices?.[0]?.delta?.content || '';
                   tts += obj?.choices?.[0]?.delta?.content || '';
                 } else if (PROXY === Yue_Xiaoyin_ChatCompletionsProxy) {
-
-                  // TODO***: 解码后的格式？设置cookies，并连接好用于做tts的文字
-
                   tts += obj?.answer || '';
                   if (conv_id === '') conv_id = obj?.conversation_id || '';
                   // tts += obj.hasOwnProperty('data') ? obj?.data?.answer : obj.data?.anaswer || '';
@@ -3138,7 +3468,6 @@ async function llamaSendMessage(node,msgs) {
           }
 
           
-          // 「TODO1: tts中的文字完全正常，仅前端显示不正常」
           if ( tts_substring ) {
             let msg_ = tts_substring.trimStart();
             if( /[\u4e00-\u9fa5]/.test(msg_) ) {
@@ -3175,7 +3504,7 @@ async function llamaSendMessage(node,msgs) {
             if (animation_res.ok) {
               // const result = animation_res.json();
               let result = animation_res;
-              const str = result.choices?.[0]?.delta?.content || '<3>'; // TODO: 默认使用伸出双手的动作
+              const str = result.choices?.[0]?.delta?.content || '<3>'; // 默认使用伸出双手的动作
               result = [... str.matchAll(/<(\d+)>/g)].map(x => x[1]);
               const socket_body = {"action": result.map(x => animation_list[x].name)};
               // 向UE socket发送
@@ -3217,7 +3546,7 @@ async function llamaSendMessage(node,msgs) {
             try {
               // 动作驱动只能在web端完成，写入html中 | 以motion方式控制
               const m = JSON.parse(fn.arguments);
-              // TODO: 控制动作、手势、表情、姿势的方法 → 在fn.arguments添加如下字段
+              // 控制动作、手势、表情、姿势的方法 → 在fn.arguments添加如下字段
               // m: { action: '...', stillpose: '...', gesture: '...', mood: '...' }
               motion(m.action, m.stillpose, m.gesture, m.mood);
             } catch(motionError) {
@@ -3237,10 +3566,8 @@ async function llamaSendMessage(node,msgs) {
         }
 
         // modified: 测试动作控制
-        // 「TODO2: 此处能看到全部的文字信息，据此规划动作序列」 
+        // 此处能看到全部的文字信息，据此规划动作序列」
         try {
-            // motion('test_glb', null, null, null); // TODO: test only
-            // motion('test_fbx', null, null, null); // TODO: test only
             // test only when FBX exported
          } catch(motionError) {
            console.error(motionError);
@@ -3754,12 +4081,13 @@ function ensureParagraphStructure(pEl, isUserMessage) {
 
 // Add new message to UI
 function addMessage(user = false) {
-  const session = user ? d3.select(".message.user-message") : d3.select(".message.system-message");
+  // const session = user ? d3.select(".message.user-message") : d3.select(".message.system-message");
+  const session = user ? d3.select("#chat-container-right") : d3.select("#chat-container-left");
   const message = session.append("div");
 
   message.classed("message", true)
     .classed("user", user);
-    // .classed("blink", !user);
+  // message.classed("user-message", user);
 
   // 创建一个 <p> 段落作为消息第一行（后续 addText 会往这个 <p> 的 .message-content 写入）
   const p = message.node().appendChild(document.createElement('p'));
@@ -3770,7 +4098,8 @@ function addMessage(user = false) {
   ensureParagraphStructure(p, user);
 
   // scroll 保持不变
-  const nodeSessions = user ? d3.select("#user-messages").node() : d3.select("#system-messages").node();
+  // const nodeSessions = user ? d3.select("#user-messages").node() : d3.select("#system-messages").node();
+  const nodeSessions = user ? d3.select("#chat-container-right").node() : d3.select("#chat-container-left").node();
   nodeSessions.scrollTop = nodeSessions.scrollHeight;
   document.querySelectorAll('.message-content.caret').forEach(el => el.classList.remove('caret')); // user端取消闪烁
   // 返回 message.node() 保持不变（外部代码可以继续使用）
@@ -3780,7 +4109,8 @@ function addMessage(user = false) {
 // Add text to session
 function addText(node, s) { // s 是新的词（preprocess 已分词过）
   // 修正可能的拼写，确保获取正确的 scroll 容器
-  const nodeSessions = node.className === "user-messages" ? d3.select("#user-messages").node() : d3.select("#system-messages").node();
+  // const nodeSessions = node.className === "user-messages" ? d3.select("#user-messages").node() : d3.select("#system-messages").node();
+  const nodeSessions = node.className === "user-messages" ? d3.select("#chat-container-right").node() : d3.select("#chat-container-left").node();
   const onbottom = Math.abs(nodeSessions.scrollHeight - nodeSessions.scrollTop - nodeSessions.clientHeight) < 20;
 
   let last = node.lastElementChild;
@@ -4993,7 +5323,7 @@ document.addEventListener('DOMContentLoaded', async function(e) {
             nodeInput.dataset.input = text;
             addText(nodeInput,text);
             document.querySelectorAll('.message.user').forEach(el => el.classList.remove('caret'));
-            // TODO: 改成选中user session栏的对象
+            // 改成选中user session栏的对象
             e.property("value","");
 
             const nodeOutput = addMessage(false);
@@ -5246,6 +5576,17 @@ document.addEventListener('DOMContentLoaded', async function(e) {
     // 触发键盘事件
     inputElement.dispatchEvent(event_key);
     // e.dispatchEvent(event_key);
+  });
+
+  d3.select("#interruption").on('click', function(ev) {
+    head.stopSpeaking();
+    if (aiController) {
+      aiController.abort();
+      aiController = null;
+    }
+    // .inline-caret
+    document.querySelectorAll('.inline-caret').forEach(el => el.classList.remove('inline-caret'));
+    document.querySelectorAll('.message-content.caret').forEach(el => el.classList.remove('caret'));
   });
 
   // Reset range
@@ -5797,7 +6138,7 @@ document.addEventListener('DOMContentLoaded', async function(e) {
 <body class="theme-dark">
 
   <div id="chat-container-left" class="chat-container">
-    <h3>系统回复</h3>
+    <!-- <h3>系统回复</h3> -->
       <!-- <div id="view">
         <video id="video" autoplay loop muted playsinline>
           <source id="view-video" src="" type="video/mp4">
@@ -5805,12 +6146,11 @@ document.addEventListener('DOMContentLoaded', async function(e) {
       </div>
       <div id="avatar"></div>
       <div class="border starttransparent"></div> -->
-      <div id="system-messages" class="messages-area">
-        <!-- <div class="sessions"> -->
-            <div id="session-0" class="message system-message"></div>
-            <div id="session-1" class="session"></div>
-        <!-- </div> -->
-      </div>
+
+      <!-- <div id="system-messages" class="messages-area">
+        <div id="session-0" class="message system-message"></div>
+        <div id="session-1" class="session"></div>
+      </div> -->
       
   </div>
 
@@ -5835,8 +6175,10 @@ document.addEventListener('DOMContentLoaded', async function(e) {
       </div>
   </div>
 
-  <div id="right-column-wrapper">
-    <div id="chat-container-right" class="chat-container">
+  <div id="right-column-wrapper" class="chat-container">
+
+    
+    <div id="chat-container-right">
 
       <!-- <div class="pages"> -->
 
@@ -7320,19 +7662,19 @@ document.addEventListener('DOMContentLoaded', async function(e) {
 
         </div>
 
-        <div id="user-messages" class="messages-area">
-          <h3>用户输入</h3>
-          <div class="sessions">
+        <!-- <div id="user-messages" class="messages-area"> -->
+          <!-- <h3>用户输入</h3> -->
+          <!-- <div class="sessions">
             <div id="session-0" class="message user-message"></div>
             <div id="session-1" class="session"></div>
-          </div>
+          </div> -->
           <!-- 插入的：
             <div class="message user-message">你好</div> -->
           <!-- <div id="sessions">
             <div id="user-message" class="messages-area"></div>
             <div id="session-1" class="session"></div>
           </div> -->
-        </div>
+        <!-- </div> -->
 
         <div id="right-session" class="page noselect nodrag hidden">
 

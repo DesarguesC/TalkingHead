@@ -630,14 +630,14 @@ def genuine_ukey_access(ukey, user_ip, operation_time, operation_type, operation
         return 224
 
 
-# 服务静态文件（index_new.html 等）
+# 服务静态文件（index.html 等）
 # 已经删除此路由 | 此处无权限校验
 # [IMPORTANT]
 # @app.route('/')
 def serve_index():
     ukey, user_ip, current_time = get_log_string()
     log_ukey_access(ukey, user_ip, current_time, TYPE_MAP['login'], "", STATUS_MAP['success'], request.cookies.get("conv_id", "?"), errCode="none")
-    return send_from_directory('.', 'index_new.html')
+    return send_from_directory('.', 'index.html')
 
 # 服务其他静态文件（js, css, images 等）
 # @app.route('/<path:path>')
@@ -739,7 +739,7 @@ def ukey_access_handler():
    
     # 记录日志
     log_ukey_access(ukey, user_ip, current_time, TYPE_MAP['login'], "", STATUS_MAP['success'], token_request.cookies.get("conv_id", "?"), errCode=200)
-    return send_from_directory('./', 'index_new.html')
+    return send_from_directory('./', 'index.html')
     
     # # 返回成功响应
     # return jsonify({
