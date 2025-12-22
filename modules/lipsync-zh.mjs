@@ -342,7 +342,7 @@ class LipsyncZh {
     });
 
     // Viseme durations in relative unit (1=average)
-    // TODO: Check for statistics for English
+    // Check for statistics for English
     // this.visemeDurations = {
     //   'aa': 0.95, 'E': 0.90, 'I': 0.92, 'O': 0.96, 'U': 0.95, 
     //   'PP': 1.08, 'SS': 1.23, 'TH': 1, 'DD': 1.05, 'FF': 1.00,
@@ -599,7 +599,7 @@ class LipsyncZh {
         // 将特殊符号替换为对应的中文词汇
         return this.ChineseSymbols.hasOwnProperty(symbol) ? this.ChineseSymbols[symbol] : symbol;
       })
-      // TODO: 后面判定数字的时候处理一下小数点
+      // 后面判定数字的时候处理一下小数点
       // .replace(/(\d)\.(\d)/g, '$1点$2')  // 处理中文数字的小数点
       .replace(/(\d)\.\s*([\u4e00-\u9fa5])/g, '$1、$2') // 非数字意义的点号
       .replace(/([\u4e00-\u9fa5])(\d)\.\s*([\u4e00-\u9fa5])/g, '$1；$2、$3') // 非数字意义的点号
@@ -607,7 +607,7 @@ class LipsyncZh {
       .replace(/[#_*\":;]/g, '')         // 过滤特殊字符
       .replaceAll('  ',' ')              // 合并多个空格
       .trim(); // 处理了分点问题
-      // TODO: 处理数字符号的中文
+      // 处理数字符号的中文
   }
 
   /**

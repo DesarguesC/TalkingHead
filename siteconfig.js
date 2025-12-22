@@ -138,7 +138,7 @@ export const site = {
   }
 
 };
-// TODO: 控制动作、手势、表情、姿势的方法 → 在fn.arguments添加如下字段
+// 控制动作、手势、表情、姿势的方法 → 在fn.arguments添加如下字段
 // m: { action: '...', pose: '...', gesture: '...', mood: '...' }
 // action -> animations
 // pose -> poses

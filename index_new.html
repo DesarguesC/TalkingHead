@@ -6,7 +6,7 @@
   <meta charset="utf-8">
   <meta content="width=device-width, height=device-height, minimum-scale=1.0, maximum-scale=1.0, initial-scale=1.0, user-scalable=no, interactive-widget=resizes-content" name="viewport">
   <link rel="icon" type="image/jpg" href="favicon.jpg">
-  <!-- TODO: 替换这里的icon -->
+  <!-- TODO: 可以替换这里的icon -->
 
 
 <style>
@@ -19,7 +19,7 @@
   :root, .theme-dark {
       --colorBody: #88ccff;
       /* --colorBody: transparent; */
-      --colorBackground: #2d2d2d; /* 1. 将背景设置为深灰色 | TODO: 可以在这里修改背景颜色 */ 
+      --colorBackground: #2d2d2d; /* 1. 将背景设置为深灰色 | 可以在这里修改背景颜色 */ 
       --colorPanel: rgba(25, 28, 36, 0.85); /* 调整面板颜色以适应新背景 */
       --colorBorderPassive: rgba(136,204,255,0.4);
       --colorBorderActive: rgba(168, 169, 226, 0.9);
@@ -1356,7 +1356,7 @@ const grokChatCompletionsProxy = "/grok/v1/chat/completions"; // Grok-beta
 const llamaChatCompletionsProxy = "/llama/v1/chat/completions"; // Local llama.cpp server proxy
 
 const Yue_Xiaoyin_ChatCompletionsProxy = "/yuexiaoyin/v1/chat/completions"; // outside API proxy
-// TODO: 接入时用这个代理替代llamaChatCompletionsProxy即可
+// 接入时用这个代理替代llamaChatCompletionsProxy【区分大小写搜索`PROXY = `即可】
 
 const UESocketProxy = "/socket:ue/animation";
 
@@ -1866,7 +1866,7 @@ async function microsoftProcessQueue() {
         microsoftSynthesizer = new window.SpeechSDK.SpeechSynthesizer(config,null);
 
         // Viseme conversion from Microsoft to Oculus
-        // TODO: Check this conversion again!
+        // Check this conversion again!
         const visemeMap = [
           "sil", 'aa', 'aa', 'O', 'E', // 0 - 4
           'E', 'I', 'U', 'O', 'aa', // 5 - 9
@@ -2034,7 +2034,6 @@ async function whisperLoadMP3(file) {
             const startSegment = async () => {
               // Look at the camera
               head.lookAtCamera(500); 
-              // TODO: 坐标系与walking.fbx等保持一致？目前直接加载两个模型的方向不同，没有相机的话可能是坐标系吧（talkinghead本身bug？）
               head.speakWithHands();
             };
             json.segments.forEach( x => {
@@ -2783,7 +2782,6 @@ function openaiBuildMessage( extra_system_prompt = "") {
     if(x.role === "system") {
       n.value = condition + "仅返回不超过100字的中文, 禁用markdown格式, 禁止分点作答." + extra_system_prompt; // 约定只有中文且无markdoswn
       // n.value = condition + "禁用markdown格式, 禁止分点作答." + extra_system_prompt;
-      // TODO: 在此添加约束（如有需要）
     }
   });
 
@@ -3322,7 +3320,7 @@ async function grokSendMessage(node,msgs) {
 // Llama
 
 // Send messages to local LLama API and handle streamed response
-// TODO: 加入动作option，仿照openaiSendMessage
+// 加入动作option，仿照openaiSendMessage
 async function llamaSendMessage(node,msgs) {
 
   const PROXY = Yue_Xiaoyin_ChatCompletionsProxy;
@@ -3369,7 +3367,7 @@ async function llamaSendMessage(node,msgs) {
       mode: "cors",
       headers: {
         "Content-Type": "application/json",
-        "Authorization": "Bearer " + await jwtGet() // TODO: apikey
+        "Authorization": "Bearer " + await jwtGet() // apikey
       },
       body: JSON.stringify(body),
       credentials: 'same-origin',
@@ -3412,7 +3410,7 @@ async function llamaSendMessage(node,msgs) {
             if ( conv_id != '' ) {
               document.cookie = "conv_id=" + conv_id + "; path=/";
             }
-            if ( data.startsWith("data: ") ) { // TODO: 这个字段也要改
+            if ( data.startsWith("data: ") ) {
               let line = data.substring(6).trim(); // buffer
               if ( line === '[DONE]' ) {
                 done = true;
@@ -3423,7 +3421,7 @@ async function llamaSendMessage(node,msgs) {
                   // line = "";
                 } catch(error) {
                   console.log("Error JSON parsing line: " + line);
-                  // throw new Error( "Error JSON parsing line: " + line ); // TODO6：这里会出现奇怪的parsing错误，需要解决
+                  // throw new Error( "Error JSON parsing line: " + line ); // TODO：这里偶尔会出现parsing错误
                 }
 
                 if ( obj && obj.error ) throw new Error( obj.error.message || ''+res.status );
@@ -3436,9 +3434,6 @@ async function llamaSendMessage(node,msgs) {
                   node.dataset.output += obj?.choices?.[0]?.delta?.content || '';
                   tts += obj?.choices?.[0]?.delta?.content || '';
                 } else if (PROXY === Yue_Xiaoyin_ChatCompletionsProxy) {
-
-                  // TODO***: 解码后的格式？设置cookies，并连接好用于做tts的文字
-
                   tts += obj?.answer || '';
                   if (conv_id === '') conv_id = obj?.conversation_id || '';
                   // tts += obj.hasOwnProperty('data') ? obj?.data?.answer : obj.data?.anaswer || '';
@@ -3473,7 +3468,6 @@ async function llamaSendMessage(node,msgs) {
           }
 
           
-          // 「TODO1: tts中的文字完全正常，仅前端显示不正常」
           if ( tts_substring ) {
             let msg_ = tts_substring.trimStart();
             if( /[\u4e00-\u9fa5]/.test(msg_) ) {
@@ -3510,7 +3504,7 @@ async function llamaSendMessage(node,msgs) {
             if (animation_res.ok) {
               // const result = animation_res.json();
               let result = animation_res;
-              const str = result.choices?.[0]?.delta?.content || '<3>'; // TODO: 默认使用伸出双手的动作
+              const str = result.choices?.[0]?.delta?.content || '<3>'; // 默认使用伸出双手的动作
               result = [... str.matchAll(/<(\d+)>/g)].map(x => x[1]);
               const socket_body = {"action": result.map(x => animation_list[x].name)};
               // 向UE socket发送
@@ -3552,7 +3546,7 @@ async function llamaSendMessage(node,msgs) {
             try {
               // 动作驱动只能在web端完成，写入html中 | 以motion方式控制
               const m = JSON.parse(fn.arguments);
-              // TODO: 控制动作、手势、表情、姿势的方法 → 在fn.arguments添加如下字段
+              // 控制动作、手势、表情、姿势的方法 → 在fn.arguments添加如下字段
               // m: { action: '...', stillpose: '...', gesture: '...', mood: '...' }
               motion(m.action, m.stillpose, m.gesture, m.mood);
             } catch(motionError) {
@@ -3572,10 +3566,8 @@ async function llamaSendMessage(node,msgs) {
         }
 
         // modified: 测试动作控制
-        // 「TODO2: 此处能看到全部的文字信息，据此规划动作序列」 
+        // 此处能看到全部的文字信息，据此规划动作序列」
         try {
-            // motion('test_glb', null, null, null); // TODO: test only
-            // motion('test_fbx', null, null, null); // TODO: test only
             // test only when FBX exported
          } catch(motionError) {
            console.error(motionError);
@@ -5331,7 +5323,7 @@ document.addEventListener('DOMContentLoaded', async function(e) {
             nodeInput.dataset.input = text;
             addText(nodeInput,text);
             document.querySelectorAll('.message.user').forEach(el => el.classList.remove('caret'));
-            // TODO: 改成选中user session栏的对象
+            // 改成选中user session栏的对象
             e.property("value","");
 
             const nodeOutput = addMessage(false);

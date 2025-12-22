@@ -23,7 +23,7 @@
 */
 
 /**
- * TODO: 控制动作、手势、表情、姿势的方法
+ * 控制动作、手势、表情、姿势的方法
  * playAnimation [deleted]
  * playPose
  * playGesture
@@ -49,7 +49,6 @@ import CompleteDict from './complete.mjs';
 // import { linearToneMapping } from 'three/tsl';
 // import CompleteDict from "https://cdn.jsdelivr.net/npm/@pinyin-pro/data@1.2.0/dist/complete.min.js";
 addDict(CompleteDict);
-//  TODO: 就算加不了，分词以后把数字手动合并，给这部分做this.ReplaceNumberInString
 
 
 // Temporary objects for animation loop
@@ -303,7 +302,6 @@ class TalkingHead {
           // position字段不变，rotation全0
           // 'pelvis.position':{'x':0,'y':0,'z':0}, 'pelvis.rotation':{'x':0,'y':0,'z':0}, 'spine_01.rotation':{'x':0,'y':0,'z':0}, 'spine_02.rotation':{'x':0,'y':0,'z':0}, 'spine_03.rotation':{'x':0,'y':0,'z':0}, 'neck_01.rotation':{'x':0,'y':0,'z':0}, 'head.rotation':{'x':0,'y':0,'z':0}, 'clavicle_l.rotation':{'x':0,'y':0,'z':0}, 'upperarm_l.rotation':{'x':0,'y':0,'z':0}, 'lowerarm_l.rotation':{'x':0,'y':0,'z':0}, 'hand_l.rotation':{'x':0,'y':0,'z':0}, 'thumb_01_l.rotation':{'x':0,'y':0,'z':0}, 'thumb_02_l.rotation':{'x':0,'y':0,'z':0}, 'thumb_03_l.rotation':{'x':0,'y':0,'z':0}, 'index_01_l.rotation':{'x':0,'y':0,'z':0}, 'index_02_l.rotation':{'x':0,'y':0,'z':0}, 'index_03_l.rotation':{'x':0,'y':0,'z':0}, 'middle_01_l.rotation':{'x':0,'y':0,'z':0}, 'middle_02_l.rotation':{'x':0,'y':0,'z':0}, 'middle_03_l.rotation':{'x':0,'y':0,'z':0}, 'ring_01_l.rotation':{'x':0,'y':0,'z':0}, 'ring_02_l.rotation':{'x':0,'y':0,'z':0}, 'ring_03_l.rotation':{'x':0,'y':0,'z':0}, 'pinky_01_l.rotation':{'x':0,'y':0,'z':0}, 'pinky_02_l.rotation':{'x':0,'y':0,'z':0}, 'pinky_03_l.rotation':{'x':0,'y':0,'z':0}, 'clavicle_r.rotation':{'x':0,'y':0,'z':0}, 'upperarm_r.rotation':{'x':0,'y':0,'z':0}, 'lowerarm_r.rotation':{'x':0,'y':0,'z':0}, 'hand_r.rotation':{'x':0,'y':0,'z':0}, 'thumb_01_r.rotation':{'x':0,'y':0,'z':0}, 'thumb_02_r.rotation':{'x':0,'y':0,'z':0}, 'thumb_03_r.rotation':{'x':0,'y':0,'z':0}, 'index_01_r.rotation':{'x':0,'y':0,'z':0}, 'index_02_r.rotation':{'x':0,'y':0,'z':0}, 'index_03_r.rotation':{'x':0,'y':0,'z':0}, 'middle_01_r.rotation':{'x':0,'y':0,'z':0}, 'middle_02_r.rotation':{'x':0,'y':0,'z':0}, 'middle_03_r.rotation':{'x':0,'y':0,'z':0}, 'ring_01_r.rotation':{'x':0,'y':0,'z':0}, 'ring_02_r.rotation':{'x':0,'y':0,'z':0}, 'ring_03_r.rotation':{'x':0,'y':0,'z':0}, 'pinky_01_r.rotation':{'x':0,'y':0,'z':0}, 'pinky_02_r.rotation':{'x':0,'y':0,'z':0}, 'pinky_03_r.rotation':{'x':0,'y':0,'z':0}, 'thigh_l.rotation':{'x':0,'y':0,'z':0}, 'calf_l.rotation':{'x':0,'y':0,'z':0}, 'foot_l.rotation':{'x':0,'y':0,'z':0}, 'ball_l.rotation':{'x':0,'y':0,'z':0}, 'thigh_r.rotation':{'x':0,'y':0,'z':0}, 'calf_r.rotation':{'x':0,'y':0,'z':0}, 'foot_r.rotation':{'x':0,'y':0,'z':0}, 'ball_r.rotation':{'x':0,'y':0,'z':0}
           'pelvis.position':{'x':0,'y':0,'z':0}, 'pelvis.rotation':{'x':-0.003,'y':-0.017,'z':0.1}, 'spine_01.rotation':{'x':-0.103,'y':-0.002,'z':-0.063}, 'spine_02.rotation':{'x':0.042,'y':-0.02,'z':-0.069}, 'spine_03.rotation':{'x':0.131,'y':-0.012,'z':-0.065}, 'neck_01.rotation':{'x':0.027,'y':0.006,'z':0}, 'head.rotation':{'x':0.077,'y':-0.065,'z':0}, 'clavicle_l.rotation':{x:1.599, y:0.084, z:-1.77}, 'upperarm_l.rotation':{'x':0,'y':0,'z':0}, 'lowerarm_l.rotation':{'x':0,'y':0,'z':0}, 'hand_l.rotation':{'x':-Math.PI/2,'y':0,'z':0}, 'thumb_01_l.rotation':{'x':0,'y':0,'z':0}, 'thumb_02_l.rotation':{'x':0,'y':0,'z':0}, 'thumb_03_l.rotation':{'x':0,'y':0,'z':0}, 'index_01_l.rotation':{'x':0,'y':0,'z':0}, 'index_02_l.rotation':{'x':0,'y':0,'z':0}, 'index_03_l.rotation':{'x':0,'y':0,'z':0}, 'middle_01_l.rotation':{'x':0,'y':0,'z':0}, 'middle_02_l.rotation':{'x':0,'y':0,'z':0}, 'middle_03_l.rotation':{'x':0,'y':0,'z':0}, 'ring_01_l.rotation':{'x':0,'y':0,'z':0}, 'ring_02_l.rotation':{'x':0,'y':0,'z':0}, 'ring_03_l.rotation':{'x':0,'y':0,'z':0}, 'pinky_01_l.rotation':{'x':0,'y':0,'z':0}, 'pinky_02_l.rotation':{'x':0,'y':0,'z':0}, 'pinky_03_l.rotation':{'x':0,'y':0,'z':0}, 'clavicle_r.rotation':{'x':-Math.PI/2,'y':Math.PI/2,'z':-Math.PI/2}, 'upperarm_r.rotation':{'x':0,'y':0,'z':0}, 'lowerarm_r.rotation':{'x':0,'y':0,'z':0}, 'hand_r.rotation':{'x':-Math.PI/2,'y':0,'z':0}, 'thumb_01_r.rotation':{'x':0,'y':0,'z':0}, 'thumb_02_r.rotation':{'x':0,'y':0,'z':0}, 'thumb_03_r.rotation':{'x':0,'y':0,'z':0}, 'index_01_r.rotation':{'x':0,'y':0,'z':0}, 'index_02_r.rotation':{'x':0,'y':0,'z':0}, 'index_03_r.rotation':{'x':0,'y':0,'z':0}, 'middle_01_r.rotation':{'x':0,'y':0,'z':0}, 'middle_02_r.rotation':{'x':0,'y':0,'z':0}, 'middle_03_r.rotation':{'x':0,'y':0,'z':0}, 'ring_01_r.rotation':{'x':0,'y':0,'z':0}, 'ring_02_r.rotation':{'x':0,'y':0,'z':0}, 'ring_03_r.rotation':{'x':0,'y':0,'z':0}, 'pinky_01_r.rotation':{'x':0,'y':0,'z':0}, 'pinky_02_r.rotation':{'x':0,'y':0,'z':0}, 'pinky_03_r.rotation':{'x':0,'y':0,'z':0}, 'thigh_l.rotation':{'x':0,'y':0,'z':0}, 'calf_l.rotation':{'x':0,'y':0,'z':0}, 'foot_l.rotation':{'x':0,'y':0,'z':0}, 'ball_l.rotation':{'x':0,'y':0,'z':Math.PI/2}, 'thigh_r.rotation':{'x':0,'y':0,'z':Math.PI}, 'calf_r.rotation':{'x':0,'y':0,'z':0}, 'foot_r.rotation':{'x':0,'y':0,'z':0}, 'ball_r.rotation':{'x':0,'y':0,'z':Math.PI/2}
-          // TODO: 先找到将其变为正常的变换
         }
       },
 
@@ -1296,7 +1294,7 @@ class TalkingHead {
       throw new Error("Invalid parameter. The avatar must have at least 'url' specified.");
     }
 
-    // Loader | TODO: GLB error starts ↓
+    // Loader | GLB error starts ↓
     const loader = new GLTFLoader();
 
     const dracoLoader = new DRACOLoader();
@@ -2418,7 +2416,7 @@ class TalkingHead {
     const currentPose_candedates = this.singlePose[poseName] || (['U_Idle_01_Cycle', 'U_Idle_02_Cycle', 'U_Idle_03_Cycle'][Math.floor(Math.random() * 3)]);
     
     // Priority: set single action for the default pose
-    const pose_path = `./animations/${currentPose_candedates}.glb`; // TODO: get path form private property
+    const pose_path = `./animations/${currentPose_candedates}.glb`; // get path form private property
     const scale_ = new THREE.Vector3(scale, scale, scale);
     const glb = await loader.loadAsync( pose_path ); // without await ? || 将后面的移上来
 
@@ -2536,7 +2534,7 @@ class TalkingHead {
     this.moodName = s;
     this.mood = this.animMoods[this.moodName];
 
-    // Reset morph target baseline // TODO: eyes
+    // Reset morph target baseline
     for( let mt of Object.keys(this.mtAvatar) ) {
       let val = this.mtBaselineExceptions.hasOwnProperty(mt) ? this.mtBaselineExceptions[mt] : this.mtBaselineDefault;
       if ( this.mood.baseline.hasOwnProperty(mt) ) {
@@ -3037,7 +3035,6 @@ class TalkingHead {
           const meta = mt.includes('viseme_') ? mt.split('_')[1] : mt; // mt: e.g. 'viseme_PP'
           if ( this.mtAvatar.hasOwnProperty(meta) ) {
             mt = meta;
-            // TODO: 更新视素交互列表
             if ( vs[j+1] === null ) continue; // Last or unknown target, skip
 
             // Start value and target
@@ -3077,7 +3074,6 @@ class TalkingHead {
 
             // Update
             m.needsUpdate = true;
-          // TODO ***: candidate value of `mt` ?
           } else if ( mt === 'eyeContact' && vs[j] !== null && isEyeContact !== false ) {
             isEyeContact = Boolean(vs[j]) ;
           } else if ( mt === 'headMove' && vs[j] !== null && isHeadMove !== false ) {
@@ -3143,11 +3139,10 @@ class TalkingHead {
           break;
 
         case 'gesture':
-          // TODO: check type of `j`
-          this.playGesture( ...j, 3, false, 1000, this.GLBmotion, j ); // TODO：这里是加入glb动作的切口
+          this.playGesture( ...j, 3, false, 1000, this.GLBmotion, j );
           break;
 
-        case 'function': // TODO: animate also can be added here
+        case 'function':
           if ( j && typeof j === "function" ) {
             j();
           }
@@ -3195,7 +3190,6 @@ class TalkingHead {
 
     }
     
-    // Eye contact | TODO: 是否保留这一段EyeContact逻辑 => 暂时没发现控制逻辑
     // if (isEyeContact || isHeadMove) {
     //   if ( isEyeContact ) {
     //     Object.assign( this.mtAvatar['EyeLookInLeft'], { system: e.y < 0 ? -e.y : 0, needsUpdate: true });
@@ -3496,7 +3490,7 @@ class TalkingHead {
       }
 
       // Add letter to spoken word
-      // TODO: dividersWords
+      // dividersWords
       if ( isSpeakable ) {
         if ( !excludes || excludes.every( x => (i < x[0]) || (i > x[1]) ) ) {
           textWord += letters[i];
@@ -3887,7 +3881,6 @@ class TalkingHead {
       let delay = 0;
       if ( item.anim ) { // 直接来自于line.anim (audioPlaylist.push({anim: line.anim, audio: line.audio})) 
         // line.anim: { template: 'visemes', ts: ..., vs: ...}
-        // TODO: check here
         // Find the lowest negative time point, if any
         delay = Math.abs(Math.min(0, ...item.anim.map( x => Math.min(...x.ts) ) ) );
         item.anim.forEach( x => {
@@ -3941,7 +3934,7 @@ class TalkingHead {
         // Look at the camera
         this.lookAtCamera(500);
         
-        // TODO: check {anim: line.anim, audio: line.audio}
+        // check {anim: line.anim, audio: line.audio}
         // Make a playlist
         this.audioPlaylist.push({ anim: line.anim, audio: line.audio });
         // this.speakWithHands(undefined, undefined, able_to_push);
@@ -4074,7 +4067,7 @@ class TalkingHead {
             this.audioPlaylist.push({ anim: line.anim, audio: audio });
             this.onSubtitles = line.onSubtitles || null; // addText
             this.resetLips();
-            if ( line.mood ) this.setMood( line.mood ); // (TODO4, TODO5) => 也可以在这里加动作驱动
+            if ( line.mood ) this.setMood( line.mood );
             this.playAudio();
 
           } else {
@@ -4703,7 +4696,6 @@ class TalkingHead {
         });
 
         // Add to pose
-        // TODO: estimate a better pose
         this.setView( this.opt.cameraView )
         const newPose = { props: props };
         if ( props['pelvis.position'] ) {

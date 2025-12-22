@@ -227,7 +227,7 @@ class LipsyncEn {
     });
 
     // Viseme durations in relative unit (1=average)
-    // TODO: Check for statistics for English
+    // Check for statistics for English
     this.visemeDurations = {
       'aa': 0.95, 'E': 0.90, 'I': 0.92, 'O': 0.96, 'U': 0.95, 'PP': 1.08,
       'SS': 1.23, 'TH': 1, 'DD': 1.05, 'FF': 1.00, 'kk': 1.21, 'nn': 0.88,

@@ -547,7 +547,7 @@ class DynamicBones {
       arr[0] = v.x;
       arr[1] = v.y;
       arr[2] = -v.z;
-      arr[3] = v.length() / 3; // TODO: Hack, fix this in later versions
+      arr[3] = v.length() / 3; // Hack, fix this in later versions
 
       // External effect, children
       if ( d.children ) {

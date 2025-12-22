@@ -158,8 +158,8 @@ def status():
 
 # Llama 服务器地址
 LLAMA_SERVER = "http://127.0.0.1:7001" 
-# Yuexiaoyin_SERVER = "https://api.yuexiaoyin.com"  # TODO: 替换为内网实际地址
-Yuexiaoyin_SERVER = "https://api.dify.ai"
+# 此处几个TODO为「对接确认点」
+Yuexiaoyin_SERVER = "https://api.dify.ai" # TODO: 替换为内网实际地址
 # 需要用本机上的方法，整机测试时需将实验室服务器挂入子网中访问 (模拟后续使用内网API访问)
 WHISPER_SERVER = "http://127.0.0.1:7002"
 GTTS_SERVER = "http://127.0.0.1:7010"
@@ -265,7 +265,7 @@ def get_failure_html(code, message):
         </body>
         </html>
         """.format(format_code=code, format_message=message, xxx_code=code, err_message=message, codeeee=code)
-# TODO: 返回首页处的href="/"修改为重定向前的路径
+# TODO: <a class="btn" href="/">返回首页</a> 中的href="/"修改为重定向前的路径
 
 # ===== WebSocket事件 =====
 @socketio.on('connect')
@@ -485,7 +485,7 @@ def get_client_ip():
 def get_log_string():
     ukey = request.args.get('ukey')
     if not ukey:
-        print("WARNING: no ukey valid") # TODO: only for test
+        print("WARNING: no ukey valid")
         ukey = "test"
     user_ip = get_client_ip()
     current_time = datetime.now().strftime("%y-%m-%d %H-%M-%S")
@@ -517,16 +517,18 @@ def log_ukey_access(ukey, user_ip, operation_time, operation_type, operation_con
                     operation_status, conv_id, errCode=None, errMsg=None):
     """记录ukey访问日志到文件和数据库"""
     # conv_id = get_conversation_id()
-    # 格式化日志信息 | TODO: 替换key为数据库中的字段
-    log_data = {
-        "ukey": ukey,
-        "user_ip": user_ip,
-        "received_at": operation_time,
-        "type": operation_type,
-        "content": operation_content,
-        "status": operation_status,
-        "conv_id": conv_id
-    }
+    # 格式化日志信息
+    # 
+    # ↓ reqParams格式 ↓
+    # log_data = {
+    #     "ukey": ukey,
+    #     "user_ip": user_ip,
+    #     "received_at": operation_time,
+    #     "type": operation_type,
+    #     "content": operation_content,
+    #     "status": operation_status,
+    #     "conv_id": conv_id
+    # }
     # {
     #     "用户身份": ukey,                   # 用户身份 - ukey
     #     "用户IP地址": user_ip,              # 用户IP
@@ -545,11 +547,11 @@ def log_ukey_access(ukey, user_ip, operation_time, operation_type, operation_con
     # 2. 发送到数据库服务器
     try:
         # response = requests.post(
-        #     f'{DATABASE_SERVER}/database/api/write', # TODO: 路由未知，需要替换
+        #     f'{DATABASE_SERVER}/database/api/write', 
         #     json=log_data,
         #     headers={
         #         'Content-Type': 'application/json',
-        #         'Authorization': 'Bearer ', # TODO: 可能还有一个token
+        #         'Authorization': 'Bearer ', 
         #         },
         #     timeout=5  # 5秒超时
         # )
@@ -570,7 +572,7 @@ def genuine_ukey_access(ukey, user_ip, operation_time, operation_type, operation
                         operation_status, conv_id, errCode=None, errMsg=None):
     """记录ukey访问日志到文件和数据库"""
     # conv_id = get_conversation_id()
-    # 格式化日志信息 | TODO: 替换key为数据库中的字段
+    # 格式化日志信息 | TODO: 替换key为数据库中的字段 | 已经自定义好提供
     reqParams = {
         "ukey": ukey,
         "user_ip": user_ip,
@@ -586,13 +588,13 @@ def genuine_ukey_access(ukey, user_ip, operation_time, operation_type, operation
             set_sid_if_needed if operation_content == 'login' else yuexiaoyin_chat
         ),
         "operDesc": operation_type,
-        "serviceID": "DigitizedHuman",       # TODO: 替换
-        "serviceName": "数字人",     # TODO: 替换
+        "serviceID": "DigitizedHuman", # TODO: serviceID看是否要再替换
+        "serviceName": "数字人", # serviceName看是否要再替换
         "reqParams": reqParams,
         "result": operation_status,
         "success": operation_status == STATUS_MAP['success'],
-        "errorCode": errCode,       # TODO: 替换
-        "errorDesc": ErrorMap.get(str(errCode), ErrorMap["500"]) if errMsg is None else errMsg,     # TODO: 替换
+        "errorCode": errCode,       # TODO: 检查errorCode和errorDesc格式等，是否是数据库写的直接返回值？「对接确认点」
+        "errorDesc": ErrorMap.get(str(errCode), ErrorMap["500"]) if errMsg is None else errMsg,
     }
     
     # 1. 写入本地日志文件
@@ -604,12 +606,11 @@ def genuine_ukey_access(ukey, user_ip, operation_time, operation_type, operation
     # 2. 发送到数据库服务器
     try:
         response = requests.post(
-            # f'{DATABASE_SERVER}/database/api/write', # TODO: 路由未知，需要替换
             f'{DATABASE_SERVER}/wx/log/sysoper/writeOperLog',
             json=LOG_DATA,
             headers={
                 'Content-Type': 'application/json',
-                'Authorization': 'Bearer ', # TODO: 可能还有一个token
+                'Authorization': 'Bearer ',
                 },
             timeout=5  # 5秒超时
         )
@@ -630,7 +631,7 @@ def genuine_ukey_access(ukey, user_ip, operation_time, operation_type, operation
 
 
 # 服务静态文件（index_new.html 等）
-# TODO: 部署时删除此路由 | 此处无权限校验
+# 已经删除此路由 | 此处无权限校验
 # [IMPORTANT]
 # @app.route('/')
 def serve_index():
@@ -645,7 +646,7 @@ def serve_index():
 #         return monitor_page()
 #     return send_from_directory('.', path)
 
-# TODO: 部署时删除此路由
+# 已删除测试路由
 # [IMPORTANT]
 # @app.route('/show224')
 def show_224():
@@ -679,13 +680,17 @@ def show_err_page(code):
 def ukey_access_handler():
     """处理带有ukey参数的访问请求"""
     # 获取ukey参数
-    ukey = request.args.get('ukey')
+    ukey = request.args.get('ukey', '')
+    # TODO: 也从cookies中查找ukey参数？但若两者冲突时，更新cookies
     
-    if not ukey:
-        return jsonify({
-            "status": "error",
-            "message": "缺少ukey参数"
-        }), 400
+    # 自然会被deny
+    # if not ukey:
+    #     return jsonify({
+    #         "status": "error",
+    #         "message": "缺少ukey参数"
+    #     }), 400
+
+    # TODO: 设置ukey于cookies中?
 
 
     # 获取用户IP
@@ -747,9 +752,9 @@ def ukey_access_handler():
     #     }
     # })
 
-# TODO: 部署时删除此路由
+# 已删除测试路由
 # [IMPORTANT]
-@app.route('/logs/recent')
+# @app.route('/logs/recent')
 def show_recent_logs():
     """显示最近的日志记录（仅用于调试）"""
     try:
@@ -833,7 +838,7 @@ llamaChatCompletionsProxy [javascript fetch]
         mode: "cors",
         headers: {
             "Content-Type": "application/json",
-            "Authorization": "Bearer " + await jwtGet() // TODO: apikey
+            "Authorization": "Bearer " + await jwtGet()
         },
         body: JSON.stringify(body),
         signal
@@ -883,10 +888,10 @@ def yuexiaoyin_chat():
         "query": query,
         "response_mode": "streaming",
         "conversation_id": conv_id, # 后续放在request中
-        "user": "111", # TODO: 给什么填什么
+        "user": "111", # TODO: user字段信息从哪里获取（session_id? ukey? ...） | 「对接点」
         "files":[]
     })
-    # TODO: inputs里面的role, content, name等结构体字段可能需要修改
+    # TODO: inputs里面的role, content, name等结构体字段可能需要修改 | 「对接点」
 
     logger.info(f"Extracted New Request: {new_request}") # DEBUG
     print(f"Extracted New Request: {new_request}")
@@ -924,7 +929,7 @@ def yuexiaoyin_chat():
         # 转发请求到 Llama 服务器
         if code == 200:
             response = requests.post(
-                f"{Yuexiaoyin_SERVER}/v1/chat-messages", # TODO: 替换为 Yuexiaoyin_SERVER，以及后面的路由需要替换
+                f"{Yuexiaoyin_SERVER}/v1/chat-messages",
                 json=new_request.json,
                 headers={
                     'Content-Type': 'application/json',
@@ -1158,9 +1163,9 @@ def run_periodic_logging():
         time.sleep(10)
 
 # 查看 session log
-# TODO: 部署时删除此路由
+# 已删除测试路由
 # [IMPORTANT]
-@app.route('/monitor')
+# @app.route('/monitor')
 def monitor_page():
     """
     在网页上展示 user.txt 的内容。
