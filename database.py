@@ -15,7 +15,52 @@ def TokenHasAuthorized(token, restUri):
 log_storage = []
 
 
-@app.route('/wx/sys/permit/verifyToken', methods=['POST'])
+
+@app.route('/nsw/sys/permit/verifyToken', methods=['POST'])
+def token_verify():
+    """模拟授权验证接口,验证token是否有效的路由和这个接口一样，但请求参数不同"""
+    try:
+        data = request.json
+        if 'restUri' not in data:
+            if  not isGenuinToken(data.get('token','')):
+                return jsonify({
+                    "code": 226,
+                    "message": "Token无效",
+                }), 226
+            
+            return jsonify({
+                "code": 200,
+                "message": "成功,Token有效",
+            }), 200
+            
+            
+
+
+        token = data.get('token', '')
+        restUri = data.get('restUri', '')
+        
+        if TokenHasAuthorized(token, restUri):
+            return jsonify({
+                "code": 200,
+                "message": "Token已授权",
+                "data": 0
+            }), 200
+        else:
+            return jsonify({
+                "code": 227,
+                "message": "Token无权限，接口未授权",
+                "data": -1
+            }), 227
+            
+    except Exception as e:
+        print(f'Line - 54: ERR - {e}')
+        return jsonify({
+            "code": 224,
+            "message": f"服务器错误: {str(e)}",
+            "data": -1
+        }), 224
+
+@app.route('/nsw/sys/permit/checkPermit', methods=['POST'])
 def authorization_verify():
     """模拟授权验证接口,验证token是否有效的路由和这个接口一样，但请求参数不同"""
     try:
@@ -59,7 +104,7 @@ def authorization_verify():
             "data": -1
         }), 224
 
-@app.route('/wx/log/sysoper/writeOperLog', methods=['POST'])
+@app.route('/nsw/log/sysoper/writeOperLog', methods=['POST'])
 def receive_log_genuine():
     """接收并存储日志数据"""
     try:
@@ -119,7 +164,7 @@ def receive_log():
         data = request.json
         
         # 验证必需字段
-        required_fields = ['ukey', 'user_ip', 'time', 'type', 'content', 'status', 'conv_id']
+        required_fields = ['wxtoken', 'user_ip', 'time', 'type', 'content', 'status', 'conv_id']
         for field in required_fields:
             if field not in data:
                 return jsonify({

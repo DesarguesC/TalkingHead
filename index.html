@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>「粤晓隐」 AI 数字人</title>
+  <title>「岳笑笑」 AI 数字人</title>
 
   <meta charset="utf-8">
   <meta content="width=device-width, height=device-height, minimum-scale=1.0, maximum-scale=1.0, initial-scale=1.0, user-scalable=no, interactive-widget=resizes-content" name="viewport">
@@ -1202,15 +1202,18 @@
 
 
 
+<script src="/node_modules/d3/dist/d3.min.js"></script>
+<script>
+  window.esmsInitOptions = { shimMode: true };
+</script>
 
-<script src="https://d3js.org/d3.v6.min.js"></script>
-<script async src="https://cdn.jsdelivr.net/npm/es-module-shims@1.7.1/dist/es-module-shims.js"></script>
-<!-- 为了能够调用静态的环境，请确保运行`npm install <package>`安装了如下package -->
-<script type="importmap">
-{ "imports":
-  {
+<script src="/node_modules/es-module-shims/dist/es-module-shims.js"></script>
+
+,,
+<script type="importmap-shim">
+{
+  "imports": {
     "three": "/node_modules/three/build/three.module.js",
-    "three/examples/": "/node_modules/three/examples/",
     "three/addons/": "/node_modules/three/examples/jsm/",
     "dompurify": "/node_modules/dompurify/dist/purify.es.mjs",
     "marked": "/node_modules/marked/lib/marked.esm.js",
@@ -1219,11 +1222,21 @@
   }
 }
 </script>
+
+<script>
+    const urlT = new URLSearchParams(window.location.search).get('wxtoken');
+    const cookieT = document.cookie.match(/ukey=([^;]+)/)?.[1];
+
+    console.log('Token from URL:', urlT);
+    console.log('Token from Cookie:', cookieT);
+    console.log('Final Token sent to 3rd-party:', urlT || cookieT);
+</script>
+
 <!-- importmap的末项绝对不能加逗号 -->
-<script src="https://cdn.jsdelivr.net/npm/microsoft-cognitiveservices-speech-sdk@latest/distrib/browser/microsoft.cognitiveservices.speech.sdk.bundle-min.js"></script>
+<script src="/node_modules/microsoft-cognitiveservices-speech-sdk/distrib/browser/microsoft.cognitiveservices.speech.sdk.bundle-min.js"></script>
 
 
-<script src="https://cdn.socket.io/4.6.1/socket.io.min.js"></script>
+<script src="/node_modules/socket.io-client/dist/socket.io.min.js"></script>
 <script>
     // --- 心跳机制核心脚本 ---
 
@@ -1243,6 +1256,18 @@
     // 1. 当成功连接到 WebSocket 时触发
     socket.on('connect', () => {
         console.log('✅ WebSocket 连接成功! SID:', socket.id);
+
+        // 获取查询字符串
+        const queryString = window.location.search;
+
+        // 使用 URLSearchParams 解析查询字符串
+        const urlParams = new URLSearchParams(queryString);
+
+        // 获取特定的参数
+        const paramValue = urlParams.get('wxtoken');
+        console.log('UKEY from server:', paramValue);
+
+        
         
         // 清除旧的定时器（如果存在）
         if (heartbeatInterval) {
@@ -1334,13 +1359,16 @@
 
 </script>
 
-<script type="module">
-  
+//修改module  = module-shim,老浏览器不理解什么是module
+<script type="module-shim">
+
 import { site } from './siteconfig.js'
 import { TalkingHead } from "./modules/talkinghead.mjs";
-import dompurify from 'dompurify';
-import { marked } from 'marked';
-import { Converter } from 'opencc-js';
+import dompurify from './node_modules/dompurify/dist/purify.es.mjs';
+//import { marked } from 'marked';
+import { marked } from './node_modules/marked/lib/marked.esm.js';
+//import { Converter } from 'opencc-js';
+import { Converter } from './node_modules/opencc-js/dist/esm/full.js';
 
 // import { UESocketProxy } from './modules/socketService.mjs';
 
@@ -1509,7 +1537,7 @@ const i18n = {
     'ai-ai2': 'AI response #2', 'Example1': 'Example-1', 'Example2': 'Example-2',
     'theme-wide': 'Widescreen', 'theme-43': '4:3', 'theme-landscape': 'Landscape',
     'theme-portrait': 'Portrait', 'voice-test': 'Speak', 'ai-stop': 'Stop',
-    'ai-user': 'User', 'input': '给 「粤晓隐」 发送消息', 'en': 'English', 'fi': 'Finnish',
+    'ai-user': 'User', 'input': '给 「岳笑笑」 发送消息', 'en': 'English', 'fi': 'Finnish',
     'ai-stopword': 'Word', 'ai-username': 'Name', 'LightAmbient': 'Ambient',
     'LightDirect': 'Direct', 'LightSpot': 'Spot', 'theme-full': "Fullscreen",
     'lt': 'Lithuanian', 'test-sentence': "Write your test sentence.",
@@ -1811,7 +1839,7 @@ async function microsoftSpeak(s, node=null, onprocessed=null) {
       "xml:lang='" + lang + "'>" +
       "<voice name='" + id + "'>" +
       "<mstts:viseme type='redlips_front'/>" +
-      s.replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;') +
+      s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;') +
       "</voice>" +
       "</speak>";
 
@@ -2370,8 +2398,8 @@ async function recordingRecord() {
 
                 let s = json.text
                   .replace(/\[[^\]]+\]/g, '')
-                  .replaceAll(/[^\p{L}\p{N},\.\p{Quotation_Mark}!€\$\+\p{Dash_Punctuation}%&\?\(\)\* ]/ug,"")
-                  .replaceAll("  "," ")
+                  .replace(/[^\p{L}\p{N},\.\p{Quotation_Mark}!€\$\+\p{Dash_Punctuation}%&\?\(\)\* ]/ug,"")
+                  .replace(/  /g," ")
                   .trim();
                 
                 transcribedText = s.replace(/\([^()]*\)/g, ''); // 去掉括号内的内容
@@ -2515,9 +2543,7 @@ const svgSpeak = '<svg viewBox="-2 -2 28 28" xmlns="http://www.w3.org/2000/svg">
 const svgStop = '<svg viewBox="-2 -2 28 28" xmlns="http://www.w3.org/2000/svg"><path d="M6.2253 4.81108C5.83477 4.42056 5.20161 4.42056 4.81108 4.81108C4.42056 5.20161 4.42056 5.83477 4.81108 6.2253L10.5858 12L4.81114 17.7747C4.42062 18.1652 4.42062 18.7984 4.81114 19.1889C5.20167 19.5794 5.83483 19.5794 6.22535 19.1889L12 13.4142L17.7747 19.1889C18.1652 19.5794 18.7984 19.5794 19.1889 19.1889C19.5794 18.7984 19.5794 18.1652 19.1889 17.7747L13.4142 12L19.189 6.2253C19.5795 5.83477 19.5795 5.20161 19.189 4.81108C18.7985 4.42056 18.1653 4.42056 17.7748 4.81108L12 10.5858L6.2253 4.81108Z" fill="currentColor" /></svg>';
 const svgRepost = '<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M13.1459 11.0499L12.9716 9.05752L15.3462 8.84977C14.4471 7.98322 13.2242 7.4503 11.8769 7.4503C9.11547 7.4503 6.87689 9.68888 6.87689 12.4503C6.87689 15.2117 9.11547 17.4503 11.8769 17.4503C13.6977 17.4503 15.2911 16.4771 16.1654 15.0224L18.1682 15.5231C17.0301 17.8487 14.6405 19.4503 11.8769 19.4503C8.0109 19.4503 4.87689 16.3163 4.87689 12.4503C4.87689 8.58431 8.0109 5.4503 11.8769 5.4503C13.8233 5.4503 15.5842 6.24474 16.853 7.52706L16.6078 4.72412L18.6002 4.5498L19.1231 10.527L13.1459 11.0499Z" fill="currentColor" /></svg>';
 
-const condition = `你是一位国安隐蔽战线女警员，名叫粤晓隐,25岁,女。你出生于一个警察家庭,父亲是一名老刑警,母亲是法学教授。
-                    你对法律和公安事业充满向往,大学期间以优异的成绩考入公安大学,主修网络安全与情报分析；毕业后,你主动申请加入国安战线,已经参与了多起重大案件的侦破工作。
-                    你曾在一次任务中凭借出色的数据分析能力,成功破解一个跨国犯罪组织的加密通讯系统，发现了大量的公民数据信息遭到外泄和利用。`;
+const condition = `你是一位可爱美丽战线女警员。`;
 
 // Get/set config value for the current session
 function cfg(key,value) {
@@ -3324,8 +3350,11 @@ async function grokSendMessage(node,msgs) {
 // 加入动作option，仿照openaiSendMessage
 async function llamaSendMessage(node,msgs) {
 
-  const PROXY = Yue_Xiaoyin_ChatCompletionsProxy;
-  // const PROXY = llamaChatCompletionsProxy; // 部署时替换为Yue_Xiaoyin_ChatCompletionsProxy
+  const PROXY = llamaChatCompletionsProxy;
+  //const PROXY = Yue_Xiaoyin_ChatCompletionsProxy; // 部署时替换为Yue_Xiaoyin_ChatCompletionsProxy
+
+  const UKEY = "{wxtoken}";
+  console.log('UKEY from server:', UKEY);
 
   // Create a new AbortController instance
   aiController = new AbortController();
@@ -3344,7 +3373,8 @@ async function llamaSendMessage(node,msgs) {
       presence_penalty: cfg('ai-openai-presence'),
       frequency_penalty: cfg('ai-openai-frequency'),
       max_tokens: cfg('ai-openai-output'),
-      stream: true
+      stream: true,
+      ukey: UKEY
     };
     const stop = cfg('ai-llama-stop');
     if ( stop && stop.length ) {
@@ -4965,7 +4995,7 @@ function scriptInit() {
   const script = (d3.select("#script").node() ? d3.select("#script").property("value") : "") || "";
   // const script = d3.select("#script").property("value") || "";
   scriptBlocks = script
-    .replaceAll('\n\n\n','\n\n').trim()
+    .replace(/\n\n\n/g,'\n\n').trim()
     .split('\n\n')
     .map( x => x.trim().split('\n')
     .map( y => y.trim() ).filter( y => y.length) )
@@ -7868,8 +7898,5 @@ document.addEventListener('DOMContentLoaded', async function(e) {
   
 
 
-  
-
 </body>
 </html>
-

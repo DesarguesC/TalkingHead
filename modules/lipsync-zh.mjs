@@ -585,7 +585,7 @@ class LipsyncZh {
       .replace(/(\d)\.(\d)/g, '$1 point $2') // Number separator
       .replace(/\d+/g, this.convertNumberToWords.bind(this)) // Numbers to words
       .replace(/(\D)\1\1+/g, "$1$1") // max 2 repeating chars
-      .replaceAll('  ',' ') // Only one repeating space
+      .replace(/\n\n\n/g,'\n\n').trim() // Only one repeating space
       .normalize('NFD').replace(/[\u0300-\u036f]/g, '').normalize('NFC') // Remove non-English diacritics
       .trim();
   }
@@ -605,7 +605,7 @@ class LipsyncZh {
       .replace(/([\u4e00-\u9fa5])(\d)\.\s*([\u4e00-\u9fa5])/g, '$1；$2、$3') // 非数字意义的点号
       .replace(/(\D)\1\1+/g, "$1$1")     // 最多保留2个重复字符
       .replace(/[#_*\":;]/g, '')         // 过滤特殊字符
-      .replaceAll('  ',' ')              // 合并多个空格
+      .replace(/  /g," ")              // 合并多个空格
       .trim(); // 处理了分点问题
       // 处理数字符号的中文
   }

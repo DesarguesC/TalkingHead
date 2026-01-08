@@ -828,7 +828,20 @@ class TalkingHead {
 
 
     // Audio context and playlist
-    this.audioCtx = new AudioContext();
+    //this.audioCtx = new AudioContext();//打补丁
+    this.audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+// 在它下面紧跟着加入这段代码：
+if (this.audioCtx.state === 'suspended') {
+    console.warn("音频被浏览器拦截，请点击页面任何地方以激活声音");
+    const resumeAudio = () => {
+        this.audioCtx.resume().then(() => {
+            console.log("音频系统已成功激活！");
+            window.removeEventListener('click', resumeAudio);
+        });
+    };
+    window.addEventListener('click', resumeAudio);
+}
     this.audioSpeechSource = this.audioCtx.createBufferSource();
     this.audioBackgroundSource = this.audioCtx.createBufferSource();
     this.audioBackgroundGainNode = this.audioCtx.createGain();
@@ -898,7 +911,15 @@ class TalkingHead {
 
 
     // Setup 3D Animation
-    this.renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+    this.renderer = new THREE.WebGLRenderer({ 
+         antialias: true, 
+         alpha: true,
+         
+         precision: "mediump"
+        });
+    // 第二步：紧跟在 new 后面加上这一行代码，它是消灭那 12 个错误的关键！
+    this.renderer.debug.checkShaderErrors = false;
+
     this.renderer.setPixelRatio( this.opt.modelPixelRatio * window.devicePixelRatio );
     this.renderer.setSize(this.nodeAvatar.clientWidth, this.nodeAvatar.clientHeight);
     this.renderer.outputColorSpace = THREE.SRGBColorSpace;
@@ -916,7 +937,8 @@ class TalkingHead {
     let scene = new THREE.Scene();
     const exrLoader = new EXRLoader();
     const pmremGenerator = new THREE.PMREMGenerator(this.renderer);
-    pmremGenerator.compileEquirectangularShader(); // 可选：提前编译 shader
+    //适配老显卡
+    //pmremGenerator.compileEquirectangularShader(); // 可选：提前编译 shader
     
     exrLoader.load('./avatars/footprint_court_2k.exr', function (texture) {
         // 2.1 设置贴图映射方式
@@ -2433,7 +2455,7 @@ class TalkingHead {
           return ids2[1].localeCompare(ids1[1]);
         });
       anim.tracks.forEach( t => {
-        if(t.name.includes('mixamorig')) t.name = t.name.replaceAll('mixamorig','');
+        if(t.name.includes('mixamorig')) t.name = t.name.replace(/mixamorig/g,'');;
         const ids = t.name.split('.');
         if ( ids[1] === 'position' ) { 
           const s_now = (ids[0]+'.scale' in props) ? props[ids[0]+'.scale'] : scale_ ;
@@ -3968,11 +3990,11 @@ class TalkingHead {
               prefix = "<mark name='";
             }
             // Add word
-            ssml += x.word.replaceAll('&','&amp;')
-              .replaceAll('<','&lt;')
-              .replaceAll('>','&gt;')
-              .replaceAll('"','&quot;')
-              .replaceAll('\'','&apos;')
+            ssml += x.word.replace(/&/g,'&amp;')
+              .replace(/</g,'&lt;')
+              .replace(/>/g,'&gt;')
+              .replace(/"/g,'&quot;')
+              .replace(/'/g,'&apos;')
               .replace(/^\p{Dash_Punctuation}$/ug,'<break time="400ms"/>')
               .replace(/\p{P}/gu, '').replace(/\s+/g, ''); // 合成子串的语音时，去除空格和标点符号
               // 750ms -> 400ms
@@ -4558,7 +4580,7 @@ class TalkingHead {
             return ids2[1].localeCompare(ids1[1]); // scale first (scale, position, quaternion)
           });
         anim.tracks.forEach( t => {
-          if(t.name.includes('mixamorig')) t.name = t.name.replaceAll('mixamorig','');
+          if(t.name.includes('mixamorig')) t.name = t.name.replace(/mixamorig/g,'');
           const ids = t.name.split('.');
           if ( ids[1] === 'position' ) { 
             // [DONE] 初步定位是提供的ref文件中，带有position信息的t(即ids[1] === 'position'时)的time帧数不足；walking中是有 30帧就是30个time，ref中这部分只有2个time
@@ -4684,7 +4706,7 @@ class TalkingHead {
         anim.tracks.forEach( t => {
 
           // Rename and scale Mixamo tracks
-          t.name = t.name.replaceAll('mixamorig','');
+          t.name = t.name.replace(/mixamorig/g,'');
           const ids = t.name.split('.');
           if ( ids[1] === 'position' ) {
             props[t.name] = new THREE.Vector3( t.values[0] * scale, t.values[1] * scale, t.values[2] * scale);
